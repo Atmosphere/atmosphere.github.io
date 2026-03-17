@@ -393,6 +393,64 @@ The real power of Atmosphere's MCP module is that your MCP tools have full acces
 
 This means an AI agent can act as a **real-time chat moderator**, **notification system**, or **admin console** -- all through the standard MCP protocol that works with Claude Desktop, Cursor, and VS Code out of the box.
 
+## Bidirectional Tool Bridge
+
+Most MCP implementations are one-directional: the client calls tools on the server. Atmosphere's `BiDirectionalToolBridge` enables the **server to call tools on the client** — for example, invoking a JavaScript function in the user's browser.
+
+### How It Works
+
+The bridge sends a JSON-RPC tool call request over the Atmosphere transport (WebSocket/SSE) and waits for the client to respond asynchronously:
+
+```java
+var bridge = new BiDirectionalToolBridge(); // 30-second default timeout
+
+// Call a tool on the connected client
+CompletableFuture<String> result = bridge.callClientTool(
+    resource,
+    "getLocation",
+    Map.of()
+);
+
+// Non-blocking: process the result when it arrives
+result.thenAccept(location ->
+    logger.info("Client location: {}", location));
+
+// Or block (on a virtual thread):
+String location = result.join();
+```
+
+### Client-Side Handler
+
+The client must handle incoming tool call requests and respond:
+
+```javascript
+atmosphere.onMessage = function(response) {
+    var msg = JSON.parse(response.responseBody);
+    if (msg.type === 'tool-call') {
+        var result = executeClientTool(msg.toolName, msg.arguments);
+        atmosphere.push(JSON.stringify({
+            type: 'tool-response',
+            id: msg.id,
+            result: result
+        }));
+    }
+};
+```
+
+### Use Cases
+
+- **Browser-side data collection**: ask the client for geolocation, local storage data, or DOM state
+- **User confirmation**: request approval before executing a sensitive server-side action
+- **Client-side computation**: offload work to the browser (e.g., image processing in a Web Worker)
+
+The bridge is thread-safe, uses `ConcurrentHashMap` for pending calls, and supports custom timeouts:
+
+```java
+var bridge = new BiDirectionalToolBridge(Duration.ofSeconds(60));
+```
+
+Monitor pending calls via `bridge.pendingCount()` or `bridge.pendingCalls()` for observability.
+
 ## Sample
 
 The `samples/spring-boot-mcp-server/` sample contains the complete `DemoMcpServer` shown above, including a chat application that the MCP tools can interact with. Run it with:

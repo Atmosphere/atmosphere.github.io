@@ -322,6 +322,53 @@ router.streamChatCompletion(request, session);
 
 Rules are evaluated in order. The first matching rule determines the target client and model. If no rule matches, the default client is used.
 
+### Cost-based and Latency-based Routing
+
+Beyond content-based rules, `RoutingLlmClient` supports cost and latency constraints via `ModelOption` — a record that attaches cost, latency, and capability metadata to each model:
+
+```java
+var models = List.of(
+    new RoutingRule.ModelOption(geminiClient, "gemini-2.5-flash", 0.001, 200, 80),
+    new RoutingRule.ModelOption(openaiClient, "gpt-4o",           0.01,  500, 95),
+    new RoutingRule.ModelOption(claudeClient, "claude-3-haiku",   0.002, 150, 70)
+);
+
+var router = RoutingLlmClient.builder(geminiClient, "gemini-2.5-flash")
+    // Under budget: pick the most capable model that fits
+    .route(RoutingRule.costBased(5.0, models))
+    // Low latency: pick the most capable model under 300ms
+    .route(RoutingRule.latencyBased(300, models))
+    // Content fallback
+    .route(RoutingRule.contentBased(
+        prompt -> prompt.contains("code"), openaiClient, "gpt-4o"))
+    .build();
+```
+
+**Cost-based** (`CostBased`): filters models where `costPerStreamingText * maxStreamingTexts <= maxCost`, then selects the highest-capability model. This lets you use GPT-4o for short prompts and fall back to cheaper models for long ones.
+
+**Latency-based** (`LatencyBased`): filters models where `averageLatencyMs <= maxLatencyMs`, then selects the highest-capability model. Useful for real-time UIs that need sub-second time-to-first-token.
+
+The `ModelOption` fields:
+
+| Field | Description |
+|-------|-------------|
+| `costPerStreamingText` | Cost per streaming text in arbitrary units |
+| `averageLatencyMs` | Average response latency in milliseconds |
+| `capability` | Capability score (higher = more capable); used for tie-breaking |
+
+### Budget-aware Degradation
+
+Combine routing with `StreamingTextBudgetManager` for automatic model degradation when a user or organization approaches their budget:
+
+```java
+var router = RoutingLlmClient.builder(defaultClient, "gpt-4o")
+    .budgetManager(budgetManager, request -> extractOrgId(request))
+    .route(RoutingRule.costBased(10.0, models))
+    .build();
+```
+
+When an owner's usage exceeds the degradation threshold, the router switches to the budget manager's recommended model *before* evaluating rules. If the budget is fully exhausted, a `BudgetExceededException` is sent as an error to the client.
+
 ## Fan-out streaming
 
 Fan-out sends the same prompt to multiple models simultaneously, with each model streaming texts through its own child session. The `FanOutStreamingSession` (in `org.atmosphere.ai.fanout`) orchestrates this.
@@ -416,6 +463,85 @@ broadcaster.getBroadcasterConfig().addFilter(metering);
 ```
 
 The filter chain processes every streaming text in order: PII redaction first, then content safety, then cost metering. If PII redaction buffers a streaming text (waiting for a sentence boundary), it is not visible to downstream filters until the sentence is complete.
+
+## Testing AI Endpoints
+
+The `atmosphere-ai-test` module provides a lightweight testing framework for AI endpoints without spinning up a full server.
+
+### Dependency
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-ai-test</artifactId>
+    <version>LATEST</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### AiTestClient
+
+`AiTestClient` wraps an `AiSupport` implementation and captures the full streaming response for assertion:
+
+```java
+@Test
+void toolsAreCalled() {
+    var client = new AiTestClient(myAiSupport);
+    var response = client.prompt("What's the weather in Tokyo?");
+
+    AiAssertions.assertThat(response)
+        .hasToolCall("get_weather")
+            .withArgument("city", "Tokyo")
+            .hasResult()
+            .and()
+        .containsText("Tokyo")
+        .completedWithin(Duration.ofSeconds(10))
+        .hasNoErrors();
+}
+```
+
+### AiResponse
+
+The captured `AiResponse` record exposes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `text()` | `String` | Full accumulated text response |
+| `events()` | `List<AiEvent>` | All structured events emitted during streaming |
+| `metadata()` | `Map<String, Object>` | Metadata key-value pairs |
+| `errors()` | `List<String>` | Error messages, if any |
+| `elapsed()` | `Duration` | Wall-clock response time |
+| `completed()` | `boolean` | Whether the stream completed normally |
+
+Filter events by type:
+
+```java
+List<AiEvent.ToolStart> toolCalls = response.eventsOfType(AiEvent.ToolStart.class);
+```
+
+### AiAssertions
+
+Fluent assertion API that chains naturally:
+
+```java
+AiAssertions.assertThat(response)
+    .containsText("weather")
+    .containsEventType(AiEvent.ToolStart.class)
+    .hasMetadata("routing.model")
+    .isComplete()
+    .hasNoErrors();
+```
+
+Tool call assertions support argument inspection:
+
+```java
+AiAssertions.assertThat(response)
+    .hasToolCall("search_docs")
+        .withArgument("query", "atmosphere framework")
+        .hasResult()
+        .and()
+    .completedWithin(Duration.ofSeconds(5));
+```
 
 ## Samples
 

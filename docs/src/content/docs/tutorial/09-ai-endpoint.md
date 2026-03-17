@@ -473,6 +473,102 @@ public interface AiConversationMemory {
 
 The default implementation is `InMemoryConversationMemory`, which uses a sliding window capped at `maxHistoryMessages`.
 
+## Identity Fields
+
+`AiRequest` carries first-class identity fields so that adapters like Google ADK (which needs `userId`/`sessionId`) and Embabel (which needs `agentId`) can access them directly. The framework populates these from `AtmosphereResource` request attributes automatically.
+
+| Field | Purpose | Used by |
+|-------|---------|---------|
+| `userId` | End-user identifier (e.g., login name) | ADK, Spring AI, rate limiting |
+| `sessionId` | Session identifier for stateful backends | ADK (runner sessions) |
+| `agentId` | Target agent identifier | Embabel (`AgentPlatform`) |
+| `conversationId` | Conversation thread ID | Multi-turn memory, durable sessions |
+
+### Setting Identity in an Interceptor
+
+The cleanest pattern is an `AiInterceptor` that extracts identity from the HTTP request:
+
+```java
+public class IdentityInterceptor implements AiInterceptor {
+
+    @Override
+    public AiRequest preProcess(AiRequest request, AtmosphereResource resource) {
+        var httpReq = resource.getRequest();
+        return request
+            .withUserId(httpReq.getHeader("X-User-Id"))
+            .withSessionId(resource.uuid())
+            .withConversationId(httpReq.getParameter("conversationId"));
+    }
+}
+```
+
+```java
+@AiEndpoint(path = "/chat",
+    interceptors = {IdentityInterceptor.class},
+    conversationMemory = true)
+```
+
+Identity fields flow through the entire pipeline: interceptors, guardrails, RAG context providers, and the AI adapter. `AiRequest` is a record, so `withUserId()` etc. return a new immutable copy.
+
+## Multi-modal Content
+
+The `Content` sealed interface supports text, images, and files via `sendContent()`:
+
+```java
+// Text (delegates to send())
+session.sendContent(Content.text("Here are the results:"));
+
+// Image
+byte[] chartPng = renderChart(data);
+session.sendContent(Content.image(chartPng, "image/png"));
+
+// File
+byte[] csvBytes = exportCsv(rows);
+session.sendContent(Content.file(csvBytes, "text/csv", "results.csv"));
+```
+
+The wire protocol uses structured JSON with a `contentType` discriminator:
+
+```json
+{"type":"content","contentType":"text","data":"Here are the results:","sessionId":"abc","seq":1}
+{"type":"content","contentType":"image","mimeType":"image/png","data":"<base64>","sessionId":"abc","seq":2}
+{"type":"content","contentType":"file","mimeType":"text/csv","fileName":"results.csv","data":"<base64>","sessionId":"abc","seq":3}
+```
+
+Binary data is base64-encoded automatically via `Image.dataBase64()` / `File.dataBase64()`.
+
+## Structured Output
+
+The `StructuredOutputParser` SPI enables LLM responses to be parsed into typed Java objects. The built-in `JacksonStructuredOutputParser` generates JSON Schema instructions and parses JSON output via Jackson.
+
+```java
+// Parse a complete response into a typed record
+record WeatherReport(String city, double temp, String conditions) {}
+
+StructuredOutputParser parser = ... // auto-discovered via ServiceLoader
+String instructions = parser.schemaInstructions(WeatherReport.class);
+// "Respond with valid JSON matching this schema: {\"type\":\"object\",\"properties\":{...}}"
+
+WeatherReport report = parser.parse(llmOutput, WeatherReport.class);
+```
+
+For streaming, the parser can emit progressive field events:
+
+```java
+// In an adapter, as chunks arrive:
+parser.parseField(chunk, WeatherReport.class)
+    .ifPresent(entry -> session.emit(
+        new AiEvent.StructuredField(entry.getKey(), entry.getValue(), "string")));
+```
+
+These events enable real-time UI updates — the client can render fields as they arrive rather than waiting for the full response. When all fields are parsed, emit `EntityComplete`:
+
+```java
+session.emit(new AiEvent.EntityStart("WeatherReport", schema));
+// ... StructuredField events for each field ...
+session.emit(new AiEvent.EntityComplete("WeatherReport", report));
+```
+
 ## Guardrails and Context Providers
 
 ### Guardrails
@@ -486,7 +582,7 @@ The default implementation is `InMemoryConversationMemory`, which uses a sliding
 
 Execution order: guardrails -> interceptors -> [LLM] -> interceptors -> guardrails
 
-### Context Providers
+### Context Providers (RAG)
 
 `ContextProvider` classes augment the prompt with RAG context:
 
@@ -494,6 +590,33 @@ Execution order: guardrails -> interceptors -> [LLM] -> interceptors -> guardrai
 @AiEndpoint(path = "/chat",
     contextProviders = {DocumentSearchProvider.class})
 ```
+
+Enable auto-discovery to pick up all `ContextProvider` implementations on the classpath via `ServiceLoader`:
+
+```java
+@AiEndpoint(path = "/chat",
+    autoDiscoverContextProviders = true)
+```
+
+Three built-in providers are available:
+
+| Provider | Module | Description |
+|----------|--------|-------------|
+| `InMemoryContextProvider` | `atmosphere-rag` | Zero-dependency, word-overlap scoring |
+| `SpringAiVectorStoreContextProvider` | `atmosphere-rag` | Bridges Spring AI vector stores |
+| `LangChain4jEmbeddingStoreContextProvider` | `atmosphere-rag` | Bridges LangChain4j retrievers |
+
+The `ContextProvider` SPI supports query transformation and reranking:
+
+```java
+public interface ContextProvider {
+    List<Document> retrieve(String query, int maxResults);
+    default String transformQuery(String originalQuery) { return originalQuery; }
+    default List<Document> rerank(String query, List<Document> documents) { return documents; }
+}
+```
+
+Execution order: `transformQuery()` -> `retrieve()` -> `rerank()` -> inject into `AiRequest.message`.
 
 ## Client Integration
 
@@ -606,11 +729,17 @@ The `samples/spring-boot-ai-chat/` sample contains the complete `AiChat` endpoin
 |---------|---------|
 | `@AiEndpoint` | Annotation that wires up an AI chat endpoint with streaming, lifecycle, and configuration |
 | `@Prompt` | Marks the method that handles user messages (invoked on a virtual thread) |
-| `StreamingSession` | SPI for pushing streaming texts to clients: `send()`, `stream()`, `complete()`, `error()` |
+| `StreamingSession` | SPI for pushing streaming texts to clients: `send()`, `stream()`, `emit()`, `sendContent()` |
+| `AiEvent` | Sealed interface with 13 structured event types (tool calls, agent steps, entities, errors) |
+| `AiRequest` | Immutable record carrying message, identity fields, history, and metadata |
+| `Content` | Sealed interface for multi-modal content (text, images, files) |
 | `AiConfig` | Global LLM configuration (model, API key, base URL) |
 | `AiInterceptor` | Pre/post processing around the prompt (cost metering, RAG, logging) |
 | `AiConversationMemory` | Multi-turn conversation history per client |
+| `MemoryStrategy` | Pluggable strategy for selecting which history messages to include |
 | `AiGuardrail` | Safety checks before and after LLM calls |
-| `ContextProvider` | RAG context augmentation |
+| `ContextProvider` | RAG context augmentation with auto-discovery support |
+| `StructuredOutputParser` | SPI for parsing LLM output into typed Java objects with progressive field events |
+| `AiCapability` | Declares required backend capabilities; validated at startup |
 
 In the [next chapter](/docs/tutorial/10-ai-tools/), you will learn about `@AiTool` -- Atmosphere's framework-agnostic annotation for declaring tools that any LLM can call.
