@@ -9,6 +9,8 @@ Atmosphere is a transport-agnostic real-time framework for the JVM. Write to a B
 
 ## How to Use This Documentation
 
+**Want a running app now?** Install the CLI and run a sample in 30 seconds: [Install & Run](/docs/tutorial/00-cli/).
+
 **New to Atmosphere?** Start with the [Tutorial](/docs/tutorial/01-introduction/) — a 20-chapter guide that builds your understanding from first principles to production deployment.
 
 **Looking for a specific feature?** Use the Reference section for API details on the core runtime, rooms, AI, MCP, and more.
@@ -19,6 +21,7 @@ Atmosphere is a transport-agnostic real-time framework for the JVM. Write to a B
 
 | What you want | Where to go |
 |--------------|-------------|
+| Run a sample in 30 seconds | [Install & Run (CLI)](/docs/tutorial/00-cli/) |
 | Build your first app | [Chapter 2: Getting Started](/docs/tutorial/02-getting-started/) |
 | `@ManagedService` deep dive | [Chapter 3](/docs/tutorial/03-managed-service/) |
 | AI/LLM streaming | [Chapter 9: @AiEndpoint](/docs/tutorial/09-ai-endpoint/) |

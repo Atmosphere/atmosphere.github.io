@@ -37,6 +37,7 @@ export default defineConfig({
               label: 'Getting Started',
               collapsed: false,
               items: [
+                { label: 'Install & Run', slug: 'tutorial/00-cli' },
                 { label: 'Introduction', slug: 'tutorial/01-introduction' },
                 { label: 'First App', slug: 'tutorial/02-getting-started' },
               ],
