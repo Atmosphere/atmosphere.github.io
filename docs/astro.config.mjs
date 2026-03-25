@@ -31,6 +31,15 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Agents',
+          items: [
+            { label: '@Agent', slug: 'agents/agent' },
+            { label: 'Skills', slug: 'agents/skills' },
+            { label: 'A2A Protocol', slug: 'agents/a2a' },
+            { label: 'AG-UI Protocol', slug: 'agents/agui' },
+          ],
+        },
+        {
           label: 'Tutorial',
           items: [
             {

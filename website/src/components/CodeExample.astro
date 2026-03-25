@@ -5,16 +5,16 @@ const reasons = [
       <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/>
       <circle cx="12" cy="15" r="2"/>
     </svg>`,
-    title: 'Ship AI features without building infrastructure',
-    description: 'Atmosphere handles streaming text delivery, tool execution, RAG context injection, and guardrails. You plug in your model — we deliver the output to the browser.',
-    detail: `<p>Atmosphere provides the <strong>server-to-browser transport layer</strong> for AI applications while your model framework handles inference.</p>
+    title: 'One annotation to deploy an AI agent',
+    description: '@Agent wires the AI endpoint, commands, tools, skill file, conversation memory, and protocol exposure. Add MCP, A2A, and AG-UI by putting the JAR on the classpath.',
+    detail: `<p><strong>@Agent</strong> is the single entry point for building AI agents with Atmosphere. One class, one annotation — everything else is auto-wired.</p>
 <ul>
-<li><strong>Streaming text</strong> — real-time delivery with content/progress/metadata/complete frames</li>
-<li><strong>Tool calling</strong> — register tools with @AiTool, auto-executed during LLM inference</li>
-<li><strong>RAG</strong> — ContextProvider SPI injects relevant documents before the LLM call</li>
-<li><strong>Guardrails</strong> — pre-process prompts, post-process responses for safety</li>
-<li><strong>MCP Server</strong> — expose tools and resources to Claude, Copilot, and Cursor</li>
-<li><strong>Model routing</strong> — failover across multiple LLM backends automatically</li>
+<li><strong>@Agent</strong> — declares an AI agent with endpoint, commands, tools, and protocols</li>
+<li><strong>@Command</strong> — register slash commands with type-safe parameters</li>
+<li><strong>@AiTool</strong> — portable tools that work across all LLM backends</li>
+<li><strong>Skill files</strong> — auto-discovered at META-INF/skills/ on the classpath</li>
+<li><strong>Import from GitHub</strong> — 1,200+ skills available via atmosphere import</li>
+<li><strong>Full-stack or headless</strong> — serve the built-in AI Console or run as a pure API agent</li>
 </ul>`,
   },
   {
@@ -22,16 +22,15 @@ const reasons = [
       <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
       <path d="m9 12 2 2 4-4"/>
     </svg>`,
-    title: 'Never build a transport layer again',
-    description: 'WebSocket negotiation, SSE fallback, reconnection with backoff, heartbeats, message caching — solved once, across every transport, on every container.',
-    detail: `<p>Transport negotiation is <strong>deceptively hard</strong>. Proxies strip WebSocket headers, mobile networks drop connections, and every container has different quirks.</p>
+    title: 'Three protocols, zero configuration',
+    description: 'MCP, A2A, and AG-UI are auto-registered based on classpath. Your @Agent is discoverable by any MCP client, any A2A agent, and any AG-UI frontend.',
+    detail: `<p>Protocol exposure is <strong>automatic</strong>. Add the dependency, and your agent speaks the protocol — no manual endpoint wiring, no boilerplate.</p>
 <ul>
-<li><strong>Automatic negotiation</strong> — WebSocket, SSE, long-polling selected per-client</li>
-<li><strong>Reconnection</strong> — exponential backoff with jitter, transparent to your code</li>
-<li><strong>Message cache</strong> — replay missed messages after reconnection</li>
-<li><strong>Heartbeats</strong> — detect dead connections before TCP timeouts</li>
-<li><strong>Proxy-safe</strong> — works behind CDNs, load balancers, and corporate firewalls</li>
-<li><strong>Container-agnostic</strong> — Tomcat, Jetty, Undertow, GlassFish, Payara</li>
+<li><strong>MCP</strong> — @McpTool, @McpResource, @McpPrompt for Claude, Copilot, and Cursor</li>
+<li><strong>A2A</strong> — @AgentSkill, @AgentSkillHandler via Agent Cards + JSON-RPC</li>
+<li><strong>AG-UI</strong> — @AgUiEndpoint, @AgUiAction via SSE (CopilotKit compatible)</li>
+<li><strong>Multi-channel</strong> — route to Slack, Telegram, Discord, WhatsApp, Messenger</li>
+<li><strong>Headless agents</strong> — no browser required, pure agent-to-agent communication</li>
 </ul>`,
   },
   {
@@ -41,16 +40,16 @@ const reasons = [
       <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
       <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
     </svg>`,
-    title: 'Rooms and presence that just work',
-    description: 'Named groups, member tracking, join/leave events, message history, and direct messaging. Add collaborative features to your app in hours, not weeks.',
-    detail: `<p>Every collaborative app needs rooms. Atmosphere gives you <strong>everything built in</strong> — no Redis, no external presence service.</p>
+    title: 'Swap LLM backends without changing code',
+    description: 'Built-in, Spring AI, LangChain4j, Google ADK, Embabel — pick any backend and swap by changing one Maven dependency. Your agent code stays the same.',
+    detail: `<p>Atmosphere is the <strong>infrastructure layer underneath</strong> your LLM library, not a replacement for it. Your @Agent and @AiTool annotations work identically across all backends.</p>
 <ul>
-<li><strong>Named rooms</strong> — create, join, leave with a single API call</li>
-<li><strong>Presence tracking</strong> — real-time member lists, join/leave events</li>
-<li><strong>Message history</strong> — configurable cache, replayed on join</li>
-<li><strong>Direct messaging</strong> — send to a specific member by ID</li>
-<li><strong>Authorization</strong> — accept or reject join requests</li>
-<li><strong>Virtual members</strong> — AI agents and bots as room participants</li>
+<li><strong>Built-in</strong> — Gemini, OpenAI, and Ollama via direct HTTP client</li>
+<li><strong>Spring AI</strong> — ChatClient + RAG + VectorStore integration</li>
+<li><strong>LangChain4j</strong> — chains, agents, and tool bridging</li>
+<li><strong>Google ADK</strong> — multi-agent orchestration</li>
+<li><strong>Embabel</strong> — goal-driven agents</li>
+<li><strong>Tool portability</strong> — @AiTool works identically with every backend</li>
 </ul>`,
   },
   {
