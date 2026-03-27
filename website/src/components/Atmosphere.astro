@@ -2,73 +2,61 @@
 const capabilities = [
   {
     icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/>
-      <circle cx="12" cy="15" r="2"/>
-      <path d="M12 17v2"/>
-    </svg>`,
-    title: '@Agent & Skills',
-    description: 'One annotation wires everything: AI endpoint, commands, tools, skill file, conversation memory, and protocol exposure. Import skills from GitHub — 1,200+ available. Auto-discovers skill files at META-INF/skills/ on the classpath.',
-    badge: 'New in 4.0',
-    detail: `<ul>
-<li><strong>@Agent annotation</strong> — declares an AI agent with endpoint, commands, tools, and protocol exposure</li>
-<li><strong>Skill file auto-discovery</strong> — reads skill definitions from META-INF/skills/ on the classpath</li>
-<li><strong>atmosphere import from GitHub</strong> — import skills directly from GitHub repositories</li>
-<li><strong>Full-stack vs headless mode</strong> — serve a built-in AI Console UI or run headless for A2A/MCP</li>
-<li><strong>@Command slash commands</strong> — register user-facing commands with type-safe parameters</li>
-<li><strong>@AiTool portable tools</strong> — tools that work across all LLM backends</li>
-<li><strong>Conversation memory</strong> — built-in session-scoped conversation history</li>
-<li><strong>Built-in AI Console UI</strong> — development and production chat interface served automatically</li>
-</ul>`,
-  },
-  {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-      <path d="m9 12 2 2 4-4"/>
-    </svg>`,
-    title: 'Agent Protocols',
-    description: 'Three open protocols auto-registered based on classpath. Your @Agent is discoverable by any MCP client, any A2A agent, and any AG-UI frontend — zero configuration.',
-    badge: 'MCP · A2A · AG-UI',
-    detail: `<ul>
-<li><strong>MCP</strong> — @McpTool/@McpResource/@McpPrompt for Claude, Copilot, and Cursor</li>
-<li><strong>A2A</strong> — @AgentSkill/@AgentSkillHandler via Agent Cards + JSON-RPC</li>
-<li><strong>AG-UI</strong> — @AgUiEndpoint/@AgUiAction via SSE (CopilotKit compatible)</li>
-<li><strong>Protocol annotations</strong> — work on both @Agent and @ManagedService</li>
-<li><strong>Multi-channel</strong> — Slack/Telegram/Discord/WhatsApp/Messenger routing</li>
-</ul>`,
-  },
-  {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
-      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
-      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
-      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
-    </svg>`,
-    title: 'LLM Backends',
-    description: 'Not an LLM library — the infrastructure layer underneath. Pick any backend, swap by changing one Maven dependency. Your agent code never changes.',
-    detail: `<ul>
-<li><strong>Built-in</strong> — Gemini, OpenAI, and Ollama via direct HTTP client</li>
-<li><strong>Spring AI</strong> — ChatClient + RAG + VectorStore integration</li>
-<li><strong>LangChain4j</strong> — chains, agents, and tool bridging</li>
-<li><strong>Google ADK</strong> — multi-agent orchestration</li>
-<li><strong>Embabel</strong> — goal-driven agents</li>
-<li><strong>Tool portability</strong> — @AiTool works with every backend</li>
-</ul>`,
-  },
-  {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
       <path d="m9 12 2 2 4-4"/>
     </svg>`,
     title: 'Transport Layer',
-    description: 'WebSocket, SSE, long-polling — your code never changes. Atmosphere picks the best transport, handles fallback, reconnection, heartbeats, and message caching automatically.',
+    description: 'WebSocket, SSE, long-polling, and gRPC — your code never changes. Atmosphere picks the best transport, handles fallback, reconnection, heartbeats, and message caching automatically.',
+    badge: 'Since 2008',
     detail: `<ul>
 <li><strong>WebSocket</strong> — full-duplex, binary support, proxy-safe</li>
 <li><strong>SSE</strong> — server-sent events with automatic reconnection</li>
 <li><strong>Long-polling</strong> — works everywhere, even behind restrictive firewalls</li>
+<li><strong>gRPC</strong> — bidirectional streaming alongside HTTP transports</li>
 <li><strong>Auto-fallback</strong> — WebSocket → SSE → long-polling, transparent to your code</li>
 <li><strong>Heartbeats</strong> — detect dead connections before TCP timeouts</li>
 <li><strong>Reconnection</strong> — exponential backoff with jitter, message replay on reconnect</li>
 <li><strong>Message cache</strong> — no messages lost during brief disconnections</li>
+</ul>`,
+  },
+  {
+    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>`,
+    title: 'Broadcaster, Rooms & Presence',
+    description: 'Write to a Broadcaster, deliver to every subscriber. RoomManager with join/leave, presence tracking, message history, and virtual AI members. @ManagedService for zero-boilerplate real-time endpoints.',
+    detail: `<ul>
+<li><strong>Broadcaster</strong> — transport-agnostic pub/sub engine with topic-based routing</li>
+<li><strong>@ManagedService</strong> — annotate a class, get a real-time endpoint with lifecycle hooks</li>
+<li><strong>RoomManager</strong> — join, leave, presence events, message history</li>
+<li><strong>Virtual members</strong> — LLM-powered room participants that respond to messages</li>
+<li><strong>BroadcasterCache</strong> — replay missed messages on reconnect</li>
+<li><strong>Interceptors</strong> — heartbeat, backpressure, MDC tracing, content tracking</li>
+<li><strong>Clustering</strong> — Redis and Kafka broadcasters for multi-node deployments</li>
+<li><strong>Durable sessions</strong> — survive restarts with SQLite or Redis backing</li>
+</ul>`,
+  },
+  {
+    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/>
+      <circle cx="12" cy="15" r="2"/>
+      <path d="M12 17v2"/>
+    </svg>`,
+    title: 'AI Streaming & Agents',
+    description: '@Agent wires AI endpoint, commands, tools, skill file, conversation memory, and protocol exposure automatically. @Coordinator orchestrates fleets of agents with parallel fan-out and sequential pipelines.',
+    badge: 'New in 4.0',
+    detail: `<ul>
+<li><strong>@Agent annotation</strong> — declares an AI agent with endpoint, commands, tools, and protocol exposure</li>
+<li><strong>@Coordinator + @Fleet</strong> — multi-agent orchestration with parallel fan-out, sequential pipelines, and weighted routing</li>
+<li><strong>AgentRuntime SPI</strong> — pluggable AI backends: Spring AI, LangChain4j, Google ADK, Embabel, or built-in</li>
+<li><strong>@AiTool portable tools</strong> — tools that work across all LLM backends</li>
+<li><strong>Conversation memory</strong> — built-in session-scoped conversation history</li>
+<li><strong>MCP, A2A, AG-UI</strong> — three open protocols auto-registered based on classpath</li>
+<li><strong>Multi-channel</strong> — Slack, Telegram, Discord, WhatsApp, Messenger routing</li>
+<li><strong>Built-in AI Console UI</strong> — development and production chat interface served automatically</li>
 </ul>`,
   },
   {
@@ -88,6 +76,24 @@ const capabilities = [
 <li><strong>React Native</strong> — AppState/NetInfo-aware with EventSource polyfill</li>
 </ul>`,
   },
+  {
+    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+    </svg>`,
+    title: 'Spring Boot & Quarkus',
+    description: 'Auto-configured starters for both frameworks. Add one dependency to your existing app — Atmosphere handles the real-time layer without rewiring anything.',
+    detail: `<ul>
+<li><strong>Spring Boot 4.0 starter</strong> — auto-configuration, annotation scanning, observability</li>
+<li><strong>Quarkus 3.21 extension</strong> — build-time annotation scanning, native image support</li>
+<li><strong>Micrometer metrics</strong> — connection counts, message throughput, AI latency</li>
+<li><strong>OpenTelemetry tracing</strong> — span propagation across transports and AI calls</li>
+<li><strong>Health checks</strong> — readiness and liveness probes for Kubernetes</li>
+<li><strong>Virtual threads</strong> — enabled by default on JDK 21+</li>
+</ul>`,
+  },
 ];
 ---
 
@@ -95,10 +101,11 @@ const capabilities = [
   <div class="atmosphere-container">
     <div class="section-header">
       <span class="section-label">Atmosphere 4.0</span>
-      <h2 class="section-title">AI agent infrastructure for Java</h2>
+      <h2 class="section-title">Everything real-time, one framework</h2>
       <p class="section-description">
-        The agent runtime, protocol exposure, LLM backends, transport layer, and client SDKs
-        your application needs — so you can focus on what makes your agent different.
+        Transport layer, rooms, presence, AI streaming, agent protocols, LLM backends, and client SDKs —
+        from classic pub/sub to multi-agent orchestration, Atmosphere handles the real-time layer
+        so you can focus on what makes your application different.
       </p>
     </div>
 
