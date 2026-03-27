@@ -5,9 +5,25 @@ description: "New features in Atmosphere 4.0"
 
 # What's New in 4.0
 
+## Multi-Agent Orchestration
+
+- **`@Coordinator` + `@Fleet`** — declare a coordinator that manages a fleet of agents. Parallel fan-out, sequential pipelines, optional agents, weighted routing, and circular dependency detection are built in. See [@Coordinator](/docs/agents/coordinator/).
+- **`AgentFleet` API** — injected into `@Prompt` methods. `fleet.parallel(...)` fans out to multiple agents concurrently; `fleet.pipeline(...)` chains them sequentially. Results are returned as `AgentResult` records with text, metadata, duration, and success/failure status.
+- **`@AgentRef`** — reference agents by class (compile-safe with IDE navigation) or by name (for remote/cross-module agents). Supports `required`, `version`, and `weight` attributes.
+- **Local + Remote transport** — coordinators transparently call local agents via direct invocation or remote agents via A2A JSON-RPC. The `AgentProxy` abstraction hides the transport layer.
+- **Console tool cards** — the built-in AI Console renders each specialist agent's work as tool cards (tool name, input, result) before displaying the synthesized response.
+
+## AgentRuntime SPI
+
+- **`AgentRuntime` replaces `AiSupport`** — the new SPI dispatches the entire agent loop (tool calling, memory, RAG, retries) to the AI framework on the classpath. This is the Servlet model for AI agents: write your `@Agent` once, run it on any runtime.
+- **Pluggable runtimes** — auto-detected via `ServiceLoader`. When multiple implementations are available, the one with the highest `priority()` that reports `isAvailable()` wins. Switch runtimes by changing a single Maven dependency — no code changes.
+- **`AiCapability` negotiation** — runtimes declare capabilities (`TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, `VISION`, `AGENT_ORCHESTRATION`, etc.). Endpoints can require capabilities with `@AiEndpoint(requires = {TOOL_CALLING})` for fail-fast validation at startup.
+- **Console runtime display** — the AI Console subtitle shows the active runtime name (e.g., "Runtime: spring-ai", "Runtime: google-adk") via `/api/console/info`.
+
 ## AI / LLM Platform
 
-- **`@AiEndpoint` + pluggable `AiSupport` SPI** — auto-detects Spring AI, LangChain4j, Google ADK, or Embabel from the classpath. Conversation memory, RAG interceptors, cost/latency routing, and fan-out streaming are built in.
+- **`@Agent` annotation** — single entry point that wires AI endpoint, commands (`@Command`), tools (`@AiTool`), skill file, conversation memory, and multi-protocol exposure (MCP, A2A, AG-UI) automatically. Conversation memory is enabled by default.
+- **`@AiEndpoint` + pluggable `AgentRuntime` SPI** — auto-detects Spring AI, LangChain4j, Google ADK, or Embabel from the classpath. Conversation memory, RAG interceptors, cost/latency routing, and fan-out streaming are built in.
 - **`@AiTool` framework-agnostic tool calling** — declare tools once with `@AiTool`/`@Param`, portable across all AI backends via automatic bridge adapters (`SpringAiToolBridge`, `LangChain4jToolBridge`, `AdkToolBridge`).
 - **Per-endpoint model override** — `@AiEndpoint(model = "gpt-4o")` selects a model per endpoint without changing global config.
 - **Multi-backend routing** — `@AiEndpoint(fallbackStrategy = FAILOVER)` wires `DefaultModelRouter` for failover, round-robin, or content-based routing across multiple AI backends.
@@ -22,9 +38,9 @@ description: "New features in Atmosphere 4.0"
 - **Capability validation** — `@AiEndpoint(requires = {TOOL_CALLING})` fails fast at startup if the backend can't satisfy required capabilities.
 - **Memory strategies** — pluggable `MemoryStrategy` SPI with `MessageWindowStrategy`, `TokenWindowStrategy` (chars/4 approximation), and `SummarizingStrategy` (condenses old messages).
 - **`StructuredOutputParser` SPI** — generate JSON Schema instructions from Java classes, parse LLM output into typed objects. Built-in `JacksonStructuredOutputParser` works with any model.
-- **Enhanced RAG** — `ContextProvider.transformQuery()` and `rerank()` enable query rewriting and result re-ranking without building a custom pipeline.
+- **Enhanced RAG** — `ContextProvider.transformQuery()` and `rerank()` enable query rewriting and result re-ranking without building a custom pipeline. `InMemoryContextProvider` provides a zero-dependency provider for development and testing.
 - **Auto tool events** — `ToolRegistry.execute(name, args, session)` auto-emits `AiEvent.ToolStart`/`ToolResult` through the streaming session.
-- **`atmosphere-ai-test` module** — `AiTestClient`, `AiResponse`, and fluent `AiAssertions` for testing AI endpoints in JUnit 5.
+- **`atmosphere-ai-test` module** — `AiTestClient`, `AiResponse`, and fluent `AiAssertions` for testing AI endpoints in JUnit 5. See [AI Testing](/docs/reference/testing/).
 
 ## MCP (Model Context Protocol)
 
@@ -46,6 +62,11 @@ description: "New features in Atmosphere 4.0"
 
 - **Spring Boot 4.0 / Quarkus 3.21** — first-class starters with auto-configuration, native image support, and observability (Micrometer + OpenTelemetry).
 - **Kotlin DSL** — builder API and coroutine extensions for idiomatic Kotlin usage.
+
+## Channels
+
+- **Multi-channel routing** — `atmosphere-channels` bridges `@Agent` to Slack, Telegram, Discord, WhatsApp, and Messenger with zero per-channel code. Commands, AI responses, and confirmation flows work identically on every channel.
+- **Channel filters** — `ChannelFilter` chain for message processing. Built-in `MessageSplittingFilter` (auto-truncates to channel max length) and `AuditLoggingFilter`.
 
 ## Client Libraries
 

@@ -5,7 +5,7 @@ sidebar:
   order: 11
 ---
 
-Atmosphere's AI layer follows the same adapter pattern as its transport layer. Just as Atmosphere auto-detects WebSocket, SSE, or long-polling support at runtime, it auto-detects which AI framework is on the classpath and bridges it to the `StreamingSession` API.
+Atmosphere's AI layer follows the same adapter pattern as its transport layer. Just as Atmosphere auto-detects WebSocket, SSE, or long-polling support at runtime, it auto-detects which AI framework is on the classpath and bridges it to the `StreamingSession` API via the `AgentRuntime` SPI.
 
 ## Built-in LLM Client (zero extra dependencies)
 
@@ -44,7 +44,7 @@ Four adapter modules ship with Atmosphere 4.0:
 | Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) |
 | Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) |
 
-All four depend on `atmosphere-ai`, which provides the framework-agnostic interfaces: `AiSupport`, `AiStreamingAdapter<T>`, `StreamingSession`, `AiRequest`, and the `@AiTool`/`@AiEndpoint` annotations.
+All four depend on `atmosphere-ai`, which provides the framework-agnostic interfaces: `AgentRuntime`, `AiStreamingAdapter<T>`, `StreamingSession`, `AiRequest`, and the `@AiTool`/`@AiEndpoint` annotations.
 
 ## The adapter architecture
 
@@ -59,20 +59,20 @@ public interface AiStreamingAdapter<T> {
 }
 ```
 
-**`AiSupport`** is the high-level SPI detected by `ServiceLoader`. It accepts a framework-agnostic `AiRequest` and handles model configuration, conversation history, and tool calling internally:
+**`AgentRuntime`** is the high-level SPI detected by `ServiceLoader`. It dispatches the entire agent loop — tool calling, memory, RAG, retries — to the AI framework on the classpath:
 
 ```java
-public interface AiSupport {
-    String name();
+public interface AgentRuntime {
+    String name();                     // e.g. "langchain4j", "spring-ai", "google-adk"
     boolean isAvailable();
     int priority();
     void configure(AiConfig.LlmSettings settings);
-    void stream(AiRequest request, StreamingSession session);
     Set<AiCapability> capabilities();
+    void execute(AgentExecutionContext context, StreamingSession session);
 }
 ```
 
-When multiple `AiSupport` implementations are on the classpath, the one with the highest `priority()` that reports `isAvailable() == true` wins. All four shipped adapters use priority `100`.
+When multiple `AgentRuntime` implementations are on the classpath, the one with the highest `priority()` that reports `isAvailable() == true` wins. All four shipped adapters use priority `100`. The built-in runtime uses priority `0` as a fallback.
 
 ## Spring AI adapter
 
@@ -84,7 +84,7 @@ When multiple `AiSupport` implementations are on the classpath, the one with the
 | Class | Role |
 |-------|------|
 | `SpringAiStreamingAdapter` | Bridges `ChatClient` Flux-based streaming to `StreamingSession`. Supports advisors (RAG, logging, memory) via a customizer callback. |
-| `SpringAiSupport` | `AiSupport` implementation backed by `ChatClient`. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, `SYSTEM_PROMPT`. |
+| `SpringAiAgentRuntime` | `AgentRuntime` implementation backed by `ChatClient`. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, `SYSTEM_PROMPT`. |
 | `SpringAiToolBridge` | Converts Atmosphere `ToolDefinition` to Spring AI `ToolCallback`. Spring AI handles the tool call loop automatically. |
 | `AtmosphereSpringAiAutoConfiguration` | Spring Boot `@AutoConfiguration`. Activates when `ChatClient` is on the classpath. |
 
@@ -100,7 +100,7 @@ When multiple `AiSupport` implementations are on the classpath, the one with the
 
 ### Auto-configuration
 
-The auto-configuration creates a `SpringAiStreamingAdapter` bean and, if a `ChatClient` bean exists, wires it into `SpringAiSupport`:
+The auto-configuration creates a `SpringAiStreamingAdapter` bean and, if a `ChatClient` bean exists, wires it into `SpringAiAgentRuntime`:
 
 ```java
 @AutoConfiguration
@@ -115,9 +115,9 @@ public class AtmosphereSpringAiAutoConfiguration {
 
     @Bean
     @ConditionalOnBean(ChatClient.class)
-    SpringAiSupport springAiSupportBridge(ChatClient chatClient) {
-        SpringAiSupport.setChatClient(chatClient);
-        return new SpringAiSupport();
+    SpringAiAgentRuntime springAiSupportBridge(ChatClient chatClient) {
+        SpringAiAgentRuntime.setChatClient(chatClient);
+        return new SpringAiAgentRuntime();
     }
 }
 ```
@@ -139,9 +139,9 @@ adapter.stream(chatClient, "Tell me about Atmosphere", session,
                 .system("You are a helpful assistant"));
 ```
 
-### How SpringAiSupport works
+### How SpringAiAgentRuntime works
 
-When an `@AiEndpoint` receives a message, `SpringAiSupport.stream()` runs the following sequence:
+When an `@AiEndpoint` receives a message, `SpringAiAgentRuntime.execute()` runs the following sequence:
 
 1. Build a prompt spec from the `AiRequest` (system prompt, conversation history, user message).
 2. If the request includes `@AiTool` definitions, convert them to Spring AI `ToolCallback` instances via `SpringAiToolBridge.toToolCallbacks()` and attach them with `promptSpec.toolCallbacks(callbacks)`.
@@ -161,7 +161,7 @@ When an `@AiEndpoint` receives a message, `SpringAiSupport.stream()` runs the fo
 | `LangChain4jStreamingAdapter` | Bridges `StreamingChatLanguageModel` to `StreamingSession`. |
 | `AtmosphereStreamingResponseHandler` | Simple `StreamingChatResponseHandler`: forwards streaming texts via `session.send()`, completion via `session.complete()`. |
 | `ToolAwareStreamingResponseHandler` | Extends the basic handler with tool calling support. Executes tools via `LangChain4jToolBridge` and re-submits conversations. Max 5 tool rounds. |
-| `LangChain4jAiSupport` | `AiSupport` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `SYSTEM_PROMPT`. |
+| `LangChain4jAgentRuntime` | `AgentRuntime` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `SYSTEM_PROMPT`. |
 | `LangChain4jToolBridge` | Converts `ToolDefinition` to `ToolSpecification` and handles tool execution. |
 | `AtmosphereLangChain4jAutoConfiguration` | Activates when `StreamingChatLanguageModel` is on the classpath. |
 
@@ -211,9 +211,9 @@ public class AtmosphereLangChain4jAutoConfiguration {
 
     @Bean
     @ConditionalOnBean(StreamingChatLanguageModel.class)
-    LangChain4jAiSupport langChain4jAiSupportBridge(StreamingChatLanguageModel model) {
-        LangChain4jAiSupport.setModel(model);
-        return new LangChain4jAiSupport();
+    LangChain4jAgentRuntime langChain4jAiSupportBridge(StreamingChatLanguageModel model) {
+        LangChain4jAgentRuntime.setModel(model);
+        return new LangChain4jAgentRuntime();
     }
 }
 ```
@@ -238,7 +238,7 @@ Unlike Spring AI, LangChain4j does not execute tool callbacks automatically. Whe
 | Class | Role |
 |-------|------|
 | `AdkStreamingAdapter` | Bridges ADK `Runner.runAsync()` RxJava `Flowable<Event>` to `StreamingSession` via `AdkEventAdapter`. |
-| `AdkAiSupport` | `AiSupport` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `AGENT_ORCHESTRATION`, `CONVERSATION_MEMORY`, `SYSTEM_PROMPT`. |
+| `AdkAgentRuntime` | `AgentRuntime` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `AGENT_ORCHESTRATION`, `CONVERSATION_MEMORY`, `SYSTEM_PROMPT`. |
 | `AdkToolBridge` | Converts `ToolDefinition` to ADK `BaseTool`. Each tool extends `BaseTool` with `runAsync()` that delegates to the Atmosphere `ToolExecutor`. |
 | `AdkBroadcastTool` | Ready-made `BaseTool` that lets an ADK agent broadcast messages to Atmosphere clients. |
 | `AdkEventAdapter` | Subscribes to a `Flowable<Event>` and forwards partial streaming texts, turn completions, and errors to a `StreamingSession`. |
@@ -256,14 +256,14 @@ Unlike Spring AI, LangChain4j does not execute tool callbacks automatically. Whe
 
 ### ADK-specific details
 
-ADK requires tools to be registered at agent construction time. You cannot add tools dynamically per-request. Use `AdkAiSupport.configureWithTools()`:
+ADK requires tools to be registered at agent construction time. You cannot add tools dynamically per-request. Use `AdkAgentRuntime.configureWithTools()`:
 
 ```java
 var tools = List.of(weatherTool, calendarTool);
-AdkAiSupport.configureWithTools(settings, tools);
+AdkAgentRuntime.configureWithTools(settings, tools);
 ```
 
-ADK only supports Gemini models natively. If you configure a non-Gemini model, `AdkAiSupport` logs a warning suggesting `atmosphere-spring-ai` or `atmosphere-langchain4j` instead.
+ADK only supports Gemini models natively. If you configure a non-Gemini model, `AdkAgentRuntime` logs a warning suggesting `atmosphere-spring-ai` or `atmosphere-langchain4j` instead.
 
 ### AdkBroadcastTool
 

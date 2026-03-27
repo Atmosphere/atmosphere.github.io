@@ -30,7 +30,7 @@ A2A (Agent-to-Agent) is Google's open protocol for agent interoperability. Atmos
 Declares a skill that this agent exposes to other agents. Applied at the class level alongside `@Agent` or `@ManagedService`.
 
 ```java
-@Agent(value = "/translator", headless = true)
+@Agent(name = "translator", headless = true)
 @AgentSkill(
     name = "translate",
     description = "Translates text between languages",
@@ -104,7 +104,7 @@ A2A uses JSON-RPC 2.0 over HTTP. Atmosphere handles serialization, error mapping
 A2A is designed for agent-to-agent communication. Agents that only serve other agents should use `headless = true`:
 
 ```java
-@Agent(value = "/data-enrichment", headless = true)
+@Agent(name = "data-enrichment", headless = true)
 @AgentSkill(name = "enrich", description = "Enriches records with external data")
 public class DataEnrichmentAgent {
 

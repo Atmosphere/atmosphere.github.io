@@ -1,10 +1,10 @@
 ---
 title: Atmosphere Documentation
-description: The Java framework for WebSocket, SSE, and AI streaming
+description: Real-time for the JVM — WebSocket, SSE, gRPC, rooms, presence, AI streaming, and multi-agent orchestration
 template: splash
 hero:
   title: Atmosphere
-  tagline: Real-time for the JVM — WebSocket, SSE, rooms, presence, AI streaming, and MCP. One dependency for Spring Boot or Quarkus.
+  tagline: Real-time for the JVM — WebSocket, SSE, gRPC, rooms, presence, and AI streaming. From classic pub/sub to multi-agent orchestration, one framework does it all.
   actions:
     - text: Start the Tutorial
       link: /docs/tutorial/01-introduction/
@@ -19,14 +19,17 @@ hero:
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid stagger>
+  <Card title="Real-Time Core" icon="rocket">
+    `@ManagedService` with transport-agnostic Broadcaster pub/sub. WebSocket, SSE, long-polling, and gRPC — auto-negotiated per client. Rooms, presence, message history, and interceptors built in.
+  </Card>
+  <Card title="AI / LLM Platform" icon="star">
+    `@Agent` with pluggable `AgentRuntime` — auto-detects Spring AI, LangChain4j, Google ADK, or Embabel. Tool calling, conversation memory, filters, cost metering, and multi-model routing.
+  </Card>
+  <Card title="Multi-Agent Orchestration" icon="puzzle">
+    `@Coordinator` + `@Fleet` for multi-agent systems. Parallel fan-out, sequential pipelines, and weighted routing. MCP, A2A, and AG-UI protocols for agent interoperability.
+  </Card>
   <Card title="20-Chapter Tutorial" icon="open-book">
-    Build a complete real-time application from scratch. Covers `@ManagedService`, transports, rooms, AI streaming, MCP, clustering, and production deployment.
-  </Card>
-  <Card title="AI / LLM Platform" icon="rocket">
-    `@AiEndpoint` with pluggable adapters for Spring AI, LangChain4j, Google ADK, and Embabel. Tool calling, conversation memory, filters, and routing built in.
-  </Card>
-  <Card title="MCP Server" icon="puzzle">
-    Expose tools, resources, and prompts to AI agents with `@McpServer` annotations. Works with Claude Desktop, VS Code Copilot, and Cursor.
+    Build a complete real-time application from scratch. Covers transports, rooms, AI streaming, MCP, clustering, and production deployment.
   </Card>
   <Card title="Spring Boot & Quarkus" icon="setting">
     First-class starters with auto-configuration, native image support, Micrometer metrics, and OpenTelemetry tracing.

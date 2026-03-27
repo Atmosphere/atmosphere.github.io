@@ -7,7 +7,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Atmosphere',
-      description: 'The Java framework for WebSocket, SSE, and AI streaming',
+      description: 'Real-time for the JVM — WebSocket, SSE, gRPC, rooms, presence, AI streaming, and multi-agent orchestration',
       logo: {
         src: './src/assets/logo.svg',
         replacesTitle: false,
@@ -34,6 +34,7 @@ export default defineConfig({
           label: 'Agents',
           items: [
             { label: '@Agent', slug: 'agents/agent' },
+            { label: '@Coordinator', slug: 'agents/coordinator' },
             { label: 'Skills', slug: 'agents/skills' },
             { label: 'A2A Protocol', slug: 'agents/a2a' },
             { label: 'AG-UI Protocol', slug: 'agents/agui' },
@@ -103,6 +104,7 @@ export default defineConfig({
             { label: 'Core Runtime', slug: 'reference/core' },
             { label: 'Rooms & Presence', slug: 'reference/rooms' },
             { label: 'AI / LLM', slug: 'reference/ai' },
+            { label: 'AI Testing', slug: 'reference/testing' },
             { label: 'MCP Server', slug: 'reference/mcp' },
             { label: 'gRPC Transport', slug: 'reference/grpc' },
             { label: 'Kotlin DSL', slug: 'reference/kotlin' },

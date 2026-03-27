@@ -1,11 +1,11 @@
 ---
 title: "LangChain4j"
-description: "AiSupport backed by LangChain4j"
+description: "AgentRuntime backed by LangChain4j"
 ---
 
 # LangChain4j Adapter
 
-`AiSupport` implementation backed by LangChain4j `StreamingChatLanguageModel`. When this JAR is on the classpath, `@AiEndpoint` automatically uses LangChain4j for streaming.
+`AgentRuntime` implementation backed by LangChain4j `StreamingChatLanguageModel`. When this JAR is on the classpath, `@AiEndpoint` automatically uses LangChain4j for streaming.
 
 ## Maven Coordinates
 
@@ -32,7 +32,7 @@ public class MyChat {
 }
 ```
 
-The `LangChain4jAiSupport` implementation has priority 100, which takes precedence over the built-in client (priority 0).
+The `LangChain4jAgentRuntime` implementation has priority 100, which takes precedence over the built-in client (priority 0).
 
 ## Direct Usage
 
@@ -56,7 +56,7 @@ Bridges LangChain4j's `StreamingChatResponseHandler` to Atmosphere's `StreamingS
 
 ## Spring Boot Auto-Configuration
 
-`AtmosphereLangChain4jAutoConfiguration` bridges a Spring-managed `StreamingChatLanguageModel` bean to the `LangChain4jAiSupport` SPI automatically.
+`AtmosphereLangChain4jAutoConfiguration` bridges a Spring-managed `StreamingChatLanguageModel` bean to the `LangChain4jAgentRuntime` SPI automatically.
 
 ## Samples
 
@@ -64,7 +64,7 @@ Bridges LangChain4j's `StreamingChatResponseHandler` to Atmosphere's `StreamingS
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AiSupport` SPI, `@AiEndpoint`, filters, routing
+- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
 - [Spring AI Adapter](spring-ai.md)
 - [Google ADK Adapter](adk.md)
 - [Embabel Adapter](embabel.md)

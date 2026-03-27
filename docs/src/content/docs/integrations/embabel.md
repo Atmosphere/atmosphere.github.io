@@ -1,11 +1,11 @@
 ---
 title: "Embabel"
-description: "AiSupport backed by Embabel AgentPlatform"
+description: "AgentRuntime backed by Embabel AgentPlatform"
 ---
 
 # Embabel Adapter
 
-`AiSupport` implementation backed by [Embabel](https://github.com/embabel/embabel-agent) `AgentPlatform`. When this JAR is on the classpath, `@AiEndpoint` can run Embabel agents and stream their output to browser clients.
+`AgentRuntime` implementation backed by [Embabel](https://github.com/embabel/embabel-agent) `AgentPlatform`. When this JAR is on the classpath, `@AiEndpoint` can run Embabel agents and stream their output to browser clients.
 
 ## Maven Coordinates
 
@@ -19,7 +19,7 @@ description: "AiSupport backed by Embabel AgentPlatform"
 
 ## Quick Start
 
-### AiSupport SPI (auto-detected)
+### AgentRuntime SPI (auto-detected)
 
 ```java
 @AiEndpoint(path = "/ai/chat", systemPrompt = "You are a helpful assistant")
@@ -49,7 +49,7 @@ embabelAdapter.stream(AgentRequest("assistant") { channel ->
 |-------|---------|
 | `EmbabelStreamingAdapter` | `AiStreamingAdapter` bridging Embabel agents to StreamingSession |
 | `AtmosphereOutputChannel` | Routes Embabel `OutputChannelEvent` to `StreamingSession` |
-| `EmbabelAiSupport` | `AiSupport` SPI implementation (priority 100) |
+| `EmbabelAgentRuntime` | `AgentRuntime` SPI implementation (priority 100) |
 | `AgentRequest` | Wraps agent name and runner function |
 
 ### Event Mapping
@@ -71,7 +71,7 @@ embabelAdapter.stream(AgentRequest("assistant") { channel ->
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AiSupport` SPI, `@AiEndpoint`, filters, routing
+- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
 - [Spring AI Adapter](spring-ai.md)
 - [LangChain4j Adapter](langchain4j.md)
 - [Google ADK Adapter](adk.md)

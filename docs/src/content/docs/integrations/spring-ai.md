@@ -1,11 +1,11 @@
 ---
 title: "Spring AI"
-description: "AiSupport backed by Spring AI ChatClient"
+description: "AgentRuntime backed by Spring AI ChatClient"
 ---
 
 # Spring AI Adapter
 
-`AiSupport` implementation backed by Spring AI `ChatClient`. When this JAR is on the classpath, `@AiEndpoint` automatically uses Spring AI for streaming.
+`AgentRuntime` implementation backed by Spring AI `ChatClient`. When this JAR is on the classpath, `@AiEndpoint` automatically uses Spring AI for streaming.
 
 ## Maven Coordinates
 
@@ -32,7 +32,7 @@ public class MyChat {
 }
 ```
 
-No code changes needed -- the `SpringAiSupport` implementation has priority 100, which takes precedence over the built-in client (priority 0).
+No code changes needed -- the `SpringAiAgentRuntime` implementation has priority 100, which takes precedence over the built-in client (priority 0).
 
 ## Direct Usage
 
@@ -62,7 +62,7 @@ springAiAdapter.stream(chatClient, prompt, session, spec -> {
 `AtmosphereSpringAiAutoConfiguration` provides:
 
 - `SpringAiStreamingAdapter` bean
-- `SpringAiSupport` bridge bean (connects Spring-managed `ChatClient` to the SPI)
+- `SpringAiAgentRuntime` bridge bean (connects Spring-managed `ChatClient` to the SPI)
 
 The `ChatClient` bean must be configured separately via Spring AI's own starter.
 
@@ -72,7 +72,7 @@ The `ChatClient` bean must be configured separately via Spring AI's own starter.
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AiSupport` SPI, `@AiEndpoint`, filters, routing
+- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
 - [LangChain4j Adapter](langchain4j.md)
 - [Google ADK Adapter](adk.md)
 - [Embabel Adapter](embabel.md)

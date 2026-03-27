@@ -75,13 +75,13 @@ src/main/resources/
 You can explicitly bind a skill file to an agent:
 
 ```java
-@Agent(value = "/reviewer", skills = "classpath:META-INF/skills/code-reviewer.skills")
+@Agent(name = "code-reviewer", skillFile = "META-INF/skills/code-reviewer.skills")
 public class CodeReviewerAgent {
     // agent uses the code-reviewer skill
 }
 ```
 
-If no `skills` attribute is specified, Atmosphere matches by convention — an agent named `code-reviewer` will pick up `META-INF/skills/code-reviewer.skills` if present.
+If no `skillFile` attribute is specified, Atmosphere matches by convention — an agent named `code-reviewer` will pick up `META-INF/skills/code-reviewer.skills` if present.
 
 ## Importing Skills from GitHub
 

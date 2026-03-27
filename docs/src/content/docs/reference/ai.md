@@ -1,11 +1,11 @@
 ---
 title: "AI / LLM"
-description: "@AiEndpoint, StreamingSession, AiSupport SPI, tool calling, filters"
+description: "@AiEndpoint, StreamingSession, AgentRuntime SPI, tool calling, filters"
 ---
 
 # AI / LLM Integration
 
-AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `StreamingSession`, the `AiSupport` SPI for auto-detected AI framework adapters, and a built-in `OpenAiCompatibleClient` that works with Gemini, OpenAI, Ollama, and any OpenAI-compatible API.
+AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `StreamingSession`, the `AgentRuntime` SPI for auto-detected AI framework adapters, and a built-in `OpenAiCompatibleClient` that works with Gemini, OpenAI, Ollama, and any OpenAI-compatible API.
 
 ## Maven Coordinates
 
@@ -19,17 +19,19 @@ AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `Stre
 
 ## Architecture
 
-Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers -- Jetty, Tomcat, Undertow. `AiSupport` adapts AI frameworks -- Spring AI, LangChain4j, Google ADK, Embabel. Same design pattern, same discovery mechanism:
+Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers — Jetty, Tomcat, Undertow. `AgentRuntime` adapts AI frameworks — Spring AI, LangChain4j, Google ADK, Embabel. Same design pattern, same discovery mechanism:
 
 | Concern | Transport layer | AI layer |
 |---------|----------------|----------|
-| SPI interface | `AsyncSupport` | `AiSupport` |
+| SPI interface | `AsyncSupport` | `AgentRuntime` |
 | What it adapts | Web containers (Jetty, Tomcat, Undertow) | AI frameworks (Spring AI, LangChain4j, ADK, Embabel) |
 | Discovery | Classpath scanning | `ServiceLoader` |
 | Resolution | Best available container | Highest `priority()` among `isAvailable()` |
 | Initialization | `init(ServletConfig)` | `configure(LlmSettings)` |
-| Core method | `service(req, res)` | `stream(AiRequest, StreamingSession)` |
-| Fallback | `BlockingIOCometSupport` | `BuiltInAiSupport` (OpenAI-compatible) |
+| Core method | `service(req, res)` | `execute(AgentExecutionContext, StreamingSession)` |
+| Fallback | `BlockingIOCometSupport` | Built-in `AgentRuntime` (OpenAI-compatible) |
+
+This is the **Servlet model for AI agents**: write your `@Agent` once, run it on LangChain4j, Google ADK, Spring AI, or standalone — determined by classpath.
 
 ## Quick Start -- @AiEndpoint
 
@@ -48,17 +50,32 @@ public class MyChatBot {
 
 The `@AiEndpoint` annotation replaces the boilerplate of `@ManagedService` + `@Ready` + `@Disconnect` + `@Message` for AI streaming use cases. The `@Prompt` method runs on a virtual thread.
 
-`session.stream(message)` auto-detects the best available `AiSupport` implementation via `ServiceLoader` -- drop an adapter JAR on the classpath and it just works.
+`session.stream(message)` auto-detects the best available `AgentRuntime` implementation via `ServiceLoader` — drop an adapter JAR on the classpath and it just works.
 
-## AiSupport SPI
+## AgentRuntime SPI
 
-| Classpath JAR | Auto-detected `AiSupport` | Priority |
-|---------------|--------------------------|----------|
+The `AgentRuntime` SPI dispatches the entire agent loop — tool calling, memory, RAG, retries — to the AI framework on the classpath. When multiple implementations are available, the one with the highest `priority()` that reports `isAvailable()` wins.
+
+```java
+public interface AgentRuntime {
+    String name();                                    // e.g. "langchain4j", "spring-ai"
+    boolean isAvailable();                            // checks classpath dependencies
+    int priority();                                   // higher wins
+    void configure(AiConfig.LlmSettings settings);   // called once after resolution
+    Set<AiCapability> capabilities();                 // feature discovery
+    void execute(AgentExecutionContext context, StreamingSession session);  // full agent loop
+}
+```
+
+| Classpath JAR | Auto-detected `AgentRuntime` | Priority |
+|---------------|------------------------------|----------|
 | `atmosphere-ai` (default) | Built-in `OpenAiCompatibleClient` (Gemini, OpenAI, Ollama) | 0 |
 | `atmosphere-spring-ai` | Spring AI `ChatClient` | 100 |
 | `atmosphere-langchain4j` | LangChain4j `StreamingChatLanguageModel` | 100 |
 | `atmosphere-adk` | Google ADK `Runner` | 100 |
 | `atmosphere-embabel` | Embabel `AgentPlatform` | 100 |
+
+To switch runtimes, change a single Maven dependency — no code changes needed.
 
 ## Conversation Memory
 
@@ -329,7 +346,7 @@ Configure the built-in client with environment variables:
 | `@Prompt` | Marks the method that handles user messages |
 | `@AiTool` | Marks a method as an AI-callable tool (framework-agnostic) |
 | `@Param` | Describes a tool parameter's name, description, and required flag |
-| `AiSupport` | SPI for AI framework backends (ServiceLoader-discovered) |
+| `AgentRuntime` | SPI for AI framework backends (ServiceLoader-discovered) |
 | `AiRequest` | Framework-agnostic request record (message, systemPrompt, model, userId, sessionId, agentId, conversationId, metadata) |
 | `AiEvent` | Sealed interface: 13 structured event types (TextDelta, ToolStart, ToolResult, AgentStep, EntityStart, etc.) |
 | `AiCapability` | Enum for endpoint capability requirements (TEXT_STREAMING, TOOL_CALLING, STRUCTURED_OUTPUT, etc.) |

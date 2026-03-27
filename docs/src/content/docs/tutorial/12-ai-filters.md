@@ -251,13 +251,13 @@ The `ModelRouter` interface (in `org.atmosphere.ai`) mirrors Atmosphere's transp
 
 ```java
 public interface ModelRouter {
-    Optional<AiSupport> route(
+    Optional<AgentRuntime> route(
         AiRequest request,
-        List<AiSupport> availableBackends,
+        List<AgentRuntime> availableBackends,
         Set<AiCapability> requiredCapabilities);
 
-    void reportFailure(AiSupport backend, Throwable error);
-    void reportSuccess(AiSupport backend);
+    void reportFailure(AgentRuntime backend, Throwable error);
+    void reportSuccess(AgentRuntime backend);
 }
 ```
 
@@ -291,13 +291,13 @@ For `CONTENT_BASED` routing, the router checks `request.model()` for a model hin
 
 ### RoutingAiSupport
 
-Wraps a `ModelRouter` and a list of backends into a single `AiSupport` instance. On failure, it attempts one retry with the next backend:
+Wraps a `ModelRouter` and a list of backends into a single `AgentRuntime` instance. On failure, it attempts one retry with the next backend:
 
 ```java
 var routing = new RoutingAiSupport(router, List.of(
-    springAiSupport,
-    langChain4jSupport,
-    adkSupport
+    springAiRuntime,
+    langChain4jRuntime,
+    adkRuntime
 ));
 ```
 
@@ -450,7 +450,7 @@ budgetManager.setBudget(new StreamingTextBudgetManager.Budget(
 // 2. Set up routing with failover
 var router = new DefaultModelRouter(FallbackStrategy.FAILOVER);
 var routing = new RoutingAiSupport(router, List.of(
-    springAiSupport, langChain4jSupport));
+    springAiRuntime, langChain4jRuntime));
 
 // 3. Add filters to the broadcaster
 var metering = new CostMeteringFilter();
@@ -481,12 +481,12 @@ The `atmosphere-ai-test` module provides a lightweight testing framework for AI 
 
 ### AiTestClient
 
-`AiTestClient` wraps an `AiSupport` implementation and captures the full streaming response for assertion:
+`AiTestClient` wraps an `AgentRuntime` implementation and captures the full streaming response for assertion:
 
 ```java
 @Test
 void toolsAreCalled() {
-    var client = new AiTestClient(myAiSupport);
+    var client = new AiTestClient(myAgentRuntime);
     var response = client.prompt("What's the weather in Tokyo?");
 
     AiAssertions.assertThat(response)
@@ -547,3 +547,5 @@ AiAssertions.assertThat(response)
 
 - **`samples/spring-boot-ai-tools/`** -- demonstrates the `CostMeteringInterceptor` that tracks streaming text usage and sends routing metadata to the client.
 - **`samples/spring-boot-spring-ai-routing/`** -- demonstrates multi-model routing with `RoutingAiSupport` and `DefaultModelRouter` using Spring AI backends.
+
+For comprehensive testing documentation, see the [AI Testing](/docs/reference/testing/) reference.

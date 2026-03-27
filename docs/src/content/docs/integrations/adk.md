@@ -1,6 +1,6 @@
 ---
 title: "Google ADK"
-description: "AiSupport backed by Google ADK Runner"
+description: "AgentRuntime backed by Google ADK Runner"
 ---
 
 # Google ADK Adapter
@@ -25,7 +25,7 @@ Browser <- WS/SSE/gRPC -> Broadcaster <- AdkEventAdapter <- Flowable<Event> <- R
 
 ## Quick Start
 
-### AiSupport SPI (auto-detected)
+### AgentRuntime SPI (auto-detected)
 
 ```java
 @AiEndpoint(path = "/ai/chat", systemPrompt = "You are a helpful assistant")
@@ -90,7 +90,7 @@ LlmAgent agent = LlmAgent.builder()
 | `AdkEventAdapter` | Subscribes to `Flowable<Event>` and forwards streaming texts to `StreamingSession` |
 | `AdkBroadcastTool` | ADK `BaseTool` that broadcasts messages via Atmosphere `Broadcaster` |
 | `AdkStreamingAdapter` | `AiStreamingAdapter` SPI impl bridging ADK Runner to StreamingSession |
-| `AdkAiSupport` | `AiSupport` SPI implementation (priority 100) |
+| `AdkAgentRuntime` | `AgentRuntime` SPI implementation (priority 100) |
 
 ## Samples
 
@@ -99,7 +99,7 @@ LlmAgent agent = LlmAgent.builder()
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AiSupport` SPI, `@AiEndpoint`, filters, routing
+- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
 - [Spring AI Adapter](spring-ai.md)
 - [LangChain4j Adapter](langchain4j.md)
 - [Embabel Adapter](embabel.md)
