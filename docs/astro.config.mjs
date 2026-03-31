@@ -96,6 +96,7 @@ export default defineConfig({
             { label: 'Core Runtime', slug: 'reference/core' },
             { label: 'Rooms & Presence', slug: 'reference/rooms' },
             { label: 'MCP Server', slug: 'reference/mcp' },
+            { label: 'WebTransport/HTTP3', slug: 'reference/webtransport' },
             { label: 'gRPC Transport', slug: 'reference/grpc' },
             { label: 'Kotlin DSL', slug: 'reference/kotlin' },
             { label: 'Observability', slug: 'reference/observability' },
