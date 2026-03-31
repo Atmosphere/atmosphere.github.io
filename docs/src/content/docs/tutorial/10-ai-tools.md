@@ -395,6 +395,76 @@ Converts Atmosphere `ToolDefinition` to ADK `BaseTool`:
 - Wraps each tool as an ADK-compatible tool object
 - ADK handles the tool call loop through its agent event system
 
+## Human-in-the-Loop Approval
+
+Some tools — deleting data, sending emails, making payments — should require explicit human approval before executing. The `@RequiresApproval` annotation pauses the tool's virtual thread until the client approves or denies.
+
+### Declaring an Approval Gate
+
+```java
+@AiTool(name = "delete_account", description = "Permanently delete a user account")
+@RequiresApproval("This will permanently delete the account. Are you sure?")
+public String deleteAccount(@Param("accountId") String accountId) {
+    return accountService.delete(accountId);
+}
+```
+
+When the LLM calls this tool, Atmosphere:
+
+1. Parks the virtual thread on a `CompletableFuture` (cheap — no carrier thread consumed)
+2. Emits an `approval-required` event to the client with the tool name, arguments, and prompt message
+3. Waits for the client to respond with `/__approval/<id>/approve` or `/__approval/<id>/deny`
+4. Unparks the thread and either executes the tool or returns a "cancelled" result
+
+Default timeout: 5 minutes. Configurable: `@RequiresApproval(value = "...", timeoutSeconds = 120)`.
+
+### Wire Protocol
+
+The client receives a JSON event:
+
+```json
+{
+  "event": "approval-required",
+  "data": {
+    "approvalId": "apr_a1b2c3d4e5f6",
+    "toolName": "delete_account",
+    "arguments": {"accountId": "user-42"},
+    "message": "This will permanently delete the account. Are you sure?",
+    "expiresIn": 300
+  }
+}
+```
+
+Respond by sending one of these strings via the WebSocket:
+- `/__approval/apr_a1b2c3d4e5f6/approve` — tool executes
+- `/__approval/apr_a1b2c3d4e5f6/deny` — tool returns cancelled
+
+### Frontend Handling (React)
+
+```tsx
+const { aiEvents, send } = useStreaming({ request });
+
+// Render approve/deny buttons when an approval event arrives
+{aiEvents.filter(e => e.event === 'approval-required').map(e => (
+  <div key={e.data.approvalId}>
+    <p>{e.data.message}</p>
+    <button onClick={() => send(`/__approval/${e.data.approvalId}/approve`)}>Approve</button>
+    <button onClick={() => send(`/__approval/${e.data.approvalId}/deny`)}>Deny</button>
+  </div>
+))}
+```
+
+The built-in Atmosphere Console at `/atmosphere/console/` renders approval prompts automatically.
+
+### How It Works Internally
+
+- `ApprovalGateExecutor` wraps the `ToolExecutor` for `@RequiresApproval` tools
+- `ApprovalRegistry` tracks pending approvals per session as `CompletableFuture<Boolean>`
+- `AiEndpointHandler` fast-paths `/__approval/` messages to the registry before prompt dispatch
+- On transport reconnect, a fallback scan across all active sessions ensures the approval reaches the parked thread
+
+See [AI / LLM Reference](/docs/reference/ai/) for the full SPI details.
+
 ## Conversation Memory with Tools
 
 When tools are combined with `conversationMemory = true`, the conversation history includes tool calls and results. This lets the model:

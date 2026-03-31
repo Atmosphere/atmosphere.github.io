@@ -343,6 +343,120 @@ The same `@Coordinator` code works with any AI runtime. Switch the execution eng
 <artifactId>atmosphere-adk</artifactId>
 ```
 
+## Coordination Journal
+
+Every coordination is automatically journaled — which agents were called, what they returned, timing, success/failure. The journal is a pluggable SPI (`CoordinationJournal`) with an in-memory default, discovered via `ServiceLoader`.
+
+```java
+// After parallel execution, query the journal
+var events = fleet.journal().retrieve(coordinationId);
+var failed = fleet.journal().query(CoordinationQuery.forAgent("weather"));
+```
+
+Event types: `Started`, `Dispatched`, `Completed`, `Failed`, `Evaluated`. Each event includes the agent name, skill/method called, timestamp, duration, and result summary.
+
+## Agent Handoffs
+
+An agent can transfer the conversation — with full history — to another agent. One method call:
+
+```java
+@Prompt
+public void onPrompt(String message, StreamingSession session) {
+    if (message.toLowerCase().contains("billing")) {
+        session.handoff("billing", message);  // conversation history travels with it
+        return;
+    }
+    session.stream(message);
+}
+```
+
+The client receives an `AiEvent.Handoff` event before the target agent responds. Nested handoffs are blocked (cycle guard). The target agent's `@Prompt` method runs with its own tools, system prompt, and interceptor chain.
+
+## Conditional Routing
+
+Route based on agent results — first match wins, with an optional fallback:
+
+```java
+var weather = fleet.agent("weather").call("forecast", Map.of("city", city));
+
+var result = fleet.route(weather, route -> route
+    .when(r -> r.success() && r.text().contains("sunny"),
+          f -> f.agent("outdoor").call("plan", Map.of()))
+    .when(r -> r.success(),
+          f -> f.agent("indoor").call("suggest", Map.of()))
+    .otherwise(f -> AgentResult.failure("router", "route",
+          "Weather unavailable", Duration.ZERO))
+);
+```
+
+Every routing decision is recorded in the `CoordinationJournal`.
+
+## Result Evaluation
+
+Plug in quality assessment via the `ResultEvaluator` SPI. Evaluators run automatically (async, non-blocking, recorded in journal) after each agent call, and can be invoked explicitly:
+
+```java
+var result = fleet.agent("writer").call("draft", Map.of("topic", "AI"));
+var evals = fleet.evaluate(result, call);
+if (evals.stream().allMatch(Evaluation::passed)) {
+    session.stream(result.text());
+}
+```
+
+## Long-Term Memory
+
+Agents remember users across sessions. Configuration-only — no code changes in `@Agent` classes:
+
+```java
+// LongTermMemoryInterceptor (pre): injects stored facts into system prompt
+// LongTermMemoryInterceptor (post): extracts new facts via LLM
+
+// Extraction strategies:
+MemoryExtractionStrategy.onSessionClose()  // default — batch, cost-efficient
+MemoryExtractionStrategy.perMessage()       // real-time, expensive
+MemoryExtractionStrategy.periodic(5)        // every 5 messages
+```
+
+Backed by `InMemoryLongTermMemory` (dev) or any `SessionStore` implementation (Redis, SQLite). The `onDisconnect` lifecycle hook ensures facts are extracted before conversation history is cleared.
+
+## Testing
+
+The coordinator module includes test stubs for exercising `@Prompt` methods without infrastructure or LLM calls:
+
+```java
+var fleet = StubAgentFleet.builder()
+    .agent("weather", "Sunny, 72F in Madrid")
+    .agent("activities", "Visit Retiro Park, Prado Museum")
+    .build();
+
+coordinator.onPrompt("What to do in Madrid?", fleet, session);
+
+CoordinatorAssertions.assertThat(result)
+    .succeeded()
+    .containsText("Madrid")
+    .completedWithin(Duration.ofSeconds(5));
+```
+
+`StubAgentFleet` returns canned responses. `StubAgentTransport` allows predicate-based routing for more complex scenarios.
+
+## Eval Assertions
+
+LLM-as-judge for testing agent response quality. Uses any `AgentRuntime` as the judge model:
+
+```java
+var judge = new LlmJudge(cheapRuntime, "gpt-4o-mini");
+var response = client.prompt("Should I bring an umbrella to Tokyo?");
+
+assertThat(response)
+    .withJudge(judge)
+    .forPrompt("Should I bring an umbrella to Tokyo?")
+    .meetsIntent("Recommends whether to bring an umbrella based on weather data")
+    .isGroundedIn("get_weather")
+    .hasQuality(q -> q.relevance(0.8).coherence(0.7).safety(0.9));
+```
+
+See [AI Testing](/docs/reference/testing/) for the full assertion API.
+
 ## Console UI
 
 The built-in AI Console renders coordinator activity as **tool cards** — showing each specialist agent's work (tool name, input, result) before displaying the synthesized response. This gives users visibility into the multi-agent orchestration process.

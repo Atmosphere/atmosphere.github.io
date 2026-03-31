@@ -109,6 +109,32 @@ public String deploy(
 
 Commands appear in the AI Console UI autocomplete and are also exposed via MCP as tools.
 
+### Destructive Command Confirmation
+
+For commands that perform destructive actions, use the `confirm` attribute to require user confirmation before execution:
+
+```java
+@Command(value = "/reset", description = "Reset all data",
+         confirm = "This will delete all data. Are you sure?")
+public String reset() {
+    return dataService.resetAll();
+}
+```
+
+The client receives a confirmation prompt before the command executes.
+
+## Built-in Console UI
+
+Every full-stack `@Agent` is automatically served by the **Atmosphere AI Console** at `/atmosphere/console/`. The console provides:
+
+- Chat interface with streaming responses
+- Tool call visualization in the **AGENT COLLABORATION** panel
+- Approval prompts for `@RequiresApproval` tools
+- Command autocomplete
+- Connection status indicator
+
+No frontend code needed — the console is bundled in `atmosphere-spring-boot-starter`.
+
 ## Tools
 
 `@AiTool` methods are callable by the LLM during inference. They work identically across all backends (built-in, Spring AI, LangChain4j, Google ADK, Embabel).

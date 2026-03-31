@@ -1,121 +1,145 @@
 ---
 title: "Introduction"
-description: "What Atmosphere is, its transport-agnostic design, key concepts, and what version 4.0 brings to the table."
+description: "What Atmosphere is, the @Agent programming model, AI runtimes, multi-agent orchestration, and the real-time transport layer."
 sidebar:
   order: 1
 ---
 
 # Introduction
 
-Atmosphere is a transport-agnostic real-time framework for the JVM. You write your application logic once, broadcast messages through named channels, and the framework delivers them over WebSocket, SSE, long-polling, streaming, gRPC, or MCP -- depending on what each client supports. If a WebSocket handshake fails, the client transparently falls back to SSE, then long-polling, with no changes to your server code.
+Atmosphere is a transport-agnostic runtime for Java AI agents. You declare **what** your agent does — the framework handles **how** it's delivered. A single `@Agent` class can serve browsers over WebSocket, expose tools via MCP, accept tasks from other agents via A2A, stream state to frontends via AG-UI, and route messages to Slack, Telegram, or Discord — all without changing a line of code.
 
-The project has been in continuous development since 2008. Version 4.0 requires JDK 21+ and adds rooms with presence, AI endpoint streaming, MCP server support, gRPC transport, and durable sessions, while preserving the same annotation-driven programming model that has been at the core of the framework since the beginning.
+## The `@Agent` Programming Model
 
-## Why Atmosphere Exists
-
-Every real-time application needs a persistent connection between client and server, but the transport that creates that connection varies. A browser on a modern desktop will negotiate a WebSocket. A browser behind a corporate proxy that strips `Upgrade` headers will fall back to SSE. A mobile client on a flaky connection might need long-polling with aggressive heartbeats. A backend microservice might prefer gRPC.
-
-Without Atmosphere, you would need to:
-
-1. Implement each transport separately on the server.
-2. Implement each transport separately on the client.
-3. Write fallback logic and transport negotiation by hand.
-4. Manage the pub/sub plumbing (who is subscribed to what) yourself.
-5. Handle heartbeats, reconnection, message caching for missed messages, and connection lifecycle across all transports.
-
-Atmosphere eliminates all of this. You write to a **Broadcaster**, and the framework delivers to every subscriber, regardless of their transport.
-
-## Key Concepts
-
-### AtmosphereResource
-
-An `AtmosphereResource` represents a single suspended connection from a client. It wraps the underlying HTTP request/response pair and provides a transport-independent handle to communicate with that client. Every connected client -- whether over WebSocket, SSE, or long-polling -- is represented as an `AtmosphereResource`.
-
-Each resource has a unique identifier accessible via `resource.uuid()`.
-
-### Broadcaster
-
-A `Broadcaster` is the pub/sub hub at the heart of Atmosphere. It maintains a set of subscribed `AtmosphereResource` instances and delivers messages to all of them when you call `broadcast(message)`. Think of it as a named topic or channel.
-
-When you annotate a class with `@ManagedService(path = "/chat")`, Atmosphere automatically creates a `Broadcaster` for that path and subscribes every connecting client to it. When your `@Message` method returns a value, that value is broadcast to all subscribers.
-
-### @ManagedService
-
-`@ManagedService` is the primary programming model. It turns a plain Java class into a real-time endpoint with automatic lifecycle management, message routing, heartbeats, and message caching. A minimal example from the chat sample:
+One annotation. The framework wires everything based on what's in the class and what's on the classpath.
 
 ```java
-@ManagedService(path = "/chat")
-public class Chat {
+@Agent(name = "my-agent", description = "What this agent does")
+public class MyAgent {
 
-    @Ready
-    public void onReady() {
-        // called when a connection is suspended and ready
+    @Prompt
+    public void onMessage(String message, StreamingSession session) {
+        session.stream(message);  // LLM streaming via configured backend
     }
 
-    @Message(encoders = {JacksonEncoder.class}, decoders = {JacksonDecoder.class})
-    public Message onMessage(Message message) {
-        return message; // returned value is broadcast to all subscribers
+    @Command(value = "/status", description = "Show status")
+    public String status() {
+        return "All systems operational";  // Executes instantly, no LLM cost
+    }
+
+    @AiTool(name = "lookup", description = "Look up data")
+    public String lookup(@Param("query") String query) {
+        return dataService.find(query);  // Callable by the LLM during inference
     }
 }
 ```
 
-The lifecycle annotations -- `@Ready`, `@Disconnect`, `@Message`, `@Resume`, `@Heartbeat` -- let you hook into every stage of a connection without implementing any framework interface.
+### What `@Agent` Wires
 
-### AtmosphereHandler
+What gets registered depends on which modules are on the classpath:
 
-For cases where you need lower-level control, `AtmosphereHandler` is the interface-based programming model. It has three methods: `onRequest`, `onStateChange`, and `destroy`. Most applications should prefer `@ManagedService`, which uses `AtmosphereHandler` internally but removes the boilerplate.
+| Module on classpath | What gets registered |
+|---|---|
+| `atmosphere-agent` (required) | WebSocket endpoint at `/atmosphere/agent/my-agent` with streaming AI, conversation memory, `/help` auto-generation |
+| `atmosphere-mcp` | MCP endpoint at `/atmosphere/agent/my-agent/mcp` — tools exposed to Claude, Copilot, Cursor |
+| `atmosphere-a2a` | A2A endpoint at `/atmosphere/agent/my-agent/a2a` with Agent Card discovery |
+| `atmosphere-agui` | AG-UI endpoint at `/atmosphere/agent/my-agent/agui` — CopilotKit-compatible |
+| `atmosphere-channels` + bot token | Same agent responds on Slack, Telegram, Discord, WhatsApp, Messenger |
+| (built-in) | Console UI at `/atmosphere/console/` — auto-detects the agent |
 
-### BroadcasterFactory
+### Full-Stack vs. Headless
 
-`BroadcasterFactory` is the registry of all active `Broadcaster` instances. You can look up a broadcaster by path, create new ones on the fly, or iterate over all of them:
+An `@Agent` with a `@Prompt` method gets a WebSocket UI. An `@Agent` with only `@AgentSkill` methods runs headless — A2A and MCP only, no browser endpoint. The framework detects the mode automatically.
+
+## AI Runtimes
+
+Write your agent once. The execution engine is determined by what's on the classpath — like Servlets run on Tomcat or Jetty without code changes.
+
+| Runtime | Dependency |
+|---------|-----------|
+| Built-in | `atmosphere-ai` — OpenAI-compatible client (Gemini, OpenAI, Ollama). Zero framework overhead. |
+| LangChain4j | `atmosphere-langchain4j` — ReAct tool loops, `StreamingChatModel` |
+| Spring AI | `atmosphere-spring-ai` — `ChatClient`, function calling, RAG advisors |
+| Google ADK | `atmosphere-adk` — `LlmAgent`, function tools, session management |
+| Embabel | `atmosphere-embabel` — Goal-driven GOAP planning |
+| JetBrains Koog | `atmosphere-koog` — Graph-based orchestration, `AIAgent` |
+
+Switching backends is one dependency change. Your `@Agent`, `@AiTool`, `@Command`, skill files, conversation memory, guardrails, and protocol exposure stay the same. See [AI Adapters](/docs/tutorial/11-ai-adapters/) for details.
+
+## Multi-Agent Orchestration
+
+`@Coordinator` manages a fleet of agents. Declare the fleet, inject `AgentFleet`, and orchestrate with plain Java — sequential, parallel, conditional, or any pattern.
 
 ```java
-@Inject
-private BroadcasterFactory factory;
+@Coordinator(name = "ceo")
+@Fleet({
+    @AgentRef(type = ResearchAgent.class),
+    @AgentRef(type = StrategyAgent.class),
+    @AgentRef(type = FinanceAgent.class)
+})
+public class CeoCoordinator {
 
-// Look up a broadcaster, creating it if it does not exist
-Broadcaster b = factory.lookup("/chat", true);
-
-// Get all active broadcasters
-Collection<Broadcaster> all = factory.lookupAll();
+    @Prompt
+    public void onPrompt(String message, AgentFleet fleet, StreamingSession session) {
+        var research = fleet.agent("research").call("web_search", Map.of("query", message));
+        var results = fleet.parallel(
+            fleet.call("strategy", "analyze", Map.of("data", research.text())),
+            fleet.call("finance", "model", Map.of("market", message))
+        );
+        session.stream("Synthesize: " + research.text() + results.get("strategy").text());
+    }
+}
 ```
 
-## Transport-Agnostic Design
+The fleet handles transport automatically — local agents call directly (no HTTP), remote agents use A2A JSON-RPC. Features include coordination journal, agent handoffs, conditional routing, result evaluation, long-term memory, and eval assertions. See [@Coordinator](/docs/agents/coordinator/) for the full guide.
 
-The central design principle is that your server-side code is identical regardless of transport. The same `@ManagedService` class handles WebSocket clients, SSE clients, and long-polling clients simultaneously. Transport negotiation happens at the framework level -- your `@Message` method never needs to know how the message will be delivered.
+## Human-in-the-Loop
 
-This is achieved through the `Broadcaster` abstraction. When you broadcast a message, Atmosphere inspects each subscribed `AtmosphereResource` to determine its transport and writes the message using the appropriate protocol. A WebSocket client receives a WebSocket frame. An SSE client receives a `data:` event. A long-polling client receives an HTTP response body.
+Tools that require human approval before execution use `@RequiresApproval`:
 
-## What's New in 4.0
+```java
+@AiTool(name = "delete_account", description = "Permanently delete a user account")
+@RequiresApproval("This will permanently delete the account. Are you sure?")
+public String deleteAccount(@Param("accountId") String accountId) {
+    return accountService.delete(accountId);
+}
+```
 
-Atmosphere 4.0 is the most significant release since the original 1.0. Key additions:
+The virtual thread parks cheaply until the client approves or denies. See [@AiTool & Human-in-the-Loop](/docs/tutorial/10-ai-tools/) for the wire protocol and frontend handling.
 
-- **JDK 21 required** -- virtual threads are enabled by default for all async operations
-- **Rooms and Presence** (`@RoomService`) -- first-class support for named rooms with join/leave lifecycle and optional message history
-- **AI Endpoint Streaming** -- `@AiEndpoint` for streaming LLM responses text-by-text to connected clients
-- **MCP Server Support** (`atmosphere-mcp`) -- expose Atmosphere endpoints as Model Context Protocol servers
-- **gRPC Transport** (`atmosphere-grpc`) -- bidirectional streaming over gRPC alongside WebSocket and SSE
-- **Durable Sessions** (`atmosphere-durable-sessions`) -- persist session state to SQLite or Redis for recovery after reconnection
-- **Spring Boot 4.0 Starter** (`atmosphere-spring-boot-starter`) -- auto-configuration for Spring Boot 4.0 with Spring Framework 7.0
-- **Quarkus Extension** (`atmosphere-quarkus-extension`) -- build-time configuration for Quarkus 3.21+
-- **LLM Integrations** -- `atmosphere-langchain4j`, `atmosphere-spring-ai`, `atmosphere-adk` for AI agent frameworks
+## Real-Time Foundation
+
+Atmosphere has been in continuous development since 2008. The AI agent layer is built on top of a battle-tested real-time transport infrastructure that also powers non-AI applications:
+
+- **Transports** — WebSocket, SSE, Long-Polling, gRPC with automatic fallback and reconnection
+- **Broadcaster** — Pub/sub hub that delivers messages to all subscribers regardless of transport
+- **Rooms & Presence** — Named rooms with join/leave lifecycle and message history
+- **@ManagedService** — The original annotation-driven programming model (fully compatible with `@Agent`)
+
+See [Real-Time Infrastructure](/docs/tutorial/03-managed-service/) for details.
 
 ## Module Map
 
 | Module | Artifact | Description |
 |--------|----------|-------------|
-| Core Runtime | `atmosphere-runtime` | The framework itself -- Broadcaster, AtmosphereResource, transports |
-| Spring Boot | `atmosphere-spring-boot-starter` | Auto-configuration for Spring Boot 4.0 |
+| Agent | `atmosphere-agent` | `@Agent`, `@Command`, `@Prompt`, protocol auto-wiring |
+| AI | `atmosphere-ai` | `AgentRuntime` SPI, `@AiTool`, conversation memory, compaction, artifacts |
+| Coordinator | `atmosphere-coordinator` | `@Coordinator`, `@Fleet`, `AgentFleet`, coordination journal |
+| MCP | `atmosphere-mcp` | Model Context Protocol server (tools, resources, prompts) |
+| A2A | `atmosphere-a2a` | Agent-to-Agent protocol (Agent Card, JSON-RPC task delegation) |
+| AG-UI | `atmosphere-agui` | Agent-User Interaction (SSE event streaming, CopilotKit-compatible) |
+| Channels | `atmosphere-channels` | Slack, Telegram, Discord, WhatsApp, Messenger |
+| Core Runtime | `atmosphere-runtime` | Broadcaster, AtmosphereResource, transports |
+| Spring Boot | `atmosphere-spring-boot-starter` | Auto-configuration for Spring Boot 4.0+ |
 | Quarkus | `atmosphere-quarkus-extension` | Build-time extension for Quarkus 3.21+ |
-| AI | `atmosphere-ai` | AI endpoint streaming support |
-| MCP | `atmosphere-mcp` | Model Context Protocol server |
-| gRPC | `atmosphere-grpc` | gRPC bidirectional streaming transport |
-| LangChain4j | `atmosphere-langchain4j` | LangChain4j integration |
-| Spring AI | `atmosphere-spring-ai` | Spring AI integration |
-| ADK | `atmosphere-adk` | Google ADK integration |
+| LangChain4j | `atmosphere-langchain4j` | LangChain4j adapter |
+| Spring AI | `atmosphere-spring-ai` | Spring AI adapter |
+| ADK | `atmosphere-adk` | Google ADK adapter |
+| Embabel | `atmosphere-embabel` | Embabel adapter |
+| Koog | `atmosphere-koog` | JetBrains Koog adapter |
 | Durable Sessions | `atmosphere-durable-sessions` | Session persistence (SQLite, Redis) |
-| TypeScript Client | `atmosphere.js` | Browser and React Native client library |
+| Client | `atmosphere.js` | TypeScript client — React, Vue, Svelte, React Native |
 
 ## Next Steps
 
-In the [next section](/docs/tutorial/02-getting-started/), you will build a working chat application from scratch. From there, you can either jump straight to [AI & LLM Streaming](/docs/tutorial/09-ai-endpoint/) or continue with the [Core Concepts](/docs/tutorial/03-managed-service/) to learn about Broadcasters, Rooms, and the transport layer.
+Start with [@Agent & @Prompt](/docs/agents/agent/) to learn the core programming model, then continue to [@AiTool & Human-in-the-Loop](/docs/tutorial/10-ai-tools/) for tool calling and approval gates.
