@@ -365,6 +365,234 @@ Configure the built-in client with environment variables:
 | `ConversationPersistence` | SPI for durable conversation storage (Redis, SQLite) |
 | `RetryPolicy` | Exponential backoff with circuit-breaker semantics |
 
+## Approval Gates
+
+`@RequiresApproval` pauses tool execution until the client approves. The virtual thread parks cheaply on a `CompletableFuture` -- no carrier thread consumed.
+
+```java
+@AiTool(name = "delete_account", description = "Permanently delete a user account")
+@RequiresApproval("This will permanently delete the account. Are you sure?")
+public String deleteAccount(@Param("accountId") String accountId) {
+    return accountService.delete(accountId);
+}
+```
+
+### Wire Protocol
+
+When the LLM calls a `@RequiresApproval` tool, the client receives an `approval-required` event:
+
+```json
+{"event":"approval-required","data":{
+  "approvalId":"apr_a1b2c3d4e5f6",
+  "toolName":"delete_account",
+  "arguments":{"accountId":"user-42"},
+  "message":"This will permanently delete the account. Are you sure?",
+  "expiresIn":300
+}}
+```
+
+The client responds with:
+- `/__approval/apr_a1b2c3d4e5f6/approve` -- tool executes
+- `/__approval/apr_a1b2c3d4e5f6/deny` -- tool returns cancelled
+
+Default timeout: 5 minutes. Configurable via `@RequiresApproval(timeoutSeconds = 120)`.
+
+### How It Works
+
+1. `AiStreamingSession.wrapApprovalGates()` wraps `@RequiresApproval` tools with `ApprovalGateExecutor`
+2. When the LLM calls the tool, `ApprovalGateExecutor` parks the virtual thread on `CompletableFuture.get(timeout)`
+3. The session emits `AiEvent.ApprovalRequired` to the client
+4. `AiEndpointHandler` fast-paths `/__approval/` messages to the session's `ApprovalRegistry` (before prompt dispatch)
+5. `ApprovalRegistry.tryResolve()` completes the future, unparking the virtual thread
+6. On transport reconnect, a fallback scan across all active sessions ensures the approval reaches the parked thread
+
+### ADK ToolConfirmation Bridge
+
+When running on Google ADK, Atmosphere also calls `toolContext.requestConfirmation()` to give ADK native visibility into the approval pause. If ADK resolves a confirmation before Atmosphere (e.g., via its own UI), the ADK denial short-circuits without calling the executor. This creates a two-layer model: Atmosphere-level (cross-runtime) + ADK-native (runtime-specific).
+
+ADK runtimes declare `AiCapability.TOOL_APPROVAL`.
+
+## Context Compaction SPI
+
+The `AiCompactionStrategy` SPI controls how conversation history is compacted when it exceeds the configured limit. Unlike `MemoryStrategy` (which selects messages for the next request -- read path), compaction permanently reduces stored history (write path).
+
+```java
+public interface AiCompactionStrategy {
+    List<ChatMessage> compact(List<ChatMessage> messages, int maxMessages);
+    String name();
+}
+```
+
+### Built-in Strategies
+
+**`SlidingWindowCompaction`** (default) -- drops the oldest non-system messages until under the limit. System messages are always preserved.
+
+**`SummarizingCompaction`** -- condenses old messages into a single system-role summary, preserving the most recent messages verbatim. The recent window size is configurable (default: 6).
+
+```java
+// Default: sliding window
+var memory = new InMemoryConversationMemory(20);
+
+// Custom: summarization with 8-message recent window
+var memory = new InMemoryConversationMemory(20, new SummarizingCompaction(8));
+```
+
+### ADK Bridge
+
+`AdkCompactionBridge.toAdkConfig()` maps Atmosphere compaction settings to ADK's `EventsCompactionConfig` for native compaction when using the ADK runtime.
+
+## Artifact Persistence SPI
+
+The `ArtifactStore` SPI provides binary artifact persistence across agent runs. Use cases include agent-generated reports, images, code files, and content shared between coordinated agents.
+
+```java
+public interface ArtifactStore {
+    Artifact save(Artifact artifact);                              // auto-versions
+    Optional<Artifact> load(String namespace, String artifactId);  // latest version
+    Optional<Artifact> load(String namespace, String artifactId, int version);
+    List<Artifact> list(String namespace);                         // latest of each
+    boolean delete(String namespace, String artifactId);           // all versions
+    void deleteAll(String namespace);
+}
+```
+
+### Artifact Record
+
+```java
+public record Artifact(
+    String id,                    // unique identifier
+    String namespace,             // grouping key (session ID, agent name, user ID)
+    String fileName,              // human-readable name ("report.pdf")
+    String mimeType,              // MIME type ("application/pdf")
+    byte[] data,                  // binary content (defensively copied)
+    int version,                  // auto-incremented per save
+    Map<String, String> metadata, // arbitrary key-value pairs
+    Instant createdAt
+) { }
+```
+
+Byte arrays are defensively copied on construction and on access -- callers cannot mutate persisted data.
+
+### Implementations
+
+- **`InMemoryArtifactStore`** -- default, for development and testing. Data does not survive JVM restart.
+- **ADK bridge** -- `AdkArtifactBridge.toAdkService()` wraps an `ArtifactStore` as ADK's `BaseArtifactService`.
+
+## Interceptor Disconnect Lifecycle
+
+`AiInterceptor` includes an `onDisconnect` hook called **before** conversation memory is cleared. This enables fact extraction, summary persistence, and other cleanup that requires access to the conversation history.
+
+```java
+public interface AiInterceptor {
+    default AiRequest preProcess(AiRequest request, AtmosphereResource resource) { return request; }
+    default void postProcess(AiRequest request, AtmosphereResource resource) { }
+    default void onDisconnect(String userId, String conversationId, List<ChatMessage> history) { }
+}
+```
+
+`LongTermMemoryInterceptor.onDisconnect()` uses this to extract facts from the full conversation on session close via `OnSessionCloseStrategy`.
+
+Execution order: `preProcess` runs FIFO, `postProcess` runs LIFO, `onDisconnect` runs FIFO. Exceptions in one interceptor do not prevent others from being called.
+
+## AiEvent Model
+
+The `AiEvent` sealed interface provides 15 structured event types emitted via `session.emit()`. All runtimes map their native events to this common model.
+
+| Event | Description |
+|-------|-------------|
+| `TextDelta` | Streaming token |
+| `TextComplete` | Final assembled text |
+| `ToolStart` | Tool invocation begins (name + arguments) |
+| `ToolResult` | Tool executed successfully (name + result) |
+| `ToolError` | Tool execution failed |
+| `AgentStep` | Orchestration step (ADK agent steps, Embabel planning) |
+| `StructuredField` | Structured output field arrival |
+| `EntityStart` / `EntityComplete` | Structured entity streaming |
+| `RoutingDecision` | Backend routing event |
+| `Progress` | Long-running operation status |
+| `Handoff` | Agent handoff notification |
+| `ApprovalRequired` | Human approval gate |
+| `Error` | Error with recovery hint |
+| `Complete` | Stream completed with usage metadata |
+
+### Runtime Event Normalization
+
+| Source | Atmosphere Event |
+|--------|-----------------|
+| ADK `event.functionCalls()` | `AiEvent.ToolStart` |
+| ADK `event.functionResponses()` | `AiEvent.ToolResult` |
+| ADK `event.author()` (non-partial) | `AiEvent.AgentStep` |
+| ADK `event.usageMetadata()` | `ai.tokens.input/output/total` metadata |
+| Koog `onToolCallStarting` | `AiEvent.ToolStart` |
+| Koog `onToolCallCompleted` | `AiEvent.ToolResult` |
+| Koog `onToolCallFailed` | `AiEvent.ToolError` |
+| Koog `StreamFrame.ReasoningDelta` | `AiEvent.Progress` |
+| Embabel `MessageOutputChannelEvent` | `AiEvent.TextDelta` |
+| Embabel `ProgressOutputChannelEvent` | `AiEvent.AgentStep` |
+
+## Capability Matrix
+
+Each runtime declares capabilities via `AiCapability`. The framework uses these for model routing, tool negotiation, and feature discovery.
+
+### Guaranteed by Core
+
+Available on **all** runtimes:
+
+| Capability | Description |
+|-----------|-------------|
+| `TEXT_STREAMING` | Basic text streaming |
+| `SYSTEM_PROMPT` | System prompt support |
+
+### Runtime-Dependent
+
+| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog |
+|-----------|----------|-------------|-----------|-----|---------|------|
+| `TOOL_CALLING` | Y | Y | Y | Y | | Y |
+| `STRUCTURED_OUTPUT` | Y | Y | Y | Y | Y | Y |
+| `CONVERSATION_MEMORY` | | | | Y | | Y |
+
+### Experimental
+
+| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog |
+|-----------|----------|-------------|-----------|-----|---------|------|
+| `AGENT_ORCHESTRATION` | | | | Y | Y | Y |
+| `TOOL_APPROVAL` | | | | Y | | |
+| `VISION` | | | | | | |
+| `AUDIO` | | | | | | |
+
+## Cross-Runtime Contract Tests (TCK)
+
+The `AbstractAgentRuntimeContractTest` base class in `atmosphere-ai-test` enforces a minimum contract across all runtime adapters.
+
+```java
+public abstract class AbstractAgentRuntimeContractTest {
+    protected abstract AgentRuntime createRuntime();
+    protected abstract AgentExecutionContext createTextContext();
+    protected abstract AgentExecutionContext createToolCallContext();
+    protected abstract AgentExecutionContext createErrorContext();
+
+    // Enforced contracts:
+    // - runtimeDeclaresMinimumCapabilities (TEXT_STREAMING)
+    // - runtimeHasNonBlankName
+    // - runtimeIsAvailable
+    // - textStreamingCompletesSession (10s timeout)
+    // - toolCallExecutesIfSupported
+    // - errorContextTriggersSessionError
+}
+```
+
+Add `atmosphere-ai-test` as a test dependency and extend the base class:
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-ai-test</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+The `RecordingSession` test double captures all events, text chunks, metadata, and errors for assertion. Currently enforced on: ADK, LangChain4j, Spring AI.
+
 ## Samples
 
 - [Spring Boot AI Chat](../samples/spring-boot-ai-chat/) -- built-in client with Gemini/OpenAI/Ollama
