@@ -27,59 +27,49 @@ export default defineConfig({
           label: 'Getting Started',
           items: [
             { label: 'Welcome', slug: 'welcome' },
+            { label: 'Architecture', slug: 'architecture' },
+            { label: 'CLI', slug: 'tutorial/00-cli' },
+            { label: 'First App', slug: 'tutorial/02-getting-started' },
             { label: "What's New in 4.0", slug: 'whats-new' },
-          ],
-        },
-        {
-          label: 'Agents',
-          items: [
-            { label: '@Agent', slug: 'agents/agent' },
-            { label: '@Coordinator', slug: 'agents/coordinator' },
-            { label: 'Skills', slug: 'agents/skills' },
-            { label: 'A2A Protocol', slug: 'agents/a2a' },
-            { label: 'AG-UI Protocol', slug: 'agents/agui' },
           ],
         },
         {
           label: 'Tutorial',
           items: [
             {
-              label: 'Getting Started',
+              label: 'Agents',
               collapsed: false,
               items: [
-                { label: 'Install & Run', slug: 'tutorial/00-cli' },
                 { label: 'Introduction', slug: 'tutorial/01-introduction' },
-                { label: 'First App', slug: 'tutorial/02-getting-started' },
-              ],
-            },
-            {
-              label: 'AI & LLM Streaming',
-              collapsed: false,
-              items: [
-                { label: '@AiEndpoint & Streaming', slug: 'tutorial/09-ai-endpoint' },
-                { label: '@AiTool', slug: 'tutorial/10-ai-tools' },
+                { label: '@Agent & @Prompt', slug: 'agents/agent' },
+                { label: '@AiTool & Human-in-the-Loop', slug: 'tutorial/10-ai-tools' },
+                { label: '@Command & Skill Files', slug: 'agents/skills' },
+                { label: '@Coordinator & Multi-Agent', slug: 'agents/coordinator' },
                 { label: 'AI Adapters', slug: 'tutorial/11-ai-adapters' },
                 { label: 'AI Filters & Routing', slug: 'tutorial/12-ai-filters' },
-                { label: 'MCP Server', slug: 'tutorial/13-mcp' },
+                { label: 'Channels', slug: 'tutorial/23-channels' },
               ],
             },
             {
-              label: 'Core Concepts',
+              label: 'Protocols',
               collapsed: false,
               items: [
+                { label: 'MCP Server', slug: 'tutorial/13-mcp' },
+                { label: 'A2A Protocol', slug: 'agents/a2a' },
+                { label: 'AG-UI Protocol', slug: 'agents/agui' },
+              ],
+            },
+            {
+              label: 'Real-Time Infrastructure',
+              collapsed: true,
+              items: [
+                { label: '@AiEndpoint & Streaming', slug: 'tutorial/09-ai-endpoint' },
                 { label: '@ManagedService', slug: 'tutorial/03-managed-service' },
                 { label: 'Transports', slug: 'tutorial/04-transports' },
                 { label: 'Broadcaster & Pub/Sub', slug: 'tutorial/05-broadcaster' },
                 { label: 'Rooms & Presence', slug: 'tutorial/06-rooms' },
-              ],
-            },
-            {
-              label: 'Advanced',
-              collapsed: true,
-              items: [
                 { label: 'WebSocket Deep Dive', slug: 'tutorial/07-websocket' },
                 { label: 'Interceptors', slug: 'tutorial/08-interceptors' },
-                { label: 'atmosphere.js Client', slug: 'tutorial/19-client' },
                 { label: 'gRPC & Kotlin', slug: 'tutorial/20-grpc-kotlin' },
               ],
             },
@@ -101,10 +91,10 @@ export default defineConfig({
         {
           label: 'Reference',
           items: [
-            { label: 'Core Runtime', slug: 'reference/core' },
-            { label: 'Rooms & Presence', slug: 'reference/rooms' },
             { label: 'AI / LLM', slug: 'reference/ai' },
             { label: 'AI Testing', slug: 'reference/testing' },
+            { label: 'Core Runtime', slug: 'reference/core' },
+            { label: 'Rooms & Presence', slug: 'reference/rooms' },
             { label: 'MCP Server', slug: 'reference/mcp' },
             { label: 'gRPC Transport', slug: 'reference/grpc' },
             { label: 'Kotlin DSL', slug: 'reference/kotlin' },
