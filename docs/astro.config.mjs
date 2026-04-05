@@ -101,6 +101,7 @@ export default defineConfig({
             { label: 'Kotlin DSL', slug: 'reference/kotlin' },
             { label: 'Observability', slug: 'reference/observability' },
             { label: 'Durable Sessions', slug: 'reference/durable-sessions' },
+            { label: 'Durable Checkpoints', slug: 'reference/checkpoint' },
           ],
         },
         {
