@@ -102,6 +102,7 @@ export default defineConfig({
             { label: 'Observability', slug: 'reference/observability' },
             { label: 'Durable Sessions', slug: 'reference/durable-sessions' },
             { label: 'Durable Checkpoints', slug: 'reference/checkpoint' },
+            { label: 'Performance Benchmarks', slug: 'reference/benchmarks' },
           ],
         },
         {
