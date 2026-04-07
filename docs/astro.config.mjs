@@ -100,6 +100,7 @@ export default defineConfig({
             { label: 'gRPC Transport', slug: 'reference/grpc' },
             { label: 'Kotlin DSL', slug: 'reference/kotlin' },
             { label: 'Observability', slug: 'reference/observability' },
+            { label: 'Admin Control Plane', slug: 'reference/admin' },
             { label: 'Durable Sessions', slug: 'reference/durable-sessions' },
             { label: 'Durable Checkpoints', slug: 'reference/checkpoint' },
             { label: 'Performance Benchmarks', slug: 'reference/benchmarks' },
