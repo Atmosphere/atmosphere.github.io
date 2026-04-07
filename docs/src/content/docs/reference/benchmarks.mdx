@@ -48,10 +48,9 @@ The chart below loads the latest benchmark data from CI. Each data point is a pu
   <div id="benchmark-table" style="display:none; overflow-x: auto;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
-<script defer>
-{`
+<script is:inline>
 (async function() {
   const loading = document.getElementById('benchmark-loading');
   const canvas = document.getElementById('benchmark-chart');
@@ -89,7 +88,7 @@ The chart below loads the latest benchmark data from CI. Each data point is a pu
 
     let html = '<table><thead><tr><th>Benchmark</th><th>Value</th><th>Unit</th><th>±Error</th></tr></thead><tbody>';
     for (const b of benches) {
-      const name = b.name.replace(/^org\\.atmosphere\\.benchmarks\\.jmh\\./, '');
+      const name = b.name.replace(/^org\.atmosphere\.benchmarks\.jmh\./, '');
       html += '<tr><td><code>' + name + '</code></td><td><strong>' + b.value.toFixed(2) + '</strong></td><td>' + b.unit + '</td><td>±' + (b.range || '?') + '</td></tr>';
     }
     html += '</tbody></table>';
@@ -107,7 +106,7 @@ The chart below loads the latest benchmark data from CI. Each data point is a pu
 
       const colors = ['#2563eb','#dc2626','#16a34a','#ca8a04','#9333ea','#0891b2','#e11d48','#4f46e5'];
       const datasets = benchNames.map((name, i) => ({
-        label: name.replace(/^org\\.atmosphere\\.benchmarks\\.jmh\\./, ''),
+        label: name.replace(/^org\.atmosphere\.benchmarks\.jmh\./, ''),
         data: recentEntries.map(e => {
           const b = (e.benches || []).find(x => x.name === name);
           return b ? b.value : null;
@@ -135,7 +134,6 @@ The chart below loads the latest benchmark data from CI. Each data point is a pu
     loading.textContent = 'Could not load benchmark data: ' + err.message;
   }
 })();
-`}
 </script>
 
 ## Running Locally
