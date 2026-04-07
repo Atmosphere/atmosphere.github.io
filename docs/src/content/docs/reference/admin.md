@@ -7,7 +7,7 @@ The `atmosphere-admin` module adds a management and control plane to any Atmosph
 
 ## Quick Start
 
-Add the dependency alongside your starter:
+**Spring Boot** — add alongside your starter:
 
 ```xml
 <dependency>
@@ -16,7 +16,22 @@ Add the dependency alongside your starter:
 </dependency>
 ```
 
-Then open `http://localhost:8080/atmosphere/admin/` in your browser.
+Dashboard at `http://localhost:8080/atmosphere/admin/`.
+
+**Quarkus** — use the dedicated extension:
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-quarkus-admin-extension</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-rest-jackson</artifactId>
+</dependency>
+```
+
+Dashboard at `http://localhost:8080/admin/` (outside the Atmosphere servlet path).
 
 ## Dashboard
 
