@@ -103,7 +103,7 @@ const plans = [
           </ul>
 
           <a
-            href="/contact/"
+            href={`mailto:${plan.email_address}?subject=Quote%20for%20${plan.name}%20Subscription`}
             class={`plan-cta ${plan.highlight ? 'plan-cta-highlight' : ''}`}
           >
             Get a Quote
@@ -125,7 +125,7 @@ const plans = [
         </p>
       </div>
       <a
-        href="/contact/"
+        href="mailto:support@async-io.org?subject=Legacy%20Atmosphere%20Support%20Inquiry"
         class="legacy-cta"
       >
         Contact Us
@@ -135,7 +135,7 @@ const plans = [
     <div class="support-footer">
       <p>
         Need professional services on a per-hour basis?
-        <a href="/contact/">Contact us</a> for a custom quote.
+        <a href="mailto:support@async-io.org?subject=Professional%20Services%20Inquiry">Contact us</a> for a custom quote.
       </p>
     </div>
   </div>
