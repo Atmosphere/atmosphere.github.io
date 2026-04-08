@@ -9,20 +9,14 @@
   </div>
 
   <div class="hero-content">
-    <div class="company-badge">
-      <span class="badge-dot"></span>
-      Enterprise open source since 2008
-    </div>
-
-    <img src="/logo.svg" alt="Atmosphere" class="hero-logo" width="80" height="80" />
+    <img src="/logo.svg" alt="Atmosphere" class="hero-logo" width="120" height="120" />
 
     <h1 class="hero-title">
-      <span class="title-line">The company behind</span>
       <span class="title-line title-accent">Atmosphere</span>
     </h1>
 
     <p class="hero-description">
-      Async-IO.org builds and supports <strong>Atmosphere</strong> &mdash; the real-time
+      Async-IO.org is the company behind <strong>Atmosphere</strong> &mdash; the real-time
       transport layer for Java AI agents. We provide the engineering, the support,
       and the long-term commitment that production systems require.
     </p>
@@ -129,42 +123,10 @@
     text-align: center;
   }
 
-  .company-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-xs) var(--space-lg);
-    background: var(--color-bg-elevated);
-    border: 1px solid var(--color-border-accent);
-    border-radius: 100px;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-xl);
-    animation: fadeInUp 0.8s var(--ease-out-expo) 0.05s both;
-  }
-
-  .badge-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    box-shadow: 0 0 8px var(--color-accent);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
   .hero-logo {
     display: block;
-    margin: 0 auto var(--space-lg);
-    border-radius: 12px;
-    animation: fadeInUp 0.8s var(--ease-out-expo) 0.08s both;
+    margin: 0 auto var(--space-xl);
+    animation: fadeInUp 0.8s var(--ease-out-expo) 0.05s both;
   }
 
   .hero-title {
@@ -183,16 +145,13 @@
 
   .title-line:nth-child(1) {
     animation-delay: 0.1s;
-    font-size: clamp(1.35rem, 4.2vw, 2.6rem);
-    color: var(--color-text-secondary);
-  }
-
-  .title-line:nth-child(2) {
-    animation-delay: 0.2s;
   }
 
   .title-accent {
-    color: var(--color-accent);
+    background: linear-gradient(135deg, #b8944a, #d4b060, #c4a86a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-style: italic;
   }
 
