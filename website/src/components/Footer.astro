@@ -1,72 +1,47 @@
 ---
 const currentYear = new Date().getFullYear();
 
-const footerLinks = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'Documentation', href: '/docs/' },
-      { label: 'API Reference', href: '/apidocs/' },
-      { label: 'Spring Boot Sample', href: 'https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat', external: true },
-      { label: 'Quarkus Sample', href: 'https://github.com/Atmosphere/atmosphere/tree/main/samples/quarkus-chat', external: true },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'Support Plans', href: '#support' },
-      { label: 'GitHub', href: 'https://github.com/Atmosphere/atmosphere', external: true },
-      { label: 'Sponsor', href: 'https://github.com/sponsors/Atmosphere', external: true },
-      { label: 'Contact', href: 'mailto:support@async-io.org' },
-    ],
-  },
+const links = [
+  { label: 'Support', href: '#support' },
+  { label: 'GitHub', href: 'https://github.com/Atmosphere/atmosphere', external: true },
+  { label: 'Contact', href: '/contact/' },
 ];
 ---
 
 <footer class="footer">
   <div class="footer-container">
-    <div class="footer-main">
-      <div class="footer-brand">
-        <a href="/" class="footer-logo">
-          <img src="/logo.svg" alt="Async IO" width="32" height="32" style="border-radius: 4px;" />
-          <span>Async IO</span>
-        </a>
-        <p class="footer-tagline">
-          Building real-time infrastructure for the JVM since 2008.
-        </p>
-      </div>
+    <div class="footer-top">
+      <a href="/" class="footer-logo">
+        <img src="/logo.svg" alt="Async IO" width="28" height="28" style="border-radius: 4px;" />
+        <span>Async IO</span>
+      </a>
 
-      <nav class="footer-nav">
-        {footerLinks.map((section) => (
-          <div class="footer-section">
-            <h4 class="footer-section-title">{section.title}</h4>
-            <ul class="footer-section-list">
-              {section.links.map((link) => (
-                <li>
-                  <a
-                    href={link.href}
-                    class="footer-link"
-                    {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  >
-                    {link.label}
-                    {link.external && (
-                      <svg class="external-icon" width="10" height="10" viewBox="0 0 12 12" fill="none">
-                        <path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    )}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+      <nav class="footer-links">
+        {links.map((link) => (
+          <a
+            href={link.href}
+            class="footer-link"
+            {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
+            {link.label}
+            {link.external && (
+              <svg class="external-icon" width="10" height="10" viewBox="0 0 12 12" fill="none">
+                <path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            )}
+          </a>
         ))}
       </nav>
     </div>
 
+    <div class="footer-divider"></div>
+
     <div class="footer-bottom">
       <p class="footer-copyright">
-        &copy; 2008&ndash;{currentYear} <a href="https://async-io.org">Async-IO.org</a>.
-        Atmosphere is open source under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Apache 2.0 License</a>.
+        &copy; 2008&ndash;{currentYear} <a href="https://async-io.org">Async-IO.org</a>. All rights reserved.
+      </p>
+      <p class="footer-tagline">
+        Real-time infrastructure for the JVM since 2008.
       </p>
     </div>
   </div>
@@ -74,7 +49,7 @@ const footerLinks = [
 
 <style>
   .footer {
-    padding: var(--space-4xl) var(--space-xl) var(--space-2xl);
+    padding: var(--space-2xl) var(--space-xl) var(--space-xl);
     background: var(--color-bg-secondary);
     border-top: 1px solid var(--color-border);
   }
@@ -84,12 +59,10 @@ const footerLinks = [
     margin: 0 auto;
   }
 
-  .footer-main {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: var(--space-4xl);
-    padding-bottom: var(--space-3xl);
-    border-bottom: 1px solid var(--color-border);
+  .footer-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .footer-logo {
@@ -97,9 +70,8 @@ const footerLinks = [
     align-items: center;
     gap: var(--space-sm);
     font-family: var(--font-display);
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: var(--color-text-primary);
-    margin-bottom: var(--space-md);
     transition: color 0.2s var(--ease-out-quad);
   }
 
@@ -107,41 +79,18 @@ const footerLinks = [
     color: var(--color-accent);
   }
 
-  .footer-tagline {
-    font-size: 0.9375rem;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    max-width: 280px;
-  }
-
-  .footer-nav {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-xl);
-  }
-
-  .footer-section-title {
-    font-family: var(--font-body);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-text-primary);
-    margin-bottom: var(--space-md);
-  }
-
-  .footer-section-list {
-    list-style: none;
+  .footer-links {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
+    align-items: center;
+    gap: var(--space-xl);
   }
 
   .footer-link {
     display: inline-flex;
     align-items: center;
     gap: var(--space-xs);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
     color: var(--color-text-secondary);
     transition: color 0.2s var(--ease-out-quad);
   }
@@ -154,17 +103,25 @@ const footerLinks = [
     opacity: 0.5;
   }
 
+  .footer-link:hover .external-icon {
+    opacity: 1;
+  }
+
+  .footer-divider {
+    height: 1px;
+    margin: var(--space-xl) 0;
+    background: var(--color-border);
+  }
+
   .footer-bottom {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding-top: var(--space-xl);
+    justify-content: space-between;
   }
 
   .footer-copyright {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--color-text-muted);
-    text-align: center;
   }
 
   .footer-copyright a {
@@ -176,23 +133,30 @@ const footerLinks = [
     color: var(--color-text-primary);
   }
 
-  @media (max-width: 900px) {
-    .footer-main {
-      grid-template-columns: 1fr;
-      gap: var(--space-2xl);
-    }
+  .footer-tagline {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-family: var(--font-display);
   }
 
   @media (max-width: 640px) {
     .footer {
-      padding: var(--space-3xl) var(--space-md) var(--space-xl);
+      padding: var(--space-xl) var(--space-md);
     }
 
-    .footer-nav {
-      grid-template-columns: 1fr;
+    .footer-top {
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .footer-links {
+      gap: var(--space-lg);
     }
 
     .footer-bottom {
+      flex-direction: column;
+      gap: var(--space-sm);
       text-align: center;
     }
   }

@@ -1,37 +1,12 @@
 ---
-const reasons = [
+const capabilities = [
   {
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/>
       <circle cx="12" cy="15" r="2"/>
     </svg>`,
-    title: 'One annotation to deploy an AI agent',
-    description: '@Agent wires the AI endpoint, commands, tools, skill file, conversation memory, and protocol exposure. Add MCP, A2A, and AG-UI by putting the JAR on the classpath.',
-    detail: `<p><strong>@Agent</strong> is the single entry point for building AI agents with Atmosphere. One class, one annotation — everything else is auto-wired.</p>
-<ul>
-<li><strong>@Agent</strong> — declares an AI agent with endpoint, commands, tools, and protocols</li>
-<li><strong>@Command</strong> — register slash commands with type-safe parameters</li>
-<li><strong>@AiTool</strong> — portable tools that work across all LLM backends</li>
-<li><strong>Skill files</strong> — auto-discovered at META-INF/skills/ on the classpath</li>
-<li><strong>Import from GitHub</strong> — 1,200+ skills available via atmosphere import</li>
-<li><strong>Full-stack or headless</strong> — serve the built-in AI Console or run as a pure API agent</li>
-</ul>`,
-  },
-  {
-    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-      <path d="m9 12 2 2 4-4"/>
-    </svg>`,
-    title: 'Three protocols, zero configuration',
-    description: 'MCP, A2A, and AG-UI are auto-registered based on classpath. Your @Agent is discoverable by any MCP client, any A2A agent, and any AG-UI frontend.',
-    detail: `<p>Protocol exposure is <strong>automatic</strong>. Add the dependency, and your agent speaks the protocol — no manual endpoint wiring, no boilerplate.</p>
-<ul>
-<li><strong>MCP</strong> — @McpTool, @McpResource, @McpPrompt for Claude, Copilot, and Cursor</li>
-<li><strong>A2A</strong> — @AgentSkill, @AgentSkillHandler via Agent Cards + JSON-RPC</li>
-<li><strong>AG-UI</strong> — @AgUiEndpoint, @AgUiAction via SSE (CopilotKit compatible)</li>
-<li><strong>Multi-channel</strong> — route to Slack, Telegram, Discord, WhatsApp, Messenger</li>
-<li><strong>Headless agents</strong> — no browser required, pure agent-to-agent communication</li>
-</ul>`,
+    title: '@Agent Annotation',
+    description: 'One class, one annotation. Endpoints, commands, tools, skill files, conversation memory, and protocol exposure are all auto-wired.',
   },
   {
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -40,132 +15,88 @@ const reasons = [
       <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
       <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
     </svg>`,
-    title: 'Swap LLM backends without changing code',
-    description: 'Built-in, Spring AI, LangChain4j, Google ADK, Embabel — pick any backend and swap by changing one Maven dependency. Your agent code stays the same.',
-    detail: `<p>Atmosphere is the <strong>infrastructure layer underneath</strong> your LLM library, not a replacement for it. Your @Agent and @AiTool annotations work identically across all backends.</p>
-<ul>
-<li><strong>Built-in</strong> — Gemini, OpenAI, and Ollama via direct HTTP client</li>
-<li><strong>Spring AI</strong> — ChatClient + RAG + VectorStore integration</li>
-<li><strong>LangChain4j</strong> — chains, agents, and tool bridging</li>
-<li><strong>Google ADK</strong> — multi-agent orchestration</li>
-<li><strong>Embabel</strong> — goal-driven agents</li>
-<li><strong>Tool portability</strong> — @AiTool works identically with every backend</li>
-</ul>`,
+    title: '@Coordinator Orchestration',
+    description: 'Manage fleets of agents with parallel fan-out, sequential pipelines, conditional routing, and result evaluation.',
+  },
+  {
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v4l3 3"/>
+    </svg>`,
+    title: 'Durable Workflows',
+    description: 'CheckpointStore persists workflow state as parent-chained snapshots. Pause workflows without holding a thread; resume via REST.',
+  },
+  {
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>`,
+    title: 'Human-in-the-Loop',
+    description: '@RequiresApproval pauses tool execution for human approval. The virtual thread parks cheaply until the client responds.',
+  },
+  {
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>`,
+    title: '6 Channels',
+    description: 'Web, Slack, Telegram, Discord, WhatsApp, Messenger. Set a bot token and the same @Command + AI pipeline works everywhere.',
+  },
+  {
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <path d="M3 9h18M9 21V9"/>
+    </svg>`,
+    title: 'Admin Control Plane',
+    description: 'Real-time dashboard, 25 REST endpoints, WebSocket event stream, and MCP tools for managing agents and runtimes.',
+  },
+  {
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>`,
+    title: 'Observability',
+    description: 'OpenTelemetry tracing, Micrometer metrics, and AI token usage tracking. Auto-configured with Spring Boot.',
   },
   {
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="16 18 22 12 16 6"/>
       <polyline points="8 6 2 12 8 18"/>
     </svg>`,
-    title: 'Client SDKs for every framework',
-    description: 'React, Vue, Svelte, and React Native hooks with streaming, offline queues, and auth token refresh. One API across all platforms.',
-    detail: `<p><strong>atmosphere.js</strong> provides framework-native hooks so your UI code stays idiomatic.</p>
-<ul>
-<li><strong>useAtmosphere</strong> — subscribe, push, track connection state</li>
-<li><strong>useStreaming</strong> — stream AI text with progress and metadata</li>
-<li><strong>useRoom</strong> — join rooms, track members, broadcast messages</li>
-<li><strong>Offline queue</strong> — buffer messages while disconnected, auto-drain on reconnect</li>
-<li><strong>Auth tokens</strong> — automatic refresh and session management</li>
-<li><strong>React Native</strong> — AppState/NetInfo-aware with EventSource polyfill</li>
-</ul>`,
+    title: 'Client SDKs',
+    description: 'atmosphere.js with React, Vue, Svelte, and React Native hooks. Streaming, offline queues, auth token refresh.',
   },
 ];
 ---
 
-<section class="why" id="why">
-  <div class="why-container">
+<section class="capabilities" id="capabilities">
+  <div class="capabilities-container">
     <div class="section-header">
-      <span class="section-label">Why Atmosphere</span>
-      <h2 class="section-title">Why developers choose Atmosphere</h2>
+      <span class="section-label">What We Deliver</span>
+      <h2 class="section-title">Production-grade agent infrastructure</h2>
+      <p class="section-description">
+        Everything you need to build, deploy, and operate AI agents in production.
+        Spring Boot 4.0 and Quarkus 3.21+ auto-configuration included.
+      </p>
     </div>
 
-    <div class="reasons-grid">
-      {reasons.map((reason, index) => (
-        <article class="reason-card" data-reason={index} role="button" tabindex="0" style={`--delay: ${(index * 0.08).toFixed(2)}s`}>
-          <div class="reason-icon" set:html={reason.icon} />
-          <div class="reason-content">
-            <h3 class="reason-title">{reason.title}</h3>
-            <p class="reason-description">{reason.description}</p>
-          </div>
+    <div class="capabilities-grid">
+      {capabilities.map((cap, index) => (
+        <article class="capability-card" style={`--delay: ${(index * 0.06).toFixed(2)}s`}>
+          <div class="capability-icon" set:html={cap.icon} />
+          <h3 class="capability-title">{cap.title}</h3>
+          <p class="capability-description">{cap.description}</p>
         </article>
       ))}
-    </div>
-
-    <div class="why-cta">
-      <a href="#support" class="btn btn-primary">
-        Talk to us
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </a>
-    </div>
-  </div>
-
-  <!-- Why modal -->
-  <div class="modal-overlay" id="whyModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true">
-      <button class="modal-close" aria-label="Close">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l10 10M14 4L4 14"/></svg>
-      </button>
-      <div class="modal-hero">
-        <div class="modal-hero-glow"></div>
-        <div class="modal-icon" id="whyModalIcon"></div>
-        <div class="modal-hero-text">
-          <span class="modal-label">Why Atmosphere</span>
-          <h3 class="modal-title" id="whyModalTitle"></h3>
-        </div>
-      </div>
-      <div class="modal-divider"></div>
-      <div class="modal-body" id="whyModalBody"></div>
     </div>
   </div>
 </section>
 
-<script define:vars={{ reasons }}>
-  document.addEventListener('DOMContentLoaded', () => {
-    const overlay = document.getElementById('whyModal');
-    const modalIcon = document.getElementById('whyModalIcon');
-    const modalTitle = document.getElementById('whyModalTitle');
-    const modalBody = document.getElementById('whyModalBody');
-    const closeBtn = overlay.querySelector('.modal-close');
-
-    function openModal(index) {
-      const r = reasons[index];
-      modalIcon.innerHTML = r.icon;
-      modalTitle.textContent = r.title;
-      modalBody.innerHTML = r.detail;
-      overlay.setAttribute('aria-hidden', 'false');
-      overlay.classList.add('active');
-      document.body.style.overflow = 'hidden';
-      closeBtn.focus();
-    }
-
-    function closeModal() {
-      overlay.classList.remove('active');
-      overlay.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    }
-
-    document.querySelectorAll('.reason-card[data-reason]').forEach(card => {
-      card.addEventListener('click', () => openModal(Number(card.dataset.reason)));
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(Number(card.dataset.reason)); }
-      });
-    });
-
-    closeBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-  });
-</script>
-
 <style>
-  .why {
+  .capabilities {
     padding: var(--space-4xl) var(--space-xl);
+    background: var(--color-bg-secondary);
     position: relative;
   }
 
-  .why::before {
+  .capabilities::before {
     content: '';
     position: absolute;
     top: 0;
@@ -175,14 +106,15 @@ const reasons = [
     background: linear-gradient(90deg, transparent, var(--color-border-accent), transparent);
   }
 
-  .why-container {
-    max-width: 900px;
+  .capabilities-container {
+    max-width: 1200px;
     margin: 0 auto;
   }
 
   .section-header {
     text-align: center;
-    margin-bottom: var(--space-3xl);
+    max-width: 600px;
+    margin: 0 auto var(--space-3xl);
   }
 
   .section-label {
@@ -202,270 +134,65 @@ const reasons = [
     font-weight: 400;
     line-height: 1.2;
     letter-spacing: -0.02em;
+    margin-bottom: var(--space-md);
   }
 
-  .reasons-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-lg);
-    margin-bottom: var(--space-3xl);
-  }
-
-  .reason-card {
-    display: flex;
-    gap: var(--space-lg);
-    padding: var(--space-xl);
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s var(--ease-out-quad);
-    animation: fadeInUp 0.6s var(--ease-out-expo) var(--delay) both;
-  }
-
-  .reason-card:hover {
-    border-color: var(--color-border-accent);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
-  }
-
-  .reason-card:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  .reason-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    background: var(--color-accent-glow);
-    border-radius: 10px;
-    color: var(--color-accent);
-    transition: all 0.3s var(--ease-out-quad);
-  }
-
-  .reason-card:hover .reason-icon {
-    background: var(--color-accent);
-    color: var(--color-bg-primary);
-  }
-
-  .reason-title {
-    font-family: var(--font-body);
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: var(--space-xs);
-  }
-
-  .reason-description {
-    font-size: 0.9375rem;
+  .section-description {
+    font-size: 1.0625rem;
     color: var(--color-text-secondary);
     line-height: 1.6;
   }
 
-  .why-cta {
-    text-align: center;
+  .capabilities-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
   }
 
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-md) var(--space-xl);
-    font-family: var(--font-body);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    border-radius: 8px;
-    transition: all 0.2s var(--ease-out-quad);
-    cursor: pointer;
-    border: none;
+  .capability-card {
+    padding: var(--space-xl);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    transition: all 0.3s var(--ease-out-quad);
+    animation: fadeInUp 0.6s var(--ease-out-expo) var(--delay) both;
   }
 
-  .btn-primary {
-    background: var(--color-text-primary);
-    color: var(--color-bg-primary);
+  .capability-card:hover {
+    border-color: var(--color-border-accent);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px -16px rgba(0, 0, 0, 0.4);
   }
 
-  .btn-primary:hover {
-    background: var(--color-accent);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px var(--color-accent-glow);
-  }
-
-  /* ── Modal (same style as Atmosphere section) ── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
+  .capability-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-xl);
-    background: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0);
-    pointer-events: none;
-    transition: background 0.4s ease, backdrop-filter 0.4s ease;
-  }
-
-  .modal-overlay.active {
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(12px);
-    pointer-events: auto;
-  }
-
-  .modal {
-    position: relative;
-    width: min(680px, 100%);
-    max-height: calc(100vh - var(--space-3xl));
-    overflow-y: auto;
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 20px;
-    box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.08), 0 24px 64px -16px rgba(0, 0, 0, 0.7);
-    transform: translateY(32px) scale(0.95);
-    opacity: 0;
-    transition: transform 0.4s var(--ease-out-expo), opacity 0.35s ease;
-  }
-
-  .modal-overlay.active .modal {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-
-  .modal::-webkit-scrollbar { width: 6px; }
-  .modal::-webkit-scrollbar-track { background: transparent; }
-  .modal::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-
-  .modal-close {
-    position: absolute;
-    top: var(--space-lg);
-    right: var(--space-lg);
-    z-index: 2;
     width: 40px;
     height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-secondary);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .modal-close:hover {
-    color: var(--color-text-primary);
-    border-color: var(--color-accent-dim);
-    background: rgba(0, 212, 255, 0.08);
-  }
-
-  .modal-hero {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: var(--space-lg);
-    padding: var(--space-2xl) var(--space-2xl) var(--space-xl);
-    overflow: hidden;
-  }
-
-  .modal-hero-glow {
-    position: absolute;
-    top: -60px;
-    left: -40px;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(0, 212, 255, 0.12) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .modal-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dim));
-    border-radius: 14px;
-    color: var(--color-bg-primary);
-    box-shadow: 0 8px 24px -8px rgba(0, 212, 255, 0.3);
-  }
-
-  .modal-hero-text {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding-right: var(--space-3xl);
-  }
-
-  .modal-label {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+    background: var(--color-accent-glow);
+    border-radius: 8px;
     color: var(--color-accent);
-    opacity: 0.8;
+    margin-bottom: var(--space-md);
+    transition: all 0.3s var(--ease-out-quad);
   }
 
-  .modal-title {
-    font-family: var(--font-display);
-    font-size: 1.75rem;
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    color: var(--color-text-primary);
-    line-height: 1.2;
-  }
-
-  .modal-divider {
-    height: 1px;
-    margin: 0 var(--space-2xl);
-    background: linear-gradient(90deg, var(--color-accent-dim), var(--color-border) 40%, transparent);
-    opacity: 0.5;
-  }
-
-  .modal-body {
-    padding: var(--space-xl) var(--space-2xl) var(--space-2xl);
-    font-size: 0.9375rem;
-    line-height: 1.8;
-    color: var(--color-text-secondary);
-  }
-
-  .modal-body :global(p) { margin-bottom: var(--space-lg); }
-  .modal-body :global(p:last-child) { margin-bottom: 0; }
-  .modal-body :global(strong) { color: var(--color-text-primary); font-weight: 600; }
-
-  .modal-body :global(ul) {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-  }
-
-  .modal-body :global(li) {
-    position: relative;
-    padding-left: 1.75em;
-    line-height: 1.7;
-  }
-
-  .modal-body :global(li::before) {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.55em;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+  .capability-card:hover .capability-icon {
     background: var(--color-accent);
-    opacity: 0.5;
-    box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+    color: var(--color-bg-primary);
+  }
+
+  .capability-title {
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+
+  .capability-description {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
   }
 
   @keyframes fadeInUp {
@@ -473,19 +200,19 @@ const reasons = [
     to { opacity: 1; transform: translateY(0); }
   }
 
-  @media (max-width: 768px) {
-    .reasons-grid { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) {
+    .capabilities-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   @media (max-width: 640px) {
-    .why { padding: var(--space-3xl) var(--space-md); }
-    .reason-card { flex-direction: column; gap: var(--space-md); }
-    .btn { width: 100%; justify-content: center; }
-    .modal-overlay { padding: var(--space-sm); }
-    .modal { border-radius: 16px; }
-    .modal-hero { flex-direction: column; align-items: flex-start; padding: var(--space-xl) var(--space-lg) var(--space-lg); }
-    .modal-hero-text { padding-right: 0; }
-    .modal-divider { margin: 0 var(--space-lg); }
-    .modal-body { padding: var(--space-lg); }
+    .capabilities {
+      padding: var(--space-3xl) var(--space-md);
+    }
+
+    .capabilities-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

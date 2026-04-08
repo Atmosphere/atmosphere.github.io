@@ -1,0 +1,121 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+// Replace this with your actual Calendly URL
+const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
+---
+
+<Layout title="Contact — Async-IO.org">
+  <Header />
+  <main>
+    <section class="contact">
+      <div class="contact-container">
+        <div class="contact-header">
+          <span class="section-label">Get in touch</span>
+          <h1 class="contact-title">Let's talk</h1>
+          <p class="contact-description">
+            Book a call with the Async-IO team to discuss enterprise support,
+            migration planning, or how Atmosphere fits your architecture.
+          </p>
+        </div>
+
+        <div class="calendly-embed">
+          <div
+            class="calendly-inline-widget"
+            data-url={calendlyUrl}
+            style="min-width:320px;height:700px;"
+          ></div>
+        </div>
+
+        <div class="contact-alt">
+          <p>
+            Prefer email? Reach us at
+            <a href="mailto:support@async-io.org">support@async-io.org</a>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script is:inline src="https://assets.calendly.com/assets/external/widget.js" async></script>
+
+<style>
+  .contact {
+    padding: calc(var(--space-4xl) + 60px) var(--space-xl) var(--space-4xl);
+    min-height: 100vh;
+  }
+
+  .contact-container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .contact-header {
+    text-align: center;
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    margin-bottom: var(--space-md);
+  }
+
+  .contact-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-lg);
+  }
+
+  .contact-description {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .calendly-embed {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .contact-alt {
+    text-align: center;
+  }
+
+  .contact-alt p {
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+  }
+
+  .contact-alt a {
+    color: var(--color-accent);
+    transition: color 0.2s var(--ease-out-quad);
+  }
+
+  .contact-alt a:hover {
+    color: var(--color-text-primary);
+  }
+
+  @media (max-width: 640px) {
+    .contact {
+      padding: calc(var(--space-3xl) + 60px) var(--space-md) var(--space-3xl);
+    }
+  }
+</style>

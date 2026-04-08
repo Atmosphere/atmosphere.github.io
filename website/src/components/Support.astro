@@ -52,10 +52,11 @@ const plans = [
   <div class="support-container">
     <div class="section-header">
       <span class="section-label">Enterprise Support</span>
-      <h2 class="section-title">Support Subscriptions</h2>
+      <h2 class="section-title">Backed by the team that built it</h2>
       <p class="section-description">
-        Get support from the core team with fast response times.
-        Meet your production schedule and compliance requirements.
+        Get direct access to the core engineering team. We wrote the framework,
+        we maintain it, and we stand behind it. Meet your production schedule
+        and compliance requirements with guaranteed response times.
       </p>
     </div>
 
@@ -102,7 +103,7 @@ const plans = [
           </ul>
 
           <a
-            href={`mailto:${plan.email_address}?subject=Quote%20for%20${plan.name}%20Subscription`}
+            href="/contact/"
             class={`plan-cta ${plan.highlight ? 'plan-cta-highlight' : ''}`}
           >
             Get a Quote
@@ -111,10 +112,30 @@ const plans = [
       ))}
     </div>
 
+    <div class="legacy-card">
+      <div class="legacy-content">
+        <div class="legacy-header">
+          <span class="legacy-badge">Legacy</span>
+          <h3 class="legacy-title">Atmosphere 2.x / 3.x Support</h3>
+        </div>
+        <p class="legacy-description">
+          Still running Atmosphere 2.x or 3.x in production? We provide long-term support,
+          security patches, and migration guidance for legacy deployments. Includes a
+          migration path to Atmosphere 4.x when you are ready.
+        </p>
+      </div>
+      <a
+        href="/contact/"
+        class="legacy-cta"
+      >
+        Contact Us
+      </a>
+    </div>
+
     <div class="support-footer">
       <p>
         Need professional services on a per-hour basis?
-        <a href="mailto:support@async-io.org?subject=Professional%20Services%20Inquiry">Contact us</a> for a custom quote.
+        <a href="/contact/">Contact us</a> for a custom quote.
       </p>
     </div>
   </div>
@@ -274,6 +295,77 @@ const plans = [
     border-color: var(--color-accent-dim);
   }
 
+  .legacy-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xl);
+    margin-top: var(--space-xl);
+    padding: var(--space-xl) var(--space-2xl);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    transition: all 0.3s var(--ease-out-quad);
+  }
+
+  .legacy-card:hover {
+    border-color: var(--color-border-accent);
+  }
+
+  .legacy-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
+
+  .legacy-badge {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    background: var(--color-bg-tertiary);
+    padding: 0.2em 0.6em;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+  }
+
+  .legacy-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 400;
+  }
+
+  .legacy-description {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    max-width: 640px;
+  }
+
+  .legacy-cta {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-md) var(--space-xl);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-accent);
+    border-radius: 8px;
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s var(--ease-out-quad);
+    white-space: nowrap;
+  }
+
+  .legacy-cta:hover {
+    background: var(--color-bg-elevated);
+    border-color: var(--color-text-muted);
+  }
+
   .support-footer {
     text-align: center;
     margin-top: var(--space-2xl);
@@ -308,6 +400,17 @@ const plans = [
 
     .plans-grid {
       grid-template-columns: 1fr;
+    }
+
+    .legacy-card {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: var(--space-xl);
+    }
+
+    .legacy-cta {
+      width: 100%;
+      justify-content: center;
     }
   }
 </style>

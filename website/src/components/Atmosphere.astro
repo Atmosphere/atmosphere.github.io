@@ -1,162 +1,131 @@
 ---
-const capabilities = [
+const pillars = [
   {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-      <path d="m9 12 2 2 4-4"/>
-    </svg>`,
-    title: 'Transport Layer',
-    description: 'WebSocket, SSE, long-polling, and gRPC — your code never changes. Atmosphere picks the best transport, handles fallback, reconnection, heartbeats, and message caching automatically.',
-    badge: 'Since 2008',
-    detail: `<ul>
-<li><strong>WebSocket</strong> — full-duplex, binary support, proxy-safe</li>
-<li><strong>SSE</strong> — server-sent events with automatic reconnection</li>
-<li><strong>Long-polling</strong> — works everywhere, even behind restrictive firewalls</li>
-<li><strong>gRPC</strong> — bidirectional streaming alongside HTTP transports</li>
-<li><strong>Auto-fallback</strong> — WebSocket → SSE → long-polling, transparent to your code</li>
-<li><strong>Heartbeats</strong> — detect dead connections before TCP timeouts</li>
-<li><strong>Reconnection</strong> — exponential backoff with jitter, message replay on reconnect</li>
-<li><strong>Message cache</strong> — no messages lost during brief disconnections</li>
-</ul>`,
+    label: 'Transports',
+    title: '5 transports, one API',
+    description: 'Your application code declares what it does. Atmosphere handles how it is delivered &mdash; and falls back automatically when a transport is unavailable.',
+    items: [
+      { name: 'WebSocket', detail: 'Full-duplex communication over a single TCP connection. The standard for real-time web applications since 2011.', url: 'https://datatracker.ietf.org/doc/html/rfc6455', urlLabel: 'RFC 6455' },
+      { name: 'SSE', detail: 'Server-Sent Events. A simple HTTP-based protocol for server-to-client streaming with automatic reconnection built into the browser.', url: 'https://html.spec.whatwg.org/multipage/server-sent-events.html', urlLabel: 'WHATWG Spec' },
+      { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC. Atmosphere is the first Java framework with native WebTransport support &mdash; auto-detected via AsyncSupport with zero-config Jetty 12 QUIC or Reactor Netty sidecar.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
+      { name: 'Long-Polling', detail: 'HTTP long-polling with automatic reconnection. Works everywhere, even behind the most restrictive corporate firewalls and proxies.', url: 'https://datatracker.ietf.org/doc/html/rfc6202', urlLabel: 'RFC 6202' },
+      { name: 'gRPC', detail: 'High-performance RPC framework with bidirectional streaming over HTTP/2. Atmosphere exposes your agents as gRPC services alongside HTTP transports.', url: 'https://grpc.io', urlLabel: 'grpc.io' },
+    ],
+    extras: ['Auto-fallback', 'Reconnection with jitter', 'Heartbeats', 'Message caching'],
   },
   {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>`,
-    title: 'Broadcaster, Rooms & Presence',
-    description: 'Write to a Broadcaster, deliver to every subscriber. RoomManager with join/leave, presence tracking, message history, and virtual AI members. @ManagedService for zero-boilerplate real-time endpoints.',
-    detail: `<ul>
-<li><strong>Broadcaster</strong> — transport-agnostic pub/sub engine with topic-based routing</li>
-<li><strong>@ManagedService</strong> — annotate a class, get a real-time endpoint with lifecycle hooks</li>
-<li><strong>RoomManager</strong> — join, leave, presence events, message history</li>
-<li><strong>Virtual members</strong> — LLM-powered room participants that respond to messages</li>
-<li><strong>BroadcasterCache</strong> — replay missed messages on reconnect</li>
-<li><strong>Interceptors</strong> — heartbeat, backpressure, MDC tracing, content tracking</li>
-<li><strong>Clustering</strong> — Redis and Kafka broadcasters for multi-node deployments</li>
-<li><strong>Durable sessions</strong> — survive restarts with SQLite or Redis backing</li>
-</ul>`,
+    label: 'Agent Protocols',
+    title: '3 protocols, zero configuration',
+    description: 'Add the dependency to your classpath and your agent speaks the protocol. No manual endpoint wiring, no boilerplate.',
+    items: [
+      { name: 'MCP', detail: 'Model Context Protocol. An open standard by Anthropic for connecting AI assistants to tools, resources, and data sources. Expose your @AiTool methods to Claude, Copilot, Cursor, and any MCP-compatible client.', url: 'https://modelcontextprotocol.io', urlLabel: 'modelcontextprotocol.io' },
+      { name: 'A2A', detail: 'Agent-to-Agent protocol by Google. Enables agents to discover each other via Agent Cards and communicate through JSON-RPC. Your @Agent is automatically discoverable by any A2A-compliant agent.', url: 'https://google.github.io/A2A/', urlLabel: 'Google A2A Spec' },
+      { name: 'AG-UI', detail: 'Agent-User Interaction protocol. Streams agent state (text deltas, tool calls, state transitions) to frontends in real time. Compatible with CopilotKit and other AG-UI clients.', url: 'https://docs.ag-ui.com', urlLabel: 'AG-UI Docs' },
+    ],
+    extras: ['Auto-registered from classpath', 'Multi-channel: Slack, Telegram, Discord, WhatsApp, Messenger'],
   },
   {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/>
-      <circle cx="12" cy="15" r="2"/>
-      <path d="M12 17v2"/>
-    </svg>`,
-    title: 'AI Streaming & Agents',
-    description: '@Agent wires AI endpoint, commands, tools, skill file, conversation memory, and protocol exposure automatically. @Coordinator orchestrates fleets of agents with parallel fan-out and sequential pipelines.',
-    badge: 'New in 4.0',
-    detail: `<ul>
-<li><strong>@Agent annotation</strong> — declares an AI agent with endpoint, commands, tools, and protocol exposure</li>
-<li><strong>@Coordinator + @Fleet</strong> — multi-agent orchestration with parallel fan-out, sequential pipelines, and weighted routing</li>
-<li><strong>AgentRuntime SPI</strong> — pluggable AI backends: Spring AI, LangChain4j, Google ADK, Embabel, or built-in</li>
-<li><strong>@AiTool portable tools</strong> — tools that work across all LLM backends</li>
-<li><strong>Conversation memory</strong> — built-in session-scoped conversation history</li>
-<li><strong>MCP, A2A, AG-UI</strong> — three open protocols auto-registered based on classpath</li>
-<li><strong>Multi-channel</strong> — Slack, Telegram, Discord, WhatsApp, Messenger routing</li>
-<li><strong>Built-in AI Console UI</strong> — development and production chat interface served automatically</li>
-</ul>`,
-  },
-  {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="16 18 22 12 16 6"/>
-      <polyline points="8 6 2 12 8 18"/>
-    </svg>`,
-    title: 'Client SDKs',
-    description: 'atmosphere.js ships hooks for React, Vue, and Svelte with rooms, presence tracking, offline queues, and streaming out of the box. Also available for React Native.',
-    detail: `<ul>
-<li><strong>useAtmosphere</strong> — subscribe, push, and track connection state</li>
-<li><strong>useStreaming</strong> — stream AI text with progress and metadata</li>
-<li><strong>useRoom</strong> — join rooms, track members, broadcast and direct message</li>
-<li><strong>Offline queue</strong> — buffer messages while disconnected, auto-drain on reconnect</li>
-<li><strong>Auth tokens</strong> — automatic token refresh and session management</li>
-<li><strong>React, Vue, Svelte</strong> — native hooks for each framework</li>
-<li><strong>React Native</strong> — AppState/NetInfo-aware with EventSource polyfill</li>
-</ul>`,
-  },
-  {
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
-      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
-      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
-      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
-    </svg>`,
-    title: 'Spring Boot & Quarkus',
-    description: 'Auto-configured starters for both frameworks. Add one dependency to your existing app — Atmosphere handles the real-time layer without rewiring anything.',
-    detail: `<ul>
-<li><strong>Spring Boot 4.0 starter</strong> — auto-configuration, annotation scanning, observability</li>
-<li><strong>Quarkus 3.21 extension</strong> — build-time annotation scanning, native image support</li>
-<li><strong>Micrometer metrics</strong> — connection counts, message throughput, AI latency</li>
-<li><strong>OpenTelemetry tracing</strong> — span propagation across transports and AI calls</li>
-<li><strong>Health checks</strong> — readiness and liveness probes for Kubernetes</li>
-<li><strong>Virtual threads</strong> — enabled by default on JDK 21+</li>
-</ul>`,
+    label: 'AI Runtimes',
+    title: '6 backends, swap by dependency',
+    description: 'Atmosphere is the infrastructure layer underneath your LLM library. Your @Agent and @AiTool annotations work identically across all backends.',
+    items: [
+      { name: 'Built-in', detail: 'Atmosphere\'s zero-dependency OpenAI-compatible client. Supports function calling (up to 5 rounds), streaming, and structured output with Gemini, OpenAI, and Ollama out of the box.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
+      { name: 'Spring AI', detail: 'Spring\'s official AI framework. ChatClient, RAG, VectorStore, and auto-configuration. Atmosphere bridges @AiTool to Spring AI\'s function calling system.', url: 'https://spring.io/projects/spring-ai', urlLabel: 'spring.io' },
+      { name: 'LangChain4j', detail: 'Java port of the LangChain ecosystem. Chains, AI services, and tool bridging. Atmosphere auto-detects LangChain4j on the classpath and registers tools.', url: 'https://docs.langchain4j.dev', urlLabel: 'langchain4j.dev' },
+      { name: 'Google ADK', detail: 'Google\'s Agent Development Kit for building multi-agent systems. Atmosphere integrates as a transport and protocol layer for ADK agents.', url: 'https://google.github.io/adk-docs/', urlLabel: 'Google ADK Docs' },
+      { name: 'Embabel', detail: 'Goal-driven agent framework by Rod Johnson (creator of Spring). Agents define goals and Embabel plans execution. Atmosphere provides the real-time delivery layer.', url: 'https://embabel.com', urlLabel: 'embabel.com' },
+      { name: 'JetBrains Koog', detail: 'Kotlin-native AI framework by JetBrains. Brings structured concurrency and Kotlin idioms to agent development. Atmosphere serves as the transport and protocol layer.', url: 'https://github.com/JetBrains/koog', urlLabel: 'GitHub' },
+    ],
+    extras: ['Portable @AiTool across all backends', 'Conversation memory', 'Structured output', 'Usage tracking'],
   },
 ];
 ---
 
-<section class="atmosphere" id="atmosphere">
-  <div class="atmosphere-container">
+<section class="pillars" id="atmosphere">
+  <div class="pillars-container">
     <div class="section-header">
-      <span class="section-label">Atmosphere 4.0</span>
-      <h2 class="section-title">Everything real-time, one framework</h2>
+      <span class="section-label">The Platform</span>
+      <h2 class="section-title">Transports. Protocols. Runtimes.</h2>
       <p class="section-description">
-        Transport layer, rooms, presence, AI streaming, agent protocols, LLM backends, and client SDKs —
-        from classic pub/sub to multi-agent orchestration, Atmosphere handles the real-time layer
-        so you can focus on what makes your application different.
+        Build once with <code>@Agent</code> &mdash; deliver over any transport and any protocol.
+        Three distinct layers, each independently extensible.
       </p>
     </div>
 
-    <div class="capabilities-grid">
-      {capabilities.map((cap, index) => (
-        <article class="capability-card" data-cap={index} role="button" tabindex="0" style={`--delay: ${(index * 0.1).toFixed(1)}s`}>
-          <div class="capability-header">
-            <div class="capability-icon" set:html={cap.icon} />
-            {cap.badge && <span class="capability-badge">{cap.badge}</span>}
+    <div class="pillars-grid">
+      {pillars.map((pillar, pIdx) => (
+        <div class="pillar-card" style={`--delay: ${(pIdx * 0.12).toFixed(2)}s`}>
+          <div class="pillar-header">
+            <span class="pillar-label">{pillar.label}</span>
+            <h3 class="pillar-title">{pillar.title}</h3>
+            <p class="pillar-description" set:html={pillar.description} />
           </div>
-          <h3 class="capability-title">{cap.title}</h3>
-          <p class="capability-description">{cap.description}</p>
-          <span class="capability-hint">Click to explore</span>
-        </article>
+
+          <ul class="pillar-items">
+            {pillar.items.map((item, iIdx) => (
+              <li class="pillar-item" data-pillar={pIdx} data-item={iIdx} role="button" tabindex="0">
+                <span class="item-name">
+                  {item.name}
+                  <svg class="item-arrow" width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="item-detail">{item.detail.split('.')[0]}.</span>
+              </li>
+            ))}
+          </ul>
+
+          <div class="pillar-extras">
+            {pillar.extras.map((extra) => (
+              <span class="extra-tag">{extra}</span>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   </div>
 
-  <!-- Shared modal -->
-  <div class="modal-overlay" id="capModal" aria-hidden="true">
+  <!-- Modal -->
+  <div class="modal-overlay" id="pillarModal" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true">
       <button class="modal-close" aria-label="Close">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l10 10M14 4L4 14"/></svg>
       </button>
       <div class="modal-hero">
         <div class="modal-hero-glow"></div>
-        <div class="modal-icon" id="capModalIcon"></div>
         <div class="modal-hero-text">
-          <span class="modal-label">Atmosphere 4.0</span>
-          <h3 class="modal-title" id="capModalTitle"></h3>
+          <span class="modal-label" id="pillarModalLabel"></span>
+          <h3 class="modal-title" id="pillarModalTitle"></h3>
         </div>
       </div>
       <div class="modal-divider"></div>
-      <div class="modal-body" id="capModalBody"></div>
+      <div class="modal-body" id="pillarModalBody"></div>
+      <div class="modal-footer" id="pillarModalFooter"></div>
     </div>
   </div>
 </section>
 
-<script define:vars={{ capabilities }}>
+<script define:vars={{ pillars }}>
   document.addEventListener('DOMContentLoaded', () => {
-    const overlay = document.getElementById('capModal');
-    const modalIcon = document.getElementById('capModalIcon');
-    const modalTitle = document.getElementById('capModalTitle');
-    const modalBody = document.getElementById('capModalBody');
+    const overlay = document.getElementById('pillarModal');
+    const modalLabel = document.getElementById('pillarModalLabel');
+    const modalTitle = document.getElementById('pillarModalTitle');
+    const modalBody = document.getElementById('pillarModalBody');
+    const modalFooter = document.getElementById('pillarModalFooter');
     const closeBtn = overlay.querySelector('.modal-close');
 
-    function openModal(index) {
-      const c = capabilities[index];
-      modalIcon.innerHTML = c.icon;
-      modalTitle.textContent = c.title;
-      modalBody.innerHTML = c.detail;
+    function openModal(pIdx, iIdx) {
+      const pillar = pillars[pIdx];
+      const item = pillar.items[iIdx];
+      modalLabel.textContent = pillar.label;
+      modalTitle.textContent = item.name;
+      modalBody.innerHTML = `<p>${item.detail}</p>`;
+      modalFooter.innerHTML = `<a href="${item.url}" class="modal-link" target="_blank" rel="noopener noreferrer">
+        ${item.urlLabel}
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M4 12L12 4M12 4H6M12 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>`;
       overlay.setAttribute('aria-hidden', 'false');
       overlay.classList.add('active');
       document.body.style.overflow = 'hidden';
@@ -169,10 +138,11 @@ const capabilities = [
       document.body.style.overflow = '';
     }
 
-    document.querySelectorAll('.capability-card[data-cap]').forEach(card => {
-      card.addEventListener('click', () => openModal(Number(card.dataset.cap)));
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(Number(card.dataset.cap)); }
+    document.querySelectorAll('.pillar-item[data-pillar]').forEach(item => {
+      const handler = () => openModal(Number(item.dataset.pillar), Number(item.dataset.item));
+      item.addEventListener('click', handler);
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
       });
     });
 
@@ -183,12 +153,12 @@ const capabilities = [
 </script>
 
 <style>
-  .atmosphere {
+  .pillars {
     padding: var(--space-4xl) var(--space-xl);
     position: relative;
   }
 
-  .atmosphere::before {
+  .pillars::before {
     content: '';
     position: absolute;
     top: 0;
@@ -198,14 +168,14 @@ const capabilities = [
     background: linear-gradient(90deg, transparent, var(--color-border-accent), transparent);
   }
 
-  .atmosphere-container {
+  .pillars-container {
     max-width: 1200px;
     margin: 0 auto;
   }
 
   .section-header {
     text-align: center;
-    max-width: 600px;
+    max-width: 640px;
     margin: 0 auto var(--space-3xl);
   }
 
@@ -235,97 +205,144 @@ const capabilities = [
     line-height: 1.6;
   }
 
-  .capabilities-grid {
+  .section-description code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--color-accent);
+    background: var(--color-accent-glow);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+
+  .pillars-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-lg);
   }
 
-  .capability-card {
-    padding: var(--space-xl);
+  .pillar-card {
+    display: flex;
+    flex-direction: column;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: 16px;
+    padding: var(--space-xl);
     transition: all 0.3s var(--ease-out-quad);
     animation: fadeInUp 0.6s var(--ease-out-expo) var(--delay) both;
-    cursor: pointer;
   }
 
-  .capability-card:hover {
+  .pillar-card:hover {
     border-color: var(--color-border-accent);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
   }
 
-  .capability-card:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+  .pillar-header {
+    margin-bottom: var(--space-xl);
   }
 
-  .capability-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
-  }
-
-  .capability-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    background: var(--color-accent-glow);
-    border-radius: 10px;
-    color: var(--color-accent);
-    transition: all 0.3s var(--ease-out-quad);
-  }
-
-  .capability-card:hover .capability-icon {
-    background: var(--color-accent);
-    color: var(--color-bg-primary);
-  }
-
-  .capability-badge {
+  .pillar-label {
+    display: inline-block;
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     color: var(--color-accent);
     background: var(--color-accent-glow);
-    padding: 0.2em 0.6em;
+    padding: 0.25em 0.75em;
     border-radius: 4px;
-    border: 1px solid rgba(0, 212, 255, 0.25);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    margin-bottom: var(--space-md);
   }
 
-  .capability-title {
-    font-family: var(--font-body);
-    font-size: 1.125rem;
-    font-weight: 600;
+  .pillar-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
     margin-bottom: var(--space-sm);
   }
 
-  .capability-description {
+  .pillar-description {
     font-size: 0.9375rem;
     color: var(--color-text-secondary);
     line-height: 1.6;
   }
 
-  .capability-hint {
-    display: block;
-    margin-top: var(--space-md);
+  .pillar-items {
+    list-style: none;
+    flex-grow: 1;
+    margin-bottom: var(--space-lg);
+  }
+
+  .pillar-item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-sm) var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s var(--ease-out-quad);
+  }
+
+  .pillar-item:last-child {
+    border-bottom: none;
+  }
+
+  .pillar-item:hover {
+    background: var(--color-bg-tertiary);
+    border-color: transparent;
+  }
+
+  .pillar-item:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+
+  .item-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 0.15em;
+  }
+
+  .item-arrow {
     color: var(--color-accent);
     opacity: 0;
     transform: translateX(-4px);
-    transition: all 0.3s var(--ease-out-quad);
+    transition: all 0.2s var(--ease-out-quad);
   }
 
-  .capability-card:hover .capability-hint {
+  .pillar-item:hover .item-arrow {
     opacity: 1;
     transform: translateX(0);
+  }
+
+  .item-detail {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  .pillar-extras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .extra-tag {
+    font-size: 0.6875rem;
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    background: var(--color-bg-tertiary);
+    padding: 0.2em 0.6em;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
   }
 
   /* ── Modal ── */
@@ -351,7 +368,7 @@ const capabilities = [
 
   .modal {
     position: relative;
-    width: min(680px, 100%);
+    width: min(560px, 100%);
     max-height: calc(100vh - var(--space-3xl));
     overflow-y: auto;
     background: var(--color-bg-secondary);
@@ -415,20 +432,6 @@ const capabilities = [
     pointer-events: none;
   }
 
-  .modal-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dim));
-    border-radius: 14px;
-    color: var(--color-bg-primary);
-    box-shadow: 0 8px 24px -8px rgba(0, 212, 255, 0.3);
-  }
-
   .modal-hero-text {
     position: relative;
     display: flex;
@@ -464,43 +467,40 @@ const capabilities = [
   }
 
   .modal-body {
-    padding: var(--space-xl) var(--space-2xl) var(--space-2xl);
+    padding: var(--space-xl) var(--space-2xl) var(--space-md);
     font-size: 0.9375rem;
     line-height: 1.8;
     color: var(--color-text-secondary);
   }
 
-  .modal-body :global(ul) {
-    list-style: none;
-    padding: 0;
+  .modal-body :global(p) {
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
   }
 
-  .modal-body :global(li) {
-    position: relative;
-    padding-left: 1.75em;
-    line-height: 1.7;
+  .modal-footer {
+    padding: 0 var(--space-2xl) var(--space-2xl);
   }
 
-  .modal-body :global(li::before) {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.55em;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+  .modal-footer :global(.modal-link) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-accent);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-accent-glow);
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    border-radius: 6px;
+    transition: all 0.2s var(--ease-out-quad);
+    text-decoration: none;
+  }
+
+  .modal-footer :global(.modal-link:hover) {
     background: var(--color-accent);
-    opacity: 0.5;
-    box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
-  }
-
-  .modal-body :global(strong) {
-    color: var(--color-text-primary);
-    font-weight: 600;
+    color: var(--color-bg-primary);
+    border-color: var(--color-accent);
   }
 
   @keyframes fadeInUp {
@@ -508,25 +508,25 @@ const capabilities = [
     to { opacity: 1; transform: translateY(0); }
   }
 
-  @media (max-width: 640px) {
-    .atmosphere {
-      padding: var(--space-3xl) var(--space-md);
-    }
-
-    .capabilities-grid {
+  @media (max-width: 1024px) {
+    .pillars-grid {
       grid-template-columns: 1fr;
+      max-width: 560px;
+      margin: 0 auto;
     }
+  }
 
-    .capability-hint {
-      opacity: 1;
-      transform: translateX(0);
+  @media (max-width: 640px) {
+    .pillars {
+      padding: var(--space-3xl) var(--space-md);
     }
 
     .modal-overlay { padding: var(--space-sm); }
     .modal { border-radius: 16px; }
-    .modal-hero { flex-direction: column; align-items: flex-start; padding: var(--space-xl) var(--space-lg) var(--space-lg); }
+    .modal-hero { padding: var(--space-xl) var(--space-lg) var(--space-lg); }
     .modal-hero-text { padding-right: 0; }
     .modal-divider { margin: 0 var(--space-lg); }
-    .modal-body { padding: var(--space-lg); }
+    .modal-body { padding: var(--space-lg) var(--space-lg) var(--space-sm); }
+    .modal-footer { padding: 0 var(--space-lg) var(--space-lg); }
   }
 </style>

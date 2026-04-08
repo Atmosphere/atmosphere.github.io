@@ -4,7 +4,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = "Async IO builds Atmosphere — the open-source Java framework for WebSocket, SSE, rooms, presence, and AI streaming on Spring Boot and Quarkus." } = Astro.props;
+const { title, description = "Async-IO.org is the company behind Atmosphere — the real-time transport layer for Java AI agents. Enterprise support, agent protocols (MCP, A2A, AG-UI), 6 AI runtimes, and 5 transports including WebTransport/HTTP3." } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -14,7 +14,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <meta name="keywords" content="Java, WebSocket, SSE, Real-time, AI, LLM, Streaming, MCP, Virtual Threads, Spring Boot, Quarkus, Kafka, Redis, Clustering, JVM, Framework" />
+    <meta name="keywords" content="Java, AI Agents, MCP, A2A, AG-UI, WebSocket, SSE, WebTransport, HTTP3, gRPC, Real-time, LLM, Streaming, Spring AI, LangChain4j, Google ADK, Spring Boot, Quarkus, JVM, Enterprise Support" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalUrl.href} />
 
