@@ -11,11 +11,11 @@ Atmosphere is a transport-agnostic real-time framework for the JVM. Write to a B
 
 **Want a running app now?** Install the CLI and run a sample in 30 seconds: [Install & Run](/docs/tutorial/00-cli/).
 
-**New to Atmosphere?** Start with the [Tutorial](/docs/tutorial/01-introduction/) — a 20-chapter guide that builds your understanding from first principles to production deployment.
+**New to Atmosphere?** Start with the [Tutorial](/docs/tutorial/01-introduction/) — a 24-chapter guide that builds your understanding from first principles to production deployment.
 
 **Looking for a specific feature?** Use the Reference section for API details on the core runtime, rooms, AI, MCP, and more.
 
-**Integrating with a framework?** The Integrations section covers Spring Boot 4.0, Quarkus 3.21, and AI framework adapters.
+**Integrating with a framework?** The Integrations section covers Spring Boot 4.0, Quarkus 3.31, and AI framework adapters.
 
 ## Quick Links
 
@@ -53,4 +53,4 @@ Atmosphere is a transport-agnostic real-time framework for the JVM. Write to a B
 
 ## Version
 
-This documentation covers **Atmosphere 4.0** with JDK 21+, Spring Boot 4.0, and Quarkus 3.21.
+This documentation covers the **Atmosphere 4.0.x** release line with JDK 21+, Spring Boot 4.0.5 (Spring Framework 6.2.8), and Quarkus 3.31.3. See [What's New](/docs/whats-new/) for a highlights reel of changes since the 4.0.0 release.
