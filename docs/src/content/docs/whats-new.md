@@ -185,9 +185,11 @@ This page is a highlights reel. For the per-patch history, see the
 ## MCP (Model Context Protocol)
 
 - **MCP server** — expose tools, resources, and prompt templates to AI agents
-  with `@McpServer` / `@McpTool` / `@McpResource` / `@McpPrompt` annotations over
-  Streamable HTTP (MCP 2025-03-26 spec), WebSocket, or SSE, with a stdio bridge
-  for Claude Desktop and a programmatic `McpRegistry` API. See
+  with `@McpTool` / `@McpResource` / `@McpPrompt` annotations on any class
+  marked `@Agent` (there is no dedicated `@McpServer` annotation — the MCP
+  module reuses `@Agent` from `atmosphere-agent`). Supports Streamable HTTP
+  (MCP 2025-03-26 spec), WebSocket, or SSE, with a stdio bridge for Claude
+  Desktop and a programmatic `McpRegistry` API. See
   [MCP Reference](/docs/reference/mcp/).
 - **OpenTelemetry tracing** — `McpTracing` auto-instruments tool, resource, and
   prompt calls with span propagation.
@@ -208,19 +210,32 @@ This page is a highlights reel. For the per-patch history, see the
 
 ## Samples
 
-Four official AI framework samples have been forked and augmented with
-Atmosphere's real-time streaming, tool calling, cost metering, and content
-safety, plus new multi-agent demos:
+Atmosphere 4.0 ships with a wide set of runnable samples covering every
+major feature area — real-time chat, AI streaming with multiple providers,
+tool calling, multi-agent orchestration, MCP, RAG, clustering, durable
+sessions, and channel integrations. The full catalogue lives at
+[`samples/` on GitHub](https://github.com/Atmosphere/atmosphere/tree/main/samples).
+Highlights:
 
-| Sample | Forked from | Atmosphere features added |
-|--------|-------------|---------------------------|
-| `spring-boot-langchain4j-tools` | `langchain4j-examples/spring-boot-example` | Tool calling, PII redaction, cost metering |
-| `spring-boot-spring-ai-routing` | `spring-ai-examples/routing-workflow` | Prompt routing, content safety, cost metering |
-| `spring-boot-embabel-horoscope` | `embabel-agent-examples/horoscope` | Step progress streaming, content safety |
-| `spring-boot-adk-tools` | `adk-java/city-time-weather` | Tool calling, streaming text budgets, response caching |
-| `spring-boot-agent-chat` | *new* | DevOps assistant with `/status`, `/deploy`, `/uptime`, `/incidents` commands |
-| `spring-boot-dentist-agent` | *new* | Dr. Molar emergency dental agent with Slack + Telegram channels |
-| `spring-boot-orchestration-demo` | *new* | Support desk with live handoff between two agents and `@RequiresApproval` on `cancel_account` |
+| Sample | Feature area |
+|--------|--------------|
+| `spring-boot-ai-chat` | Streaming AI chat via the `AgentRuntime` SPI (auto-selects provider) |
+| `spring-boot-ai-tools` | Portable `@AiTool` tool calling across all runtimes |
+| `spring-boot-ai-classroom` | Multi-room AI with a React Native / Expo client |
+| `spring-boot-rag-chat` | Retrieval-augmented generation with `ContextProvider` |
+| `spring-boot-mcp-server` | MCP server exposing tools, resources, and prompts |
+| `spring-boot-a2a-agent` | A2A protocol agent-to-agent communication |
+| `spring-boot-agui-chat` | AG-UI protocol with progressive UI streaming |
+| `spring-boot-dentist-agent` | Dr. Molar emergency dental agent with Slack + Telegram channels |
+| `spring-boot-multi-agent-startup-team` | `@Coordinator` multi-agent workflow |
+| `spring-boot-checkpoint-agent` | Durable HITL workflow with `CheckpointStore` |
+| `spring-boot-orchestration-demo` | Support desk with live handoff and `@RequiresApproval` |
+| `spring-boot-durable-sessions` | Session persistence across restarts |
+| `spring-boot-channels-chat` | Multi-channel (Slack/Telegram/Discord) chat |
+| `spring-boot-koog-chat` | Koog runtime streaming chat |
+| `spring-boot-otel-chat` | OpenTelemetry tracing with Jaeger |
+| `quarkus-chat` | Quarkus extension chat |
+| `grpc-chat` | Standalone gRPC transport |
 
 ## Developer Experience
 

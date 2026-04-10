@@ -10,12 +10,18 @@ Builder API and coroutine extensions for Atmosphere.
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-kotlin</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
+
+Maven 3.5+ no longer resolves `<version>LATEST</version>` for regular dependencies; pin an explicit version. A `<properties>` placeholder keeps cross-module upgrades to a single line.
 
 ## DSL Builder
 
@@ -75,7 +81,7 @@ These extensions use `kotlinx.coroutines` to bridge Atmosphere's `Future`-based 
 
 ## Samples
 
-- [Spring Boot Chat](../samples/spring-boot-chat/) -- can be used with Kotlin DSL
+- [Spring Boot Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat) -- can be used with Kotlin DSL
 
 ## See Also
 

@@ -474,7 +474,7 @@ To opt out and use platform threads instead (e.g., for compatibility with librar
 
 ```xml
 <init-param>
-    <param-name>org.atmosphere.cpr.useVirtualThreads</param-name>
+    <param-name>org.atmosphere.useVirtualThreads</param-name>
     <param-value>false</param-value>
 </init-param>
 ```

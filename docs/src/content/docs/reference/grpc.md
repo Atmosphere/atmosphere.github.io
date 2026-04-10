@@ -10,12 +10,18 @@ Bidirectional streaming transport for Atmosphere using grpc-java. Clients can su
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-grpc</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
+
+Maven 3.5+ no longer resolves `<version>LATEST</version>` for regular dependencies; pin an explicit version. A `<properties>` placeholder keeps cross-module upgrades to a single line.
 
 ## Standalone Server
 
@@ -164,5 +170,5 @@ Requires `grpc-netty-shaded`, `grpc-protobuf`, and `grpc-stub` on the classpath.
 ## See Also
 
 - [Core Runtime](core.md)
-- [Spring Boot Integration](spring-boot.md) -- auto-configured gRPC in Spring Boot
-- [wAsync Java Client](client-java.md) -- gRPC transport support
+- [Spring Boot Integration](/docs/integrations/spring-boot/) -- auto-configured gRPC in Spring Boot
+- [wAsync Java Client](/docs/clients/java/) -- gRPC transport support

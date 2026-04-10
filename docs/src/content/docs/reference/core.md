@@ -10,12 +10,18 @@ The core framework for building real-time web applications in Java. Provides a p
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-runtime</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
+
+Maven 3.5+ no longer resolves `<version>LATEST</version>` for regular dependencies; pin an explicit version. A `<properties>` placeholder keeps cross-module upgrades to a single line.
 
 ## Key Concepts
 
@@ -93,7 +99,7 @@ org.atmosphere.useVirtualThreads=false
 
 ## GraalVM Native Image
 
-The runtime includes AOT hints for native image compilation. See the [Spring Boot](spring-boot.md) and [Quarkus](quarkus.md) docs for framework-specific native image instructions.
+The runtime includes AOT hints for native image compilation. See the [Spring Boot](/docs/integrations/spring-boot/) and [Quarkus](/docs/integrations/quarkus/) docs for framework-specific native image instructions.
 
 ## Samples
 
@@ -102,8 +108,8 @@ The runtime includes AOT hints for native image compilation. See the [Spring Boo
 
 ## See Also
 
-- [Spring Boot Integration](spring-boot.md)
-- [Quarkus Integration](quarkus.md)
+- [Spring Boot Integration](/docs/integrations/spring-boot/)
+- [Quarkus Integration](/docs/integrations/quarkus/)
 - [Rooms & Presence](rooms.md)
 - [Observability](observability.md)
-- [Module README](../modules/cpr/README.md)
+- [Module README](https://github.com/Atmosphere/atmosphere/tree/main/modules/cpr)

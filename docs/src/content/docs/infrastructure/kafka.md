@@ -10,12 +10,18 @@ Cross-node broadcasting via Kafka. Messages broadcast on one node are delivered 
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-kafka</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
+
+Maven 3.5+ no longer resolves `<version>LATEST</version>` for regular dependencies; pin an explicit version. A `<properties>` placeholder keeps cross-module upgrades to a single line.
 
 ## Quick Start
 
@@ -60,4 +66,4 @@ The consumer loop runs on a virtual thread.
 ## See Also
 
 - [Redis Clustering](redis.md)
-- [Core Runtime](core.md) -- Broadcaster API
+- [Core Runtime](/docs/reference/core/) -- Broadcaster API

@@ -5,6 +5,18 @@ sidebar:
   order: 19
 ---
 
+<!--
+  ORPHAN NOTE (cross-ref sweep, 2026-04-10):
+  This file is not currently referenced from the sidebar in astro.config.mjs.
+  The sidebar links to `clients/javascript` instead, which is a shorter
+  quick-reference. This tutorial chapter is a full client deep-dive
+  (~1200 lines) and contains material not covered in clients/javascript.
+  Decision deferred to ChefFamille: either merge the unique material into
+  clients/javascript and delete this file, or add this file to the sidebar
+  under Tutorial > Real-Time Infrastructure. Do NOT remove without review.
+-->
+
+
 Every Atmosphere server needs a client. The official TypeScript client library, `atmosphere.js`, provides a transport-agnostic API that works in the browser, Node.js, and React Native. It ships with first-class hooks for React, Vue, Svelte, and React Native.
 
 ## Installation

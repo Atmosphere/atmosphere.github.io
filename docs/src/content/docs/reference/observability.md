@@ -77,8 +77,8 @@ framework.interceptor(new BackpressureInterceptor());
 
 ## Samples
 
-- [Spring Boot OTel Chat](../samples/spring-boot-otel-chat/) -- OpenTelemetry tracing with Jaeger
-- [Spring Boot Chat](../samples/spring-boot-chat/) -- Micrometer metrics and Actuator health
+- [Spring Boot OTel Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-otel-chat) -- OpenTelemetry tracing with Jaeger
+- [Spring Boot Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat) -- Micrometer metrics and Actuator health
 
 ## See Also
 
