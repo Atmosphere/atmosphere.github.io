@@ -369,4 +369,4 @@ A ready-to-import Grafana dashboard is available at `samples/shared-resources/gr
 - The OTel chat sample shows end-to-end tracing with Jaeger
 - A Grafana dashboard is available for out-of-the-box monitoring
 
-Next up: [Chapter 19: atmosphere.js Client](/docs/tutorial/19-client/) covers the TypeScript client library.
+Next up: the [atmosphere.js TypeScript client](/docs/clients/javascript/) covers the full client API.

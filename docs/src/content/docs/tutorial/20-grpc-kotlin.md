@@ -187,7 +187,7 @@ This means a WebSocket browser client, an SSE mobile client, and a gRPC microser
 
 ### Java Client (wAsync) gRPC
 
-The [Java client (wAsync)](/docs/tutorial/19-client/#java-client-wasync) supports gRPC as a transport. Use the `grpc://` URI scheme:
+The [wAsync Java client](/docs/clients/java/#grpc-transport) supports gRPC as a transport. Use the `grpc://` URI scheme:
 
 ```java
 Client client = Client.newClient();

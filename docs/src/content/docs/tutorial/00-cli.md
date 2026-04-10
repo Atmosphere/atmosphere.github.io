@@ -9,17 +9,40 @@ Get a running Atmosphere app in seconds — no Maven, no project setup, no boile
 
 ## Install the CLI
 
+Pick whichever package manager you already have:
+
+### curl
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Atmosphere/atmosphere/main/cli/install.sh | sh
 ```
 
-Or with Homebrew:
+The installer checks for Java 21+, downloads the `atmosphere` script to `/usr/local/bin`, and creates `~/.atmosphere/` for caching.
+
+### Homebrew (macOS, Linux)
 
 ```bash
 brew install Atmosphere/tap/atmosphere
 ```
 
-The installer checks for Java 21+, downloads the `atmosphere` script to `/usr/local/bin`, and creates `~/.atmosphere/` for caching.
+### SDKMAN (macOS, Linux, WSL)
+
+```bash
+sdk install atmosphere
+```
+
+SDKMAN manages JDKs, Gradle, Maven, and now Atmosphere side-by-side. Switch versions with `sdk use atmosphere <version>` and list releases with `sdk list atmosphere`. If you haven't installed SDKMAN yet, see [sdkman.io](https://sdkman.io/install).
+
+### npx (zero install, scaffolding only)
+
+No Java CLI needed — scaffold a project straight from npm:
+
+```bash
+npx create-atmosphere-app my-chat-app
+npx create-atmosphere-app my-ai-app --template ai-chat
+```
+
+`npx` gives you `atmosphere new` functionality without a local install, but running samples still needs the full CLI (`curl`, `brew`, or `sdk` above).
 
 ## Run Your First App
 

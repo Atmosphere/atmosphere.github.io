@@ -200,7 +200,7 @@ subscription.push(JSON.stringify({ author: 'Alice', message: 'Hello!' }));
 </script>
 ```
 
-See [Chapter 19: atmosphere.js Client](/docs/tutorial/19-client/) for the full client API.
+See the [atmosphere.js client reference](/docs/clients/javascript/) for the full client API.
 
 ## Reverse Proxy (Nginx)
 
