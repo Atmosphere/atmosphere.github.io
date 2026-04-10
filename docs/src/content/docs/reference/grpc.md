@@ -121,7 +121,7 @@ public GrpcHandler grpcHandler() {
 
 ```bash
 grpcurl -plaintext -d '{"type":"SUBSCRIBE","topic":"/chat"}' \
-  localhost:9090 atmosphere.AtmosphereService/Stream
+  localhost:9090 org.atmosphere.grpc.AtmosphereService/Stream
 ```
 
 ## GrpcChannel API
@@ -159,7 +159,7 @@ Requires `grpc-netty-shaded`, `grpc-protobuf`, and `grpc-stub` on the classpath.
 
 ## Samples
 
-- [gRPC Chat](../samples/grpc-chat/) -- standalone gRPC server example
+- [gRPC Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/grpc-chat) -- standalone gRPC server example
 
 ## See Also
 

@@ -99,7 +99,7 @@ public interface SessionStore {
 
 ## Samples
 
-- [Spring Boot Durable Sessions](../samples/spring-boot-durable-sessions/) -- session persistence example
+- [Spring Boot Durable Sessions](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-durable-sessions) -- session persistence example
 
 ## See Also
 

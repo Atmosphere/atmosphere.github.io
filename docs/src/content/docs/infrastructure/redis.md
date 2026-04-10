@@ -22,14 +22,14 @@ Cross-node broadcasting via Redis pub/sub. Messages broadcast on one node are de
 Configure the broadcaster class and Redis connection:
 
 ```properties
-org.atmosphere.cpr.broadcasterClass=org.atmosphere.redis.RedisBroadcaster
+org.atmosphere.cpr.broadcasterClass=org.atmosphere.plugin.redis.RedisBroadcaster
 org.atmosphere.redis.url=redis://localhost:6379
 ```
 
 Or use `RedisClusterBroadcastFilter` with the default broadcaster:
 
 ```properties
-org.atmosphere.cpr.broadcastFilterClasses=org.atmosphere.redis.RedisClusterBroadcastFilter
+org.atmosphere.cpr.broadcastFilterClasses=org.atmosphere.plugin.redis.RedisClusterBroadcastFilter
 org.atmosphere.redis.url=redis://localhost:6379
 ```
 
@@ -37,7 +37,7 @@ org.atmosphere.redis.url=redis://localhost:6379
 
 ```yaml
 atmosphere:
-  broadcaster-class: org.atmosphere.redis.RedisBroadcaster
+  broadcaster-class: org.atmosphere.plugin.redis.RedisBroadcaster
   init-params:
     org.atmosphere.redis.url: redis://localhost:6379
 ```

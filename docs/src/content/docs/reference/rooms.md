@@ -17,7 +17,8 @@ lobby.enableHistory(100); // replay last 100 messages to new joiners
 lobby.join(resource, new RoomMember("user-1", Map.of("name", "Alice")));
 lobby.broadcast("Hello everyone!");
 lobby.onPresence(event -> log.info("{} {} room '{}'",
-    event.member().id(), event.type(), event.room().name()));
+    (event.memberInfo() != null ? event.memberInfo().id() : event.member().uuid()),
+    event.type(), event.room().name()));
 ```
 
 ## Room API
@@ -42,9 +43,10 @@ room.leave(resource);
 
 ```java
 room.onPresence(event -> {
+    String memberId = (event.memberInfo() != null ? event.memberInfo().id() : event.member().uuid());
     switch (event.type()) {
-        case JOIN -> log.info("{} joined {}", event.member().id(), event.room().name());
-        case LEAVE -> log.info("{} left {}", event.member().id(), event.room().name());
+        case JOIN -> log.info("{} joined {}", memberId, event.room().name());
+        case LEAVE -> log.info("{} left {}", memberId, event.room().name());
     }
 });
 ```
@@ -109,7 +111,7 @@ Vue and Svelte hooks are also available -- see [atmosphere.js](client-javascript
 
 ## Samples
 
-- [Spring Boot Chat](../samples/spring-boot-chat/) -- rooms, presence, REST API
+- [Spring Boot Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat) -- rooms, presence, REST API
 
 ## See Also
 

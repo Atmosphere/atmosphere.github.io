@@ -23,7 +23,7 @@ The core framework for building real-time web applications in Java. Provides a p
 
 **AtmosphereResource** -- a single connection. It wraps the underlying transport (WebSocket frame, SSE event stream, HTTP response, gRPC stream) behind a uniform API. Resources subscribe to Broadcasters.
 
-**Transport** -- the wire protocol. Atmosphere ships with WebSocket, SSE, Long-Polling, gRPC, and MCP transports. The transport is selected per-connection and can fall back automatically (WebSocket -> SSE -> Long-Polling).
+**Transport** -- the wire protocol. Atmosphere ships with 5 transports: WebTransport/HTTP3, WebSocket, SSE, Long-Polling, and gRPC. The transport is selected per-connection and can fall back automatically (WebSocket -> SSE -> Long-Polling). MCP is a protocol that rides on top of these transports (typically WebSocket, SSE, or Streamable HTTP), not a transport itself.
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ JDK 21 virtual threads are used by default. The `ExecutorsFactory` creates a `ne
 Opt out with:
 
 ```
-org.atmosphere.cpr.useVirtualThreads=false
+org.atmosphere.useVirtualThreads=false
 ```
 
 ## GraalVM Native Image
@@ -97,8 +97,8 @@ The runtime includes AOT hints for native image compilation. See the [Spring Boo
 
 ## Samples
 
-- [WAR Chat](../samples/chat/) -- standard WAR deployment with `@ManagedService`
-- [Embedded Jetty WebSocket Chat](../samples/embedded-jetty-websocket-chat/) -- programmatic Jetty with `@WebSocketHandlerService`
+- [WAR Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/chat) -- standard WAR deployment with `@ManagedService`
+- [Embedded Jetty WebSocket Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/embedded-jetty-websocket-chat) -- programmatic Jetty with `@WebSocketHandlerService`
 
 ## See Also
 
