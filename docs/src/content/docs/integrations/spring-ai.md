@@ -10,10 +10,14 @@ description: "AgentRuntime backed by Spring AI ChatClient"
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-spring-ai</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -68,11 +72,11 @@ The `ChatClient` bean must be configured separately via Spring AI's own starter.
 
 ## Samples
 
-- [Spring Boot Spring AI Chat](../samples/spring-boot-spring-ai-chat/) -- complete example with Spring AI adapter
+- [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- drop `atmosphere-spring-ai` on the classpath and the same `@AiEndpoint` code switches to Spring AI
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
-- [LangChain4j Adapter](langchain4j.md)
-- [Google ADK Adapter](adk.md)
-- [Embabel Adapter](embabel.md)
+- [AI Reference](../../reference/ai/) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
+- [LangChain4j Adapter](langchain4j/)
+- [Google ADK Adapter](adk/)
+- [Embabel Adapter](embabel/)

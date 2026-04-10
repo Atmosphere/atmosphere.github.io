@@ -10,10 +10,14 @@ description: "AgentRuntime backed by LangChain4j"
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-langchain4j</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -60,11 +64,11 @@ Bridges LangChain4j's `StreamingChatResponseHandler` to Atmosphere's `StreamingS
 
 ## Samples
 
-- [Spring Boot LangChain4j Chat](../samples/spring-boot-langchain4j-chat/) -- complete example with LangChain4j
+- [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- drop `atmosphere-langchain4j` on the classpath and the framework auto-selects LangChain4j
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
-- [Spring AI Adapter](spring-ai.md)
-- [Google ADK Adapter](adk.md)
-- [Embabel Adapter](embabel.md)
+- [AI Reference](../../reference/ai/) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
+- [Spring AI Adapter](spring-ai/)
+- [Google ADK Adapter](adk/)
+- [Embabel Adapter](embabel/)

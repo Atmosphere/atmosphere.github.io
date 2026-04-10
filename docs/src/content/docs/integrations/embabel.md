@@ -10,10 +10,14 @@ description: "AgentRuntime backed by Embabel AgentPlatform"
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-embabel</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -67,11 +71,11 @@ embabelAdapter.stream(AgentRequest("assistant") { channel ->
 
 ## Samples
 
-- [Spring Boot Embabel Chat](../samples/spring-boot-embabel-chat/) -- Embabel agent chat example
+- [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- drop `atmosphere-embabel` on the classpath and the framework auto-selects Embabel
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
-- [Spring AI Adapter](spring-ai.md)
-- [LangChain4j Adapter](langchain4j.md)
-- [Google ADK Adapter](adk.md)
+- [AI Reference](../../reference/ai/) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
+- [Spring AI Adapter](spring-ai/)
+- [LangChain4j Adapter](langchain4j/)
+- [Google ADK Adapter](adk/)

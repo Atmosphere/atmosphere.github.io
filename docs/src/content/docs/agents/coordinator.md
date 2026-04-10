@@ -55,10 +55,14 @@ public class CeoCoordinator {
 ## Dependency
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-coordinator</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -74,6 +78,8 @@ The coordinator module transitively pulls in `atmosphere-agent` and `atmosphere-
 | `skillFile` | `String` | `""` | Classpath resource path to the skill file (`.md`). The entire file becomes the system prompt. |
 | `description` | `String` | `""` | Human-readable description for Agent Card metadata. |
 | `version` | `String` | `"1.0.0"` | Coordinator version for Agent Card metadata. |
+| `responseAs` | `Class<?>` | `Void.class` | Target Java type for structured output from the coordinator's LLM synthesis. When set, the framework wraps the session with `StructuredOutputCapturingSession`, parses the LLM JSON response into the type, and emits `EntityStart` / `StructuredField` / `EntityComplete` events. Mirrors `@AiEndpoint#responseAs()`. |
+| `journalFormat` | `Class<? extends JournalFormat>` | `JournalFormat.class` (disabled) | Auto-emit a coordination journal as a tool card after `@Prompt` completes. Use `JournalFormat.Markdown.class` or a custom implementation; the framework emits a `ToolStart` / `ToolResult` event pair. |
 
 ### `@Fleet`
 
@@ -98,6 +104,9 @@ References an agent within a `@Fleet`. Exactly one of `value` (name-based) or `t
 | `version` | `String` | `""` | Expected agent version. Advisory — logged and warned at startup, not enforced. |
 | `required` | `boolean` | `true` | If `false`, coordinator starts even if this agent is unavailable. |
 | `weight` | `int` | `1` | Preference weight for routing decisions. Higher values = stronger preference. |
+| `maxRetries` | `int` | `0` | Maximum retry attempts for transient failures. `0` disables retries. Uses exponential backoff starting at 100ms (100ms, 200ms, 400ms, ...). |
+| `circuitBreaker` | `boolean` | `false` | Enable circuit-breaker protection. When `true`, the proxy is wrapped with `ResilientAgentProxy` which fast-fails once the circuit is open after repeated failures. |
+| `timeoutMs` | `long` | `0` | Per-agent call timeout in milliseconds. `0` means "use fleet default" (120s). Overrides the global parallel timeout for this specific agent. |
 
 **Class-based references** are compile-safe and provide IDE navigation:
 
@@ -197,6 +206,38 @@ Each agent in the fleet is represented by an `AgentProxy`. The proxy encapsulate
 | `call(skill, args)` | Synchronous call, returns `AgentResult` |
 | `callAsync(skill, args)` | Async call, returns `CompletableFuture<AgentResult>` |
 | `stream(skill, args, onToken, onComplete)` | Streaming call with token-by-token delivery |
+| `callWithHandle(skill, args)` | Start an async call on a virtual thread and return a cancellable `AgentExecution` handle that can be joined or cancelled independently |
+
+### AgentFleet reference
+
+Default-method additions on `AgentFleet` cover cancellable fan-out, live health, and per-scope listeners:
+
+| Method | Description |
+|--------|-------------|
+| `parallelCancellable(AgentCall... calls)` | Dispatch calls in parallel and return `Map<String, AgentExecution>` — non-blocking; callers control when to `join()` or `cancel()` individual executions. Duplicate agent names are disambiguated with `#2`, `#3` suffixes. |
+| `health()` | Snapshot of fleet health — per-agent availability, circuit-breaker state (`ResilientAgentProxy`), and recent failure counts. Streamable to clients for live dashboards. |
+| `withActivityListener(AgentActivityListener)` | Returns a new fleet instance with an additional activity listener. Use inside a `@Prompt` method to wire a per-session `StreamingActivityListener(session)` so every downstream call emits streaming tool-card events. |
+| `journal()` | Access the `CoordinationJournal` for querying past events. Returns `CoordinationJournal.NOOP` when journaling is disabled. |
+| `evaluate(result, originalCall)` | Run all registered `ResultEvaluator`s on a result. Returns an empty list if no evaluators are configured. |
+
+```java
+@Prompt
+public void onPrompt(String message, AgentFleet fleet, StreamingSession session) {
+    // Wire session-scoped streaming on every agent call
+    var liveFleet = fleet.withActivityListener(new StreamingActivityListener(session));
+
+    // Fan out with cancellable handles
+    var running = liveFleet.parallelCancellable(
+        liveFleet.call("research", "web_search", Map.of("query", message)),
+        liveFleet.call("strategy", "analyze", Map.of("topic", message))
+    );
+
+    // Publish live fleet health to the client
+    session.metadata("fleet.health", liveFleet.health());
+
+    running.values().forEach(AgentExecution::join);
+}
+```
 
 ## AgentResult
 

@@ -1,19 +1,23 @@
 ---
 title: "Quarkus"
-description: "Build-time processing for Quarkus 3.21+"
+description: "Build-time processing for Quarkus 3.31.3+"
 ---
 
 # Quarkus Integration
 
-A Quarkus extension that integrates Atmosphere with Quarkus 3.21+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and GraalVM native image support.
+A Quarkus extension that integrates Atmosphere with Quarkus 3.31.3+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and GraalVM native image support.
 
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-quarkus-extension</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -63,13 +67,14 @@ All properties are under the `quarkus.atmosphere.*` prefix:
 | `quarkus.atmosphere.packages` | (none) | Comma-separated packages to scan |
 | `quarkus.atmosphere.servlet-path` | `/atmosphere/*` | Servlet URL mapping |
 | `quarkus.atmosphere.session-support` | `false` | Enable HTTP session support |
+| `quarkus.atmosphere.websocket-support` | (auto) | Explicitly enable/disable WebSocket transport |
 | `quarkus.atmosphere.broadcaster-class` | (default) | Custom `Broadcaster` implementation |
 | `quarkus.atmosphere.broadcaster-cache-class` | (default) | Custom `BroadcasterCache` implementation |
 | `quarkus.atmosphere.load-on-startup` | `1` | Servlet load-on-startup order -- **must be > 0** |
-| `quarkus.atmosphere.heartbeat-interval-in-seconds` | (default) | Heartbeat interval |
+| `quarkus.atmosphere.heartbeat-interval` | (default) | Heartbeat interval (Duration string, e.g. `30s`) |
 | `quarkus.atmosphere.init-params` | (none) | Map of raw `ApplicationConfig` init params |
 
-> **Note:** `load-on-startup` must be > 0. Quarkus skips servlet initialization when this value is <= 0, unlike the standard Servlet spec where >= 0 means "load on startup."
+> **Note:** `load-on-startup` must be > 0. Quarkus skips servlet initialization when this value is <= 0, unlike the standard Servlet spec where >= 0 means "load on startup." See `modules/quarkus-extension/runtime/src/main/java/org/atmosphere/quarkus/runtime/AtmosphereConfig.java` for the full config schema.
 
 ## Running
 
@@ -82,18 +87,18 @@ mvn clean package -Pnative               # native image
 ## GraalVM Native Image
 
 ```bash
-./mvnw -Pnative package -pl samples/quarkus-chat
-./samples/quarkus-chat/target/atmosphere-quarkus-chat-*-runner
+cd samples/quarkus-chat && ../../mvnw clean package -Pnative
+./target/atmosphere-quarkus-chat-*-runner
 ```
 
 Requires GraalVM JDK 21+ or Mandrel. Use `-Dquarkus.native.container-build=true` to build without a local GraalVM installation.
 
 ## Samples
 
-- [Quarkus Chat](../samples/quarkus-chat/) -- real-time chat with WebSocket and long-polling fallback
+- [Quarkus Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/quarkus-chat) -- real-time chat with WebSocket and long-polling fallback
 
 ## See Also
 
-- [Core Runtime](core.md)
-- [Spring Boot Integration](spring-boot.md)
-- [Module README](../modules/quarkus-extension/README.md)
+- [Core Runtime](../reference/core/)
+- [Spring Boot Integration](spring-boot/)
+- [Module README](https://github.com/Atmosphere/atmosphere/tree/main/modules/quarkus-extension)

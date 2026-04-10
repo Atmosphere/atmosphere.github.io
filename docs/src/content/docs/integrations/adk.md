@@ -10,10 +10,14 @@ Bridges [Google Agent Development Kit (ADK)](https://github.com/google/adk-java)
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-adk</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -94,13 +98,12 @@ LlmAgent agent = LlmAgent.builder()
 
 ## Samples
 
-- [Spring Boot ADK Chat](../samples/spring-boot-adk-chat/) -- complete ADK chat example
-- [Spring Boot ADK Tools](../samples/spring-boot-adk-tools/) -- ADK tools with broadcasting
+- [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- drop `atmosphere-adk` on the classpath and the framework auto-selects ADK
 
 ## See Also
 
-- [AI Integration](ai.md) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
-- [Spring AI Adapter](spring-ai.md)
-- [LangChain4j Adapter](langchain4j.md)
-- [Embabel Adapter](embabel.md)
-- [Module README](../modules/adk/README.md)
+- [AI Reference](../../reference/ai/) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
+- [Spring AI Adapter](spring-ai/)
+- [LangChain4j Adapter](langchain4j/)
+- [Embabel Adapter](embabel/)
+- [Module README](https://github.com/Atmosphere/atmosphere/tree/main/modules/adk)

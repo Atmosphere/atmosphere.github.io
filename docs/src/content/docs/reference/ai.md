@@ -10,21 +10,25 @@ AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `Stre
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-ai</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
 ## Architecture
 
-Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers — Jetty, Tomcat, Undertow. `AgentRuntime` adapts AI frameworks — Spring AI, LangChain4j, Google ADK, Embabel. Same design pattern, same discovery mechanism:
+Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers — Jetty, Tomcat, Undertow. `AgentRuntime` adapts AI frameworks — Spring AI, LangChain4j, Google ADK, Embabel, and Koog. Same design pattern, same discovery mechanism:
 
 | Concern | Transport layer | AI layer |
 |---------|----------------|----------|
 | SPI interface | `AsyncSupport` | `AgentRuntime` |
-| What it adapts | Web containers (Jetty, Tomcat, Undertow) | AI frameworks (Spring AI, LangChain4j, ADK, Embabel) |
+| What it adapts | Web containers (Jetty, Tomcat, Undertow) | AI frameworks (Spring AI, LangChain4j, ADK, Embabel, Koog) |
 | Discovery | Classpath scanning | `ServiceLoader` |
 | Resolution | Best available container | Highest `priority()` among `isAvailable()` |
 | Initialization | `init(ServletConfig)` | `configure(LlmSettings)` |
@@ -74,6 +78,7 @@ public interface AgentRuntime {
 | `atmosphere-langchain4j` | LangChain4j `StreamingChatLanguageModel` | 100 |
 | `atmosphere-adk` | Google ADK `Runner` | 100 |
 | `atmosphere-embabel` | Embabel `AgentPlatform` | 100 |
+| `atmosphere-koog` | JetBrains Koog `AIAgent` | 100 |
 
 To switch runtimes, change a single Maven dependency — no code changes needed.
 
@@ -203,7 +208,7 @@ To swap the AI backend, change only the Maven dependency -- no tool code changes
 <artifactId>atmosphere-adk</artifactId>
 ```
 
-See the [spring-boot-ai-tools](../samples/spring-boot-ai-tools/) sample.
+See the [spring-boot-ai-tools](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools) sample.
 
 ## AiInterceptor
 
@@ -548,8 +553,12 @@ Available on **all** runtimes:
 | Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog |
 |-----------|----------|-------------|-----------|-----|---------|------|
 | `TOOL_CALLING` | Y | Y | Y | Y | | Y |
-| `STRUCTURED_OUTPUT` | Y | Y | Y | Y | Y | Y |
+| `STRUCTURED_OUTPUT` | | Y | Y | Y | Y | Y |
 | `CONVERSATION_MEMORY` | | | | Y | | Y |
+
+**Capability gaps:**
+- `BuiltInAgentRuntime` only advertises `{TEXT_STREAMING, TOOL_CALLING, SYSTEM_PROMPT}` — no structured output. Source: `modules/ai/src/main/java/org/atmosphere/ai/llm/BuiltInAgentRuntime.java`.
+- `EmbabelAgentRuntime` does not advertise `TOOL_CALLING`: Embabel agents expose skills via their own `@Agent` API, not free-form tool calling. Source: `modules/embabel/src/main/kotlin/org/atmosphere/embabel/EmbabelAgentRuntime.kt`.
 
 ### Experimental
 
@@ -595,23 +604,19 @@ The `RecordingSession` test double captures all events, text chunks, metadata, a
 
 ## Samples
 
-- [Spring Boot AI Chat](../samples/spring-boot-ai-chat/) -- built-in client with Gemini/OpenAI/Ollama
-- [Spring Boot Spring AI Chat](../samples/spring-boot-spring-ai-chat/) -- Spring AI adapter
-- [Spring Boot LangChain4j Chat](../samples/spring-boot-langchain4j-chat/) -- LangChain4j adapter
-- [Spring Boot ADK Chat](../samples/spring-boot-adk-chat/) -- Google ADK adapter
-- [Spring Boot Embabel Chat](../samples/spring-boot-embabel-chat/) -- Embabel agent adapter
-- [Spring Boot AI Tools](../samples/spring-boot-ai-tools/) -- framework-agnostic `@AiTool` pipeline
-- [Spring Boot LangChain4j Tools](../samples/spring-boot-langchain4j-tools/) -- LangChain4j-native `@Tool` with PII/cost filters
-- [Spring Boot ADK Tools](../samples/spring-boot-adk-tools/) -- Google ADK with `@AiTool` bridge
-- [Spring Boot Spring AI Routing](../samples/spring-boot-spring-ai-routing/) -- cost/latency model routing
+- [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- built-in client with Gemini/OpenAI/Ollama
+- [Spring Boot AI Tools](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools) -- framework-agnostic `@AiTool` pipeline
+- [Spring Boot AI Classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) -- rooms-based multi-room AI with an Expo client
+- [Spring Boot Koog Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-koog-chat) -- JetBrains Koog adapter
+- [Spring Boot Dentist Agent](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-dentist-agent) -- `@Agent` with tools, memory, and approval gates
 
 ## See Also
 
-- [Spring AI Adapter](spring-ai.md)
-- [LangChain4j Adapter](langchain4j.md)
-- [Google ADK Adapter](adk.md)
-- [Embabel Adapter](embabel.md)
-- [MCP Server](mcp.md) -- AI-MCP bridge for tool-driven streaming
-- [Rooms & Presence](rooms.md) -- AI virtual members in rooms
-- [atmosphere.js](client-javascript.md) -- `useStreaming` React/Vue/Svelte hooks
-- [Module README](../modules/ai/README.md)
+- [Spring AI Adapter](../../integrations/spring-ai/)
+- [LangChain4j Adapter](../../integrations/langchain4j/)
+- [Google ADK Adapter](../../integrations/adk/)
+- [Embabel Adapter](../../integrations/embabel/)
+- [MCP Server](mcp/) -- AI-MCP bridge for tool-driven streaming
+- [Rooms & Presence](rooms/) -- AI virtual members in rooms
+- [atmosphere.js](../../clients/javascript/) -- `useStreaming` React/Vue/Svelte hooks
+- [Module README](https://github.com/Atmosphere/atmosphere/tree/main/modules/ai)

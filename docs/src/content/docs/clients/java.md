@@ -12,12 +12,18 @@ Supports **WebSocket**, **Server-Sent Events (SSE)**, **HTTP Streaming**, **Long
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-wasync</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
+
+wAsync ships from the same monorepo as the rest of Atmosphere. Source lives in [`modules/wasync/`](https://github.com/Atmosphere/atmosphere/tree/main/modules/wasync).
 
 ## Quick Start
 
@@ -164,12 +170,12 @@ var socket = client.create(options)
 
 ## Samples
 
-- [Spring Boot Chat](../samples/spring-boot-chat/) -- server with wAsync-compatible endpoint
-- [gRPC Chat](../samples/grpc-chat/) -- gRPC transport example
+- [Spring Boot Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat) -- server with wAsync-compatible endpoint
+- [gRPC Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/grpc-chat) -- gRPC transport example
 
 ## See Also
 
-- [Core Runtime](core.md) -- server-side API
-- [atmosphere.js](client-javascript.md) -- TypeScript/browser client
-- [gRPC Transport](grpc.md)
-- [Module README](../modules/wasync/README.md)
+- [Core Runtime](../../reference/core/) -- server-side API
+- [atmosphere.js](javascript/) -- TypeScript/browser client
+- [gRPC Transport](../../reference/grpc/)
+- [Module README](https://github.com/Atmosphere/atmosphere/tree/main/modules/wasync)

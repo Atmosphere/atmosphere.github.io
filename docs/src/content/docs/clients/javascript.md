@@ -5,7 +5,7 @@ description: "TypeScript client with React, Vue, and Svelte hooks"
 
 # atmosphere.js -- TypeScript Client
 
-TypeScript client for the Atmosphere Framework. Supports WebSocket, SSE, and Long-Polling transports with first-class React, Vue, and Svelte hooks.
+TypeScript client for the Atmosphere Framework (currently `5.0.22`). Supports WebTransport/HTTP3, WebSocket, SSE, HTTP Streaming, and Long-Polling transports with first-class React, Vue, and Svelte hooks.
 
 ## npm Coordinates
 
@@ -284,7 +284,7 @@ Use `subscribeStreaming` for framework-agnostic streaming, or the hooks above fo
 | Option | Type | Description |
 |--------|------|-------------|
 | `url` | `string` | Endpoint URL |
-| `transport` | `string` | `'websocket'`, `'sse'`, `'long-polling'`, `'streaming'` |
+| `transport` | `string` | `'webtransport'`, `'websocket'`, `'sse'`, `'long-polling'`, `'streaming'` |
 | `fallbackTransport` | `string` | Transport to use if primary fails |
 | `reconnect` | `boolean` | Enable auto-reconnection |
 | `reconnectInterval` | `number` | Time between reconnections (ms) |
@@ -303,7 +303,8 @@ Use `subscribeStreaming` for framework-agnostic streaming, or the hooks above fo
 
 ## See Also
 
-- [AI Integration](ai.md) -- server-side `@AiEndpoint` and `StreamingSession`
-- [Rooms & Presence](rooms.md) -- server-side room management
-- [wAsync Java Client](client-java.md)
-- [Module README](../atmosphere.js/README.md)
+- [AI Integration](../../reference/ai/) -- server-side `@AiEndpoint` and `StreamingSession`
+- [Rooms & Presence](../../reference/rooms/) -- server-side room management
+- [wAsync Java Client](java/)
+- [React Native Guide](react-native/)
+- [Module README](https://github.com/Atmosphere/atmosphere/tree/main/atmosphere.js)

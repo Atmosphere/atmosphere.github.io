@@ -5,17 +5,37 @@ description: "Auto-configuration for Spring Boot 4.0+"
 
 # Spring Boot Integration
 
-Auto-configuration for running Atmosphere on Spring Boot 4.0+. Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
+Auto-configuration for running Atmosphere on Spring Boot 4.0.5 (Spring Framework 6.2.8). Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
 
 ## Maven Coordinates
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-spring-boot-starter</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
+
+### Spring Boot 4.0 modularization
+
+Spring Boot 4.0 splits several modules into separate artifacts. When you depend on features that used to live in the main `spring-boot` jar, you may need to add them explicitly:
+
+| Feature | Artifact |
+|---------|----------|
+| Servlet support | `org.springframework.boot:spring-boot-servlet` |
+| Embedded web server | `org.springframework.boot:spring-boot-web-server` |
+| Actuator health indicator | `org.springframework.boot:spring-boot-health` |
+
+The Atmosphere starter depends on `spring-boot-servlet` transitively. Add `spring-boot-health` explicitly if you want the `AtmosphereHealthIndicator` to be picked up.
+
+### SLF4J / Logback override
+
+Spring Boot 4.0 ships with SLF4J 2.x. If your build inherits from a parent POM that pins an older SLF4J 1.x or Logback 1.2.x, you must override both in `<dependencies>` (not just `dependencyManagement`) for the starter to work.
 
 ## Quick Start
 
@@ -65,7 +85,7 @@ All properties are under the `atmosphere.*` prefix:
 | `atmosphere.websocket-support` | (auto) | Explicitly enable/disable WebSocket |
 | `atmosphere.broadcaster-class` | (default) | Custom `Broadcaster` implementation FQCN |
 | `atmosphere.broadcaster-cache-class` | (default) | Custom `BroadcasterCache` implementation FQCN |
-| `atmosphere.heartbeat-interval-in-seconds` | (default) | Server heartbeat frequency |
+| `atmosphere.heartbeat-interval` | (default) | Server heartbeat frequency (Duration string, e.g. `30s`) |
 | `atmosphere.order` | `0` | Servlet load-on-startup order |
 | `atmosphere.init-params` | (none) | Map of any `ApplicationConfig` key/value |
 
@@ -75,6 +95,23 @@ All properties are under the `atmosphere.*` prefix:
 - `AtmosphereFramework` -- the framework for programmatic configuration
 - `RoomManager` -- the room API for presence and message history
 - `AtmosphereHealthIndicator` -- Actuator health check (when `spring-boot-health` is on the classpath)
+- `AtmosphereAiAutoConfiguration` -- scans for `@AiEndpoint` / `@Agent` beans and wires the resolved `AgentRuntime` (built-in, Spring AI, LangChain4j, ADK, Embabel, or Koog)
+- `AtmosphereAdminAutoConfiguration` / `AtmosphereActuatorAutoConfiguration` / `AtmosphereAuthAutoConfiguration` -- admin console, actuator metrics, and basic auth (opt-in via `atmosphere.admin.*`, `atmosphere.actuator.*`, `atmosphere.auth.*`)
+
+## AI Auto-Configuration
+
+When `atmosphere-ai` is on the classpath, the starter auto-discovers the best available `AgentRuntime` via `ServiceLoader` (LangChain4j, Spring AI, ADK, Embabel, Koog, or the built-in OpenAI-compatible client) and scans for `@AiEndpoint`/`@Agent` beans.
+
+```yaml
+atmosphere:
+  ai:
+    mode: remote            # remote | local
+    model: gemini-2.5-flash
+    base-url:               # optional, auto-derived from model
+    api-key: ${GEMINI_API_KEY}
+```
+
+Environment variables `LLM_MODE`, `LLM_MODEL`, `LLM_BASE_URL`, and `LLM_API_KEY` override these properties when the starter runs outside Spring configuration. See the [AI reference](../reference/ai/) for the full `AgentRuntime` SPI.
 
 ## gRPC Transport
 
@@ -138,24 +175,23 @@ When `micrometer-core` and `MeterRegistry` are on the classpath, the starter reg
 The starter includes `AtmosphereRuntimeHints` for native image support:
 
 ```bash
-./mvnw -Pnative package -pl samples/spring-boot-chat
-./samples/spring-boot-chat/target/atmosphere-spring-boot-chat
+cd samples/spring-boot-chat && ../../mvnw -Pnative package
+./target/atmosphere-spring-boot-chat-*
 ```
 
-Requires GraalVM JDK 25+ (Spring Boot 4.0 / Spring Framework 7 baseline).
+Requires GraalVM JDK 21+ (Spring Boot 4.0.5 / Spring Framework 6.2.8 baseline).
 
 ## Samples
 
-- [Spring Boot Chat](../samples/spring-boot-chat/) -- rooms, presence, REST API, Micrometer metrics, Actuator health
-- [Spring Boot AI Chat](../samples/spring-boot-ai-chat/) -- built-in AI client
-- [Spring Boot Spring AI Chat](../samples/spring-boot-spring-ai-chat/) -- Spring AI adapter
-- [Spring Boot MCP Server](../samples/spring-boot-mcp-server/) -- MCP tools, resources, prompts
-- [Spring Boot OTel Chat](../samples/spring-boot-otel-chat/) -- OpenTelemetry tracing with Jaeger
+- [Spring Boot Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat) -- rooms, presence, REST API, Micrometer metrics, Actuator health
+- [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- built-in AI client
+- [Spring Boot MCP Server](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-mcp-server) -- MCP tools, resources, prompts
+- [Spring Boot OTel Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-otel-chat) -- OpenTelemetry tracing with Jaeger
 
 ## See Also
 
-- [Core Runtime](core.md)
-- [AI Integration](ai.md)
-- [gRPC Transport](grpc.md)
-- [Observability](observability.md)
-- [Module README](../modules/spring-boot-starter/README.md)
+- [Core Runtime](../reference/core/)
+- [AI Integration](../reference/ai/)
+- [gRPC Transport](../reference/grpc/)
+- [Observability](../reference/observability/)
+- [Module README](https://github.com/Atmosphere/atmosphere/tree/main/modules/spring-boot-starter)
