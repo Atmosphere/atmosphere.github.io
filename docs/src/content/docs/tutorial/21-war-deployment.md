@@ -21,23 +21,27 @@ Deploy Atmosphere as a standard WAR to any Servlet 6.0+ container with WebSocket
     <artifactId>my-chat</artifactId>
     <packaging>war</packaging>
 
+    <properties>
+        <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.atmosphere</groupId>
             <artifactId>atmosphere-runtime</artifactId>
-            <version>LATEST</version> <!-- check Maven Central for latest -->
+            <version>${atmosphere.version}</version>
         </dependency>
 
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <version>4.0.15</version>
+            <version>2.0.1</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>4.0.15</version>
+            <version>3.1.1</version>
         </dependency>
     </dependencies>
 </project>

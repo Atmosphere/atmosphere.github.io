@@ -951,7 +951,7 @@ const atm = new Atmosphere({
     interceptors: [],                  // Client-side interceptors
 });
 
-atm.version;           // '5.0.0'
+atm.version;           // '5.0.22'
 ```
 
 | Method | Description |
@@ -1079,7 +1079,7 @@ Applied in order for outgoing; reverse order for incoming (middleware stack patt
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-wasync</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 

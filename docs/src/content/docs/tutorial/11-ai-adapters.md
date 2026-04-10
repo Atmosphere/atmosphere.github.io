@@ -12,10 +12,14 @@ Atmosphere's AI layer follows the same adapter pattern as its transport layer. J
 Before reaching for an adapter module, know that `atmosphere-ai` itself includes a built-in `OpenAiCompatibleClient`. This client works with **OpenAI**, **Google Gemini**, **Ollama**, **Azure OpenAI**, and any OpenAI-compatible endpoint -- with zero additional dependencies beyond `atmosphere-ai`.
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-ai</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -33,18 +37,20 @@ settings.client().streamChatCompletion(request, session);
 
 The built-in client is what powers `session.stream(message)` inside `@AiEndpoint`. If you need framework-specific features (Spring AI advisors, LangChain4j tool loops, ADK agent orchestration, Embabel agent planning), use one of the adapter modules below.
 
-## Adapter Modules
+## Runtimes
 
-Four adapter modules ship with Atmosphere 4.0:
+Atmosphere ships six `AgentRuntime` implementations — one built-in and five adapter modules for popular frameworks:
 
-| Module | Artifact | AI Framework |
-|--------|----------|-------------|
-| Spring AI | `atmosphere-spring-ai` | Spring AI (`ChatClient`) |
-| LangChain4j | `atmosphere-langchain4j` | LangChain4j (`StreamingChatLanguageModel`) |
-| Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) |
-| Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) |
+| Runtime | Module / Artifact | AI Framework | Version |
+|---------|------------------|-------------|---------|
+| Built-in | `atmosphere-ai` (OpenAI-compatible client) | OpenAI, Gemini, Ollama, Azure OpenAI | shipped |
+| Spring AI | `atmosphere-spring-ai` | Spring AI (`ChatClient`) | 2.0.0-M2 |
+| LangChain4j | `atmosphere-langchain4j` | LangChain4j (`StreamingChatLanguageModel`) | 1.12.2 |
+| Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) | 1.0.0 |
+| Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) | 0.3.4 |
+| Koog | `atmosphere-koog` | Koog (Kotlin agent framework) | 0.7.3 |
 
-All four depend on `atmosphere-ai`, which provides the framework-agnostic interfaces: `AgentRuntime`, `AiStreamingAdapter<T>`, `StreamingSession`, `AiRequest`, and the `@AiTool`/`@AiEndpoint` annotations.
+All runtimes depend on `atmosphere-ai`, which provides the framework-agnostic interfaces: `AgentRuntime`, `AiStreamingAdapter<T>`, `StreamingSession`, `AiRequest`, and the `@AiTool`/`@AiEndpoint` annotations.
 
 ## The adapter architecture
 
@@ -72,7 +78,7 @@ public interface AgentRuntime {
 }
 ```
 
-When multiple `AgentRuntime` implementations are on the classpath, the one with the highest `priority()` that reports `isAvailable() == true` wins. All four shipped adapters use priority `100`. The built-in runtime uses priority `0` as a fallback.
+When multiple `AgentRuntime` implementations are on the classpath, the one with the highest `priority()` that reports `isAvailable() == true` wins. All five shipped adapters use priority `100`. The built-in runtime uses priority `0` as a fallback.
 
 ## Spring AI adapter
 
@@ -94,7 +100,7 @@ When multiple `AgentRuntime` implementations are on the classpath, the one with 
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-spring-ai</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -161,7 +167,7 @@ When an `@AiEndpoint` receives a message, `SpringAiAgentRuntime.execute()` runs 
 | `LangChain4jStreamingAdapter` | Bridges `StreamingChatLanguageModel` to `StreamingSession`. |
 | `AtmosphereStreamingResponseHandler` | Simple `StreamingChatResponseHandler`: forwards streaming texts via `session.send()`, completion via `session.complete()`. |
 | `ToolAwareStreamingResponseHandler` | Extends the basic handler with tool calling support. Executes tools via `LangChain4jToolBridge` and re-submits conversations. Max 5 tool rounds. |
-| `LangChain4jAgentRuntime` | `AgentRuntime` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `SYSTEM_PROMPT`. |
+| `LangChain4jAgentRuntime` | `AgentRuntime` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, `SYSTEM_PROMPT`. |
 | `LangChain4jToolBridge` | Converts `ToolDefinition` to `ToolSpecification` and handles tool execution. |
 | `AtmosphereLangChain4jAutoConfiguration` | Activates when `StreamingChatLanguageModel` is on the classpath. |
 
@@ -171,13 +177,13 @@ When an `@AiEndpoint` receives a message, `SpringAiAgentRuntime.execute()` runs 
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-langchain4j</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
 ### Configuration example
 
-From the `spring-boot-langchain4j-chat` sample:
+A typical LangChain4j wiring (the same pattern used internally by `atmosphere-ai` when the LangChain4j adapter is on the classpath):
 
 ```java
 @Configuration
@@ -250,7 +256,7 @@ Unlike Spring AI, LangChain4j does not execute tool callbacks automatically. Whe
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-adk</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -313,12 +319,12 @@ Embabel is a Kotlin-based agent framework with built-in planning, tool calling, 
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-embabel</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 <dependency>
     <groupId>com.embabel.agent</groupId>
     <artifactId>embabel-agent-platform-autoconfigure</artifactId>
-    <version>4.0.15</version>
+    <version>0.3.4</version>
 </dependency>
 ```
 
@@ -354,9 +360,30 @@ Thread.startVirtualThread(() -> adapter.stream(agentRequest, session));
 
 `AtmosphereOutputChannel` translates agent events (thinking, tool calls, results) into `StreamingSession` calls with appropriate `progress` / `streaming-text` / `complete` messages.
 
+## Koog adapter
+
+**Module:** `atmosphere-koog`
+**Package:** `org.atmosphere.ai.koog`
+
+Koog is a Kotlin agent framework with a concise DSL for defining agents, tools, and multi-step workflows. The `atmosphere-koog` adapter bridges Koog's streaming callbacks to `StreamingSession`, enabling Koog agents to stream directly to Atmosphere clients.
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-koog</artifactId>
+    <version>${atmosphere.version}</version>
+</dependency>
+```
+
+Koog auto-configures when `ai.koog.agents.core` is on the classpath. See `samples/spring-boot-koog-chat/` for an end-to-end example.
+
+## Built-in runtime
+
+`BuiltInAgentRuntime` is the zero-dependency fallback used when no adapter module is on the classpath. It talks directly to OpenAI-compatible endpoints (OpenAI, Gemini, Ollama, Azure OpenAI) via `OpenAiCompatibleClient` and supports full OpenAI function calling, streaming, and a max-5-round tool loop — so `@AiTool` methods work even without a framework adapter. Priority is `0`, so any adapter that reports `isAvailable() == true` takes precedence.
+
 ## The @AiTool annotation
 
-All four adapters share the same framework-agnostic tool definition via `@AiTool` (in `org.atmosphere.ai.annotation`):
+All runtimes share the same framework-agnostic tool definition via `@AiTool` (in `org.atmosphere.ai.annotation`):
 
 ```java
 @AiTool(name = "get_weather", description = "Get current weather for a city")
@@ -370,10 +397,12 @@ The `ToolRegistry` discovers `@AiTool` methods at startup and creates `ToolDefin
 
 | Adapter | Bridge class | Native tool type |
 |---------|-------------|-----------------|
+| Built-in | `OpenAiCompatibleClient` | OpenAI function-calling JSON schema |
 | Spring AI | `SpringAiToolBridge` | `ToolCallback` |
 | LangChain4j | `LangChain4jToolBridge` | `ToolSpecification` |
 | Google ADK | `AdkToolBridge` | `BaseTool` |
 | Embabel | _(handled by Embabel platform)_ | Embabel `@Action` |
+| Koog | `KoogToolBridge` | Koog `Tool` |
 
 Tools are registered globally and selected per-endpoint:
 
@@ -381,7 +410,9 @@ Tools are registered globally and selected per-endpoint:
 @AiEndpoint(path = "/chat", tools = {WeatherTools.class, CalendarTools.class})
 ```
 
-## Choosing an adapter
+## Choosing a runtime
+
+**Built-in** is a zero-extra-dependency choice that works with any OpenAI-compatible endpoint and supports `@AiTool` function calling (max 5 tool rounds). Use it when you do not need a framework adapter's extras.
 
 **Spring AI** is the best fit for Spring Boot applications already using the Spring AI ecosystem. It supports advisors for RAG, logging, and memory, and has the broadest model provider support via Spring AI's model starters. Spring AI handles the tool call loop automatically.
 
@@ -391,20 +422,22 @@ Tools are registered globally and selected per-endpoint:
 
 **Embabel** is the best fit for Kotlin-based agent applications that need Embabel's planning and orchestration capabilities. The `AtmosphereOutputChannel` translates agent lifecycle events into streaming texts automatically.
 
-All four adapters produce the same wire protocol on the Atmosphere side: text-by-text JSON messages delivered over WebSocket, SSE, or long-polling to any connected client.
+**Koog** is the best fit when you want a concise Kotlin DSL for defining agents and tools and already live in a Kotlin codebase.
+
+All runtimes produce the same wire protocol on the Atmosphere side: text-by-text JSON messages delivered over WebTransport, WebSocket, SSE, or long-polling to any connected client.
 
 ## Samples
 
-Each adapter has a corresponding sample application:
+Each runtime has a corresponding sample application in the repo:
 
-| Sample | Adapter | Run command |
-|--------|---------|-------------|
-| `samples/spring-boot-spring-ai-chat/` | Spring AI | `./mvnw spring-boot:run -pl samples/spring-boot-spring-ai-chat` |
-| `samples/spring-boot-spring-ai-routing/` | Spring AI (multi-model routing) | `./mvnw spring-boot:run -pl samples/spring-boot-spring-ai-routing` |
-| `samples/spring-boot-langchain4j-chat/` | LangChain4j | `./mvnw spring-boot:run -pl samples/spring-boot-langchain4j-chat` |
-| `samples/spring-boot-adk-chat/` | Google ADK | `./mvnw spring-boot:run -pl samples/spring-boot-adk-chat` |
-| `samples/spring-boot-adk-tools/` | Google ADK (with tools) | `./mvnw spring-boot:run -pl samples/spring-boot-adk-tools` |
-| `samples/spring-boot-embabel-chat/` | Embabel | `./mvnw spring-boot:run -pl samples/spring-boot-embabel-chat` |
-| `samples/spring-boot-embabel-horoscope/` | Embabel (agent planning) | `./mvnw spring-boot:run -pl samples/spring-boot-embabel-horoscope` |
+| Sample | Runtime | Source |
+|--------|---------|--------|
+| `spring-boot-ai-chat` | Built-in (OpenAI-compatible) | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) |
+| `spring-boot-ai-classroom` | Built-in, multi-client streaming | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) |
+| `spring-boot-ai-tools` | Built-in, `@AiTool` tool calling | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools) |
+| `spring-boot-rag-chat` | Spring AI + vector store | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-rag-chat) |
+| `spring-boot-koog-chat` | Koog | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-koog-chat) |
+| `spring-boot-dentist-agent` | Built-in + `@Agent`/`@Command` workflow | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-dentist-agent) |
+| `spring-boot-multi-agent-startup-team` | Coordinator + multi-agent | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team) |
 
-All samples share the same browser client and produce the same AI streaming wire protocol.
+All samples share the same browser client and produce the same AI streaming wire protocol. Run any of them with `./mvnw -pl samples/<name> spring-boot:run` (add `-am` if the module is uncompiled).

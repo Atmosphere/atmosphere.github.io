@@ -17,7 +17,7 @@ The `atmosphere-grpc` module provides a standalone gRPC server integrated with `
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-grpc</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -162,7 +162,7 @@ The server enables gRPC reflection by default, so grpcurl can discover services 
 ```bash
 # Subscribe to a topic
 grpcurl -plaintext -d '{"type":"SUBSCRIBE","topic":"/chat"}' \
-  localhost:9090 atmosphere.AtmosphereService/Stream
+  localhost:9090 org.atmosphere.grpc.AtmosphereService/Stream
 ```
 
 ### Spring Boot Auto-Configuration
@@ -213,7 +213,7 @@ The `atmosphere-kotlin` module provides a type-safe DSL for building `Atmosphere
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-kotlin</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 

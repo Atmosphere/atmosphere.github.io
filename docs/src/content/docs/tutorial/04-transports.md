@@ -1,30 +1,32 @@
 ---
 title: "Transports"
-description: "How Atmosphere handles WebSocket, SSE, long-polling, streaming, and gRPC transparently, with auto-negotiation and the @WebSocketHandlerService API."
+description: "How Atmosphere handles WebTransport/HTTP3, WebSocket, SSE, long-polling, streaming, and gRPC transparently, with auto-negotiation and the @WebSocketHandlerService API."
 sidebar:
   order: 4
 ---
 
 # Transports
 
-Atmosphere is transport-agnostic. The same server-side code handles WebSocket, SSE, long-polling, streaming, and gRPC clients simultaneously. This chapter explains how each transport works, how auto-negotiation selects the best one, and how to drop down to the lower-level `@WebSocketHandlerService` when you need direct WebSocket control.
+Atmosphere is transport-agnostic. The same server-side code handles WebTransport/HTTP3, WebSocket, SSE, long-polling, streaming, and gRPC clients simultaneously. This chapter explains how each transport works, how auto-negotiation selects the best one, and how to drop down to the lower-level `@WebSocketHandlerService` when you need direct WebSocket control.
 
 ## Supported Transports
 
 | Transport | Description | Connection Pattern |
 |-----------|-------------|-------------------|
+| **WebTransport / HTTP/3** | Bidirectional streams over QUIC (HTTP/3), via the Reactor Netty sidecar in `org.atmosphere.webtransport` | Persistent |
 | **WebSocket** | Full-duplex, bidirectional channel over a single TCP connection | Persistent |
 | **SSE** (Server-Sent Events) | Server-to-client streaming over a long-lived HTTP response | Persistent (server-to-client only) |
 | **Long-Polling** | Client sends a request, server holds it until data is available, then responds | Repeated request/response cycles |
 | **Streaming** | Server writes to an open HTTP response without closing it | Persistent (server-to-client only) |
 | **gRPC** | Bidirectional streaming over HTTP/2 using Protocol Buffers (`atmosphere-grpc` module) | Persistent |
 
-All five transports deliver the same messages. The transport choice affects performance characteristics (latency, overhead, compatibility), not your application logic. gRPC is covered in detail in [Chapter 20](/docs/tutorial/20-grpc-kotlin/).
+All six transports deliver the same messages. The transport choice affects performance characteristics (latency, overhead, compatibility), not your application logic. gRPC is covered in detail in [Chapter 20](/docs/tutorial/20-grpc-kotlin/). WebTransport classes live under `modules/cpr/src/main/java/org/atmosphere/webtransport/` (core: `WebTransportSession`, `WebTransportHandler`, `WebTransportProcessor`, `ReactorNettyTransportServer`) with Spring Boot auto-configuration in `modules/spring-boot-starter/src/main/java/org/atmosphere/spring/boot/webtransport/`.
 
 ## Transport-Agnostic Design
 
 The central principle is that your `@ManagedService` class never needs to know which transport a client is using. When you return a value from a `@Message` method, Atmosphere inspects each subscribed `AtmosphereResource` to determine its transport and writes the message using the appropriate protocol:
 
+- A **WebTransport/HTTP3** client receives the message on a bidirectional QUIC stream.
 - A **WebSocket** client receives a WebSocket text frame.
 - An **SSE** client receives a `data:` event on the event stream.
 - A **long-polling** client receives an HTTP response body, then immediately reconnects.
@@ -50,10 +52,11 @@ public class Chat {
 
 Transport negotiation is handled by the client library (`atmosphere.js`) in coordination with the server. The typical flow is:
 
-1. The client attempts a WebSocket upgrade.
-2. If the WebSocket handshake succeeds, the connection stays on WebSocket.
-3. If the handshake fails (e.g., a proxy strips the `Upgrade` header), the client falls back to SSE.
-4. If SSE is not available, the client falls back to long-polling.
+1. The client attempts a WebTransport/HTTP3 session if the browser and server both advertise support.
+2. If WebTransport is unavailable, the client attempts a WebSocket upgrade.
+3. If the WebSocket handshake succeeds, the connection stays on WebSocket.
+4. If the handshake fails (e.g., a proxy strips the `Upgrade` header), the client falls back to SSE (or streaming).
+5. If SSE is not available, the client falls back to long-polling.
 
 This fallback happens transparently. Your server code does not change.
 
@@ -201,8 +204,8 @@ The client attaches the following headers (or query parameters) to every request
 
 | Header / Query Param | Description |
 |----------------------|-------------|
-| `X-Atmosphere-Framework` | The Atmosphere client version (e.g., `5.0.0`) |
-| `X-Atmosphere-Transport` | The transport in use: `websocket`, `sse`, `long-polling`, `streaming`, or `close` |
+| `X-Atmosphere-Framework` | The Atmosphere client version (e.g., `5.0.22`) |
+| `X-Atmosphere-Transport` | The transport in use: `webtransport`, `websocket`, `sse`, `long-polling`, `streaming`, or `close` |
 | `X-Atmosphere-tracking-id` | A UUID that uniquely identifies this client. Initially `0`; the server assigns the real value on first response |
 | `X-Cache-Date` | Timestamp for cache coordination |
 | `X-atmo-protocol` | When `true`, the server sends back the tracking ID and cache date on the first request so subsequent requests carry the correct values |
@@ -217,7 +220,7 @@ The client attaches the following headers (or query parameters) to every request
 A typical first request on the wire looks like:
 
 ```
-GET /chat?X-Atmosphere-tracking-id=0&X-Atmosphere-Framework=5.0.0
+GET /chat?X-Atmosphere-tracking-id=0&X-Atmosphere-Framework=5.0.22
     &X-Atmosphere-Transport=websocket&X-atmo-protocol=true HTTP/1.1
 Host: localhost:8080
 ```

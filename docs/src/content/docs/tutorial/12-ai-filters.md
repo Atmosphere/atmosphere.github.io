@@ -474,7 +474,7 @@ The `atmosphere-ai-test` module provides a lightweight testing framework for AI 
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-ai-test</artifactId>
-    <version>LATEST</version>
+    <version>${atmosphere.version}</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -545,7 +545,7 @@ AiAssertions.assertThat(response)
 
 ## Samples
 
-- **`samples/spring-boot-ai-tools/`** -- demonstrates the `CostMeteringInterceptor` that tracks streaming text usage and sends routing metadata to the client.
-- **`samples/spring-boot-spring-ai-routing/`** -- demonstrates multi-model routing with `RoutingAiSupport` and `DefaultModelRouter` using Spring AI backends.
+- **[`samples/spring-boot-ai-tools/`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools)** — demonstrates the `CostMeteringInterceptor` that tracks streaming text usage and sends routing metadata to the client.
+- **[`samples/spring-boot-rag-chat/`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-rag-chat)** — demonstrates Spring AI + vector store retrieval integrated via the Spring AI adapter. For multi-model routing patterns, combine `DefaultModelRouter` + `RoutingAiSupport` as shown above.
 
 For comprehensive testing documentation, see the [AI Testing](/docs/reference/testing/) reference.

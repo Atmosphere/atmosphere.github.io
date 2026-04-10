@@ -131,7 +131,7 @@ See [Real-Time Infrastructure](/docs/tutorial/03-managed-service/) for details.
 | Channels | `atmosphere-channels` | Slack, Telegram, Discord, WhatsApp, Messenger |
 | Core Runtime | `atmosphere-runtime` | Broadcaster, AtmosphereResource, transports |
 | Spring Boot | `atmosphere-spring-boot-starter` | Auto-configuration for Spring Boot 4.0+ |
-| Quarkus | `atmosphere-quarkus-extension` | Build-time extension for Quarkus 3.21+ |
+| Quarkus | `atmosphere-quarkus-extension` | Build-time extension for Quarkus 3.31.3 |
 | LangChain4j | `atmosphere-langchain4j` | LangChain4j adapter |
 | Spring AI | `atmosphere-spring-ai` | Spring AI adapter |
 | ADK | `atmosphere-adk` | Google ADK adapter |

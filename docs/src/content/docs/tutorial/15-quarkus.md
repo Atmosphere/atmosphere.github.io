@@ -5,18 +5,22 @@ sidebar:
   order: 15
 ---
 
-The `atmosphere-quarkus-extension` module integrates Atmosphere with Quarkus 3.21+. It uses Quarkus's build-time processing to scan annotations via Jandex (no runtime classpath scanning), registers the servlet via `ServletBuildItem`, and bridges Quarkus's Arc CDI container to Atmosphere's object factory.
+The `atmosphere-quarkus-extension` module integrates Atmosphere with Quarkus 3.31.3. It uses Quarkus's build-time processing to scan annotations via Jandex (no runtime classpath scanning), registers the servlet via `ServletBuildItem`, and bridges Quarkus's Arc CDI container to Atmosphere's object factory.
 
 ## Dependencies
 
 The extension is split into two artifacts following Quarkus conventions:
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <!-- Runtime module (what your application depends on) -->
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-quarkus-extension</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 

@@ -19,14 +19,18 @@ This chapter walks you through building a real-time chat endpoint with Atmospher
 Add the Atmosphere runtime to your project:
 
 ```xml
+<properties>
+    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+</properties>
+
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-runtime</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
-All Atmosphere modules share the `org.atmosphere` group ID. The `atmosphere-runtime` artifact is the core framework that provides `Broadcaster`, `AtmosphereResource`, `@ManagedService`, and all transport support.
+Maven 3.5+ no longer resolves `<version>LATEST</version>` for regular dependencies; always pin an explicit version (a `<properties>` placeholder keeps upgrades to a single line). All Atmosphere modules share the `org.atmosphere` group ID. The `atmosphere-runtime` artifact is the core framework that provides `Broadcaster`, `AtmosphereResource`, `@ManagedService`, and all transport support.
 
 ## The Message Class
 
@@ -266,7 +270,7 @@ If you prefer Spring Boot, add the starter dependency instead:
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-spring-boot-starter</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 
@@ -329,12 +333,12 @@ If your goal is to stream LLM texts to a browser, you can get there in under 20 
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-spring-boot-starter</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-ai</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${atmosphere.version}</version>
 </dependency>
 ```
 

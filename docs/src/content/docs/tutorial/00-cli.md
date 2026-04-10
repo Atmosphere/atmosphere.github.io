@@ -37,7 +37,7 @@ atmosphere run spring-boot-ai-chat --env LLM_API_KEY=your-key
 
 This starts an AI streaming chat that connects to Gemini, GPT, Claude, or Ollama — configured via environment variables. Without an API key, it runs in demo mode with simulated streaming.
 
-### Browse All 18 Samples
+### Browse All Samples
 
 ```bash
 atmosphere install
@@ -46,21 +46,21 @@ atmosphere install
 The interactive picker shows every sample grouped by category. Pick one, then choose to **run it** or **install its source code** into your current directory:
 
 ```
-  Atmosphere Samples (18 available)
+  Atmosphere Samples
 
   CHAT
-    1) spring-boot-chat         Real-time WebSocket chat with Spring Boot
-    2) quarkus-chat              Real-time WebSocket chat with Quarkus
-    3) embedded-jetty-ws-chat    Embedded Jetty WebSocket chat (no framework)
+    1) spring-boot-chat                Real-time WebSocket chat with Spring Boot
+    2) quarkus-chat                    Real-time WebSocket chat with Quarkus
+    3) embedded-jetty-websocket-chat   Embedded Jetty WebSocket chat (no framework)
 
   AI
-    4) spring-boot-ai-chat       AI streaming with conversation memory and structured events
-    5) spring-boot-ai-classroom  Multiple clients share streaming AI responses
-    6) spring-boot-adk-chat      AI chat with Google ADK
-    7) spring-boot-langchain4j-chat  AI chat with LangChain4j
+    4) spring-boot-ai-chat             AI streaming with conversation memory and structured events
+    5) spring-boot-ai-classroom        Multiple clients share streaming AI responses
+    6) spring-boot-ai-tools            Framework-agnostic @AiTool tool calling
+    7) spring-boot-koog-chat           Kotlin-based Koog agent chat
     ...
 
-  Pick a sample [1-18]:
+  Pick a sample:
 ```
 
 If [fzf](https://github.com/junegunn/fzf) is installed, you get fuzzy-search instead of numbered menus.
@@ -125,35 +125,38 @@ Options: `--handler` (chat, ai-chat, mcp-server), `--ai` (builtin, spring-ai, la
 | `quarkus-chat` | Real-time WebSocket chat with Quarkus | 8080 |
 | `embedded-jetty-websocket-chat` | Embedded Jetty, no framework | 8080 |
 
-### AI Streaming
+### AI Streaming & Tools
 
 | Sample | Description | Port |
 |--------|-------------|------|
 | `spring-boot-ai-chat` | Conversation memory, structured events, capability validation | 8080 |
 | `spring-boot-ai-classroom` | Multiple clients share streaming AI responses | 8080 |
-| `spring-boot-adk-chat` | Google ADK agent chat | 8080 |
-| `spring-boot-langchain4j-chat` | LangChain4j streaming | 8081 |
-| `spring-boot-embabel-chat` | Embabel agent chat | 8082 |
-| `spring-boot-spring-ai-chat` | Spring AI ChatClient | 8083 |
+| `spring-boot-ai-tools` | Framework-agnostic `@AiTool` tool calling | 8080 |
+| `spring-boot-koog-chat` | Kotlin-based Koog agent chat | 8080 |
+| `spring-boot-rag-chat` | RAG with Spring AI vector store | 8080 |
 
-### Tool Calling
+### Agents & Coordination
 
 | Sample | Description | Port |
 |--------|-------------|------|
-| `spring-boot-ai-tools` | Framework-agnostic `@AiTool` with cost metering | 8090 |
-| `spring-boot-adk-tools` | Google ADK tool calling with caching | 8087 |
-| `spring-boot-langchain4j-tools` | LangChain4j tools with PII redaction | 8086 |
-| `spring-boot-spring-ai-routing` | Spring AI routing with content safety | 8088 |
-| `spring-boot-embabel-horoscope` | Multi-step Embabel agent with progress tracking | 8089 |
+| `spring-boot-dentist-agent` | Single-agent workflow with `@Agent` / `@Command` | 8080 |
+| `spring-boot-multi-agent-startup-team` | Multi-agent coordinator with `@Coordinator` and `@Fleet` | 8080 |
+| `spring-boot-orchestration-demo` | Orchestration primitives (handoffs, routing, judges) | 8080 |
+| `spring-boot-a2a-agent` | Agent-to-agent (A2A) protocol | 8080 |
+| `spring-boot-checkpoint-agent` | Agent with checkpoint/recovery | 8080 |
 
 ### Infrastructure
 
 | Sample | Description | Port |
 |--------|-------------|------|
-| `spring-boot-mcp-server` | MCP tools, resources, and prompts for AI agents | 8083 |
-| `spring-boot-otel-chat` | OpenTelemetry tracing with Jaeger | 8084 |
+| `spring-boot-mcp-server` | MCP tools, resources, and prompts for AI agents | 8080 |
+| `spring-boot-otel-chat` | OpenTelemetry tracing with Jaeger | 8080 |
 | `spring-boot-durable-sessions` | Session persistence with SQLite | 8080 |
-| `spring-boot-rag-chat` | RAG with Spring AI vector store | 8080 |
+| `spring-boot-channels-chat` | Channels API for pub/sub routing | 8080 |
+| `spring-boot-agui-chat` | AgUI real-time agent UI | 8080 |
+| `grpc-chat` | Mixed WebSocket + gRPC transport | 8080 |
+
+Run `atmosphere list` for the full, current sample catalog.
 
 ## Environment Variables
 

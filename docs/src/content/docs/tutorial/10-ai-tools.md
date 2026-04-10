@@ -142,7 +142,7 @@ Key observations:
 Use the `tools` attribute on `@AiEndpoint`:
 
 ```java
-@AiEndpoint(path = "/atmosphere/langchain4j-tools/{room}",
+@AiEndpoint(path = "/atmosphere/ai-tools/{room}",
         systemPromptResource = "prompts/system-prompt.md",
         conversationMemory = true,
         maxHistoryMessages = 30,
@@ -497,14 +497,13 @@ User: "And the weather there?"
 
 All of these messages are retained in the conversation memory, giving the model full context for follow-up questions.
 
-## Samples
+## Sample
 
-Two sample applications demonstrate tool calling:
+The canonical tool-calling sample is:
 
-- **`samples/spring-boot-ai-tools/`** -- uses the built-in LLM client with `@AiTool` methods (`AssistantTools`), conversation memory, and the `CostMeteringInterceptor`. Run with: `./mvnw spring-boot:run -pl samples/spring-boot-ai-tools`
-- **`samples/spring-boot-langchain4j-tools/`** -- same tools, but powered by the LangChain4j adapter with `ToolAwareStreamingResponseHandler`. Run with: `./mvnw spring-boot:run -pl samples/spring-boot-langchain4j-tools`
+- **[`samples/spring-boot-ai-tools/`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools)** — uses the built-in LLM client with `@AiTool` methods (`AssistantTools`), conversation memory, and the `CostMeteringInterceptor`. Run with: `./mvnw spring-boot:run -pl samples/spring-boot-ai-tools`
 
-Both samples share the same `AssistantTools` class, demonstrating that `@AiTool` definitions are adapter-independent.
+Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` class works with any of the six runtimes (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog) by swapping the adapter dependency.
 
 ## Summary
 
