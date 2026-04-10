@@ -553,11 +553,12 @@ Available on **all** runtimes:
 | Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog |
 |-----------|----------|-------------|-----------|-----|---------|------|
 | `TOOL_CALLING` | Y | Y | Y | Y | | Y |
-| `STRUCTURED_OUTPUT` | | Y | Y | Y | Y | Y |
+| `STRUCTURED_OUTPUT` | Y | Y | Y | Y | Y | Y |
 | `CONVERSATION_MEMORY` | | | | Y | | Y |
 
+**How structured output works:** `AiPipeline` wraps the streaming session with `StructuredOutputCapturingSession` and augments the system prompt with JSON-schema instructions before the runtime runs. Any runtime that honors `SYSTEM_PROMPT` therefore gets `STRUCTURED_OUTPUT` automatically via the pipeline — no per-runtime adapter code required. `BuiltInAgentRuntime` additionally enables native `jsonMode` on the OpenAI-compatible client for provider-level JSON enforcement on top of the pipeline wrap. Source: `modules/ai/src/main/java/org/atmosphere/ai/pipeline/AiPipeline.java:128-135`, `modules/ai/src/main/java/org/atmosphere/ai/llm/BuiltInAgentRuntime.java:72-74`.
+
 **Capability gaps:**
-- `BuiltInAgentRuntime` only advertises `{TEXT_STREAMING, TOOL_CALLING, SYSTEM_PROMPT}` — no structured output. Source: `modules/ai/src/main/java/org/atmosphere/ai/llm/BuiltInAgentRuntime.java`.
 - `EmbabelAgentRuntime` does not advertise `TOOL_CALLING`: Embabel agents expose skills via their own `@Agent` API, not free-form tool calling. Source: `modules/embabel/src/main/kotlin/org/atmosphere/embabel/EmbabelAgentRuntime.kt`.
 
 ### Experimental
