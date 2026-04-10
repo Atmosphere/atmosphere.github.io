@@ -1,346 +1,309 @@
 ---
 title: "MCP Server"
-description: "Expose tools, resources, and prompts to AI agents with @McpServer annotations"
+description: "Expose tools, resources, and prompts to AI agents with @McpTool, @McpResource, @McpPrompt"
 sidebar:
   order: 13
 ---
 
-The Model Context Protocol (MCP) is an open standard that lets AI agents (Claude Desktop, VS Code Copilot, Cursor, etc.) discover and call tools, read resources, and use prompt templates from external servers. Atmosphere's `atmosphere-mcp` module lets you build an MCP server with annotations, backed by the same Broadcaster infrastructure that powers your real-time application.
+The Model Context Protocol (MCP) is an open standard that lets AI agents (Claude Desktop, VS Code Copilot, Cursor, etc.) discover and call tools, read resources, and use prompt templates from external servers. Atmosphere's `atmosphere-mcp` module lets you build an MCP server by adding four annotations to any Spring bean -- no servlet wiring, no protocol code, no external SDK.
+
+`atmosphere-mcp` is a **self-contained MCP protocol implementation**. It speaks the MCP 2025-03-26 JSON-RPC wire protocol directly on top of Atmosphere's transport layer, so your server is automatically reachable over Streamable HTTP, WebSocket, and SSE with no additional dependencies.
 
 **Module:** `atmosphere-mcp`
 **Package:** `org.atmosphere.mcp`
 
+## What you'll build
+
+In this chapter you'll take the `spring-boot-mcp-server` sample and walk through how it exposes live chat administration tools to AI agents. By the end, an MCP client like Claude Desktop will be able to list connected users, broadcast messages to the chat, and read server status -- all through the standard MCP protocol.
+
+## Dependencies
+
+Add the MCP module and the Atmosphere Spring Boot starter. The `atmosphere-agent` module is what scans for your annotated class and registers the MCP endpoint:
+
 ```xml
 <dependency>
     <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-spring-boot-starter</artifactId>
+    <version>${project.version}</version>
+</dependency>
+
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-agent</artifactId>
+    <version>${project.version}</version>
+</dependency>
+
+<dependency>
+    <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-mcp</artifactId>
-    <version>LATEST</version> <!-- check Maven Central for latest -->
+    <version>${project.version}</version>
 </dependency>
 ```
 
-## Annotations
+That's the entire dependency setup. There is no `@McpServer` annotation, no `McpServerProcessor` to register, and no servlet filter to configure. The Spring Boot starter auto-configures the `AtmosphereServlet`, the agent processor discovers your annotated class at startup, and the MCP endpoint is registered on Atmosphere's transport layer automatically.
 
-Five annotations define an MCP server:
+## The four annotations
 
-### @McpServer
+`atmosphere-mcp` ships exactly four annotations. You will not find an `@McpServer` class-level annotation anywhere in the codebase -- class-level wiring is handled by `@Agent` from the `atmosphere-agent` module.
 
-Marks a class as an MCP server endpoint. Methods within it can be annotated with `@McpTool`, `@McpResource`, and `@McpPrompt`.
+| Annotation | Target | Purpose |
+|-----------|--------|---------|
+| `@McpTool` | Method | Exposes a method as a callable tool (`tools/call`) |
+| `@McpResource` | Method | Exposes a method as a read-only resource (`resources/read`) |
+| `@McpPrompt` | Method | Exposes a method as a prompt template (`prompts/get`) |
+| `@McpParam` | Parameter | Annotates parameters with name, description, and required flag |
 
-```java
-@McpServer(name = "my-server", version = "1.0.0", path = "/atmosphere/mcp")
-public class MyMcpServer { ... }
-```
+The class itself is marked with `@Agent`, which tells the agent processor to scan the class and wire up any `@McpTool`, `@McpResource`, or `@McpPrompt` methods it finds.
 
-| Attribute | Default | Description |
-|-----------|---------|-------------|
-| `name` | (required) | Server name reported during MCP initialization |
-| `version` | `"1.0.0"` | Server version reported during initialization |
-| `path` | `"/mcp"` | Atmosphere endpoint path for this MCP server |
+## Step 1 -- Declare the agent class
 
-### @McpTool
-
-Marks a method as an MCP tool, invocable by MCP clients via `tools/call`:
+Create a Spring bean annotated with `@Agent`. Set `endpoint` to the MCP path you want to expose and `headless = true` to indicate there is no `@Prompt` method or WebSocket UI -- this is a pure MCP service:
 
 ```java
-@McpTool(name = "search", description = "Search the knowledge base")
-public List<Result> search(
-        @McpParam(name = "query", required = true) String query) {
-    return knowledgeBase.search(query);
+package com.example.mcp;
+
+import org.atmosphere.agent.annotation.Agent;
+import org.springframework.stereotype.Component;
+
+@Component
+@Agent(name = "atmosphere-demo",
+       version = "1.0.0",
+       endpoint = "/atmosphere/mcp",
+       headless = true)
+public class DemoMcpServer {
+    // tools, resources, and prompts go here
 }
 ```
 
-| Attribute | Default | Description |
-|-----------|---------|-------------|
-| `name` | (required) | Tool name as reported to MCP clients |
-| `description` | `""` | Human-readable description of what the tool does |
+Key points:
 
-### @McpResource
+- `name` is reported to MCP clients during the `initialize` handshake.
+- `endpoint` is the HTTP/WebSocket path clients connect to. When the endpoint ends in `/mcp`, the agent processor registers the MCP handler at exactly that path; otherwise it defaults to `/atmosphere/agent/{name}/mcp`.
+- `headless = true` forces "protocol-only" mode: no `@Prompt` method is required and no chat UI is registered.
 
-Marks a method as an MCP resource, providing read-only data accessible via `resources/read`:
+## Step 2 -- Add a tool
+
+A tool is any method marked with `@McpTool`. The return value is serialized to JSON and sent back to the AI agent. Parameters use `@McpParam` to declare their name, description, and whether they are required:
 
 ```java
-@McpResource(uri = "atmosphere://rooms/{roomId}/history",
-             name = "Room History",
-             description = "Chat message history for a room",
+import org.atmosphere.mcp.annotation.McpTool;
+import org.atmosphere.mcp.annotation.McpParam;
+
+import java.util.List;
+import java.util.Map;
+
+@McpTool(name = "list_users",
+         description = "List all users currently connected to the chat")
+public List<Map<String, String>> listUsers() {
+    var broadcaster = chatBroadcaster();
+    if (broadcaster == null) {
+        return List.of(Map.of("error", "No chat broadcaster active"));
+    }
+    return broadcaster.getAtmosphereResources().stream()
+            .map(r -> Map.of(
+                    "uuid", r.uuid(),
+                    "transport", r.transport().name()))
+            .toList();
+}
+
+@McpTool(name = "broadcast_message",
+         description = "Send a message to all connected chat users")
+public Map<String, Object> broadcastMessage(
+        @McpParam(name = "message",
+                  description = "The message text to broadcast") String message,
+        @McpParam(name = "author",
+                  description = "Author name",
+                  required = false) String author) {
+    var broadcaster = chatBroadcaster();
+    var text = (author != null ? author : "MCP Admin") + ": " + message;
+    broadcaster.broadcast(text);
+    return Map.of("status", "sent",
+                  "recipients", broadcaster.getAtmosphereResources().size());
+}
+```
+
+Tool methods can return any serializable type -- `String`, `Map`, `List`, records, or domain objects. The MCP runtime serializes them to JSON via Jackson.
+
+## Step 3 -- Add a resource
+
+Resources are read-only data exposed at a URI. AI agents call `resources/read` with the URI to fetch the content:
+
+```java
+import org.atmosphere.mcp.annotation.McpResource;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+
+@McpResource(uri = "atmosphere://server/status",
+             name = "Server Status",
+             description = "Current server status and uptime",
              mimeType = "application/json")
-public String roomHistory(@McpParam(name = "roomId") String roomId) {
-    return roomService.getHistory(roomId);
+public String serverStatus() {
+    var status = new LinkedHashMap<String, Object>();
+    status.put("status", "running");
+    status.put("timestamp", Instant.now().toString());
+    status.put("connectedUsers", config.resourcesFactory().findAll().size());
+    return mapper.writeValueAsString(status);
 }
 ```
 
-| Attribute | Default | Description |
-|-----------|---------|-------------|
-| `uri` | (required) | URI or URI template for this resource |
-| `name` | `""` | Human-readable name |
-| `description` | `""` | Description of the resource |
-| `mimeType` | `"text/plain"` | MIME type of the resource content |
+The `uri` is the stable identifier clients request. `mimeType` defaults to `text/plain`; set it explicitly when returning JSON, Markdown, or binary data.
 
-### @McpPrompt
+## Step 4 -- Add a prompt template
 
-Marks a method as an MCP prompt template, accessible via `prompts/get`. The method returns a `List<McpMessage>`:
+Prompt templates return a list of `McpMessage` objects that the AI agent can inject into its own conversation. Use `McpMessage.system()` and `McpMessage.user()` to build the template:
 
 ```java
-@McpPrompt(name = "analyze_data", description = "Analyze a dataset")
-public List<McpMessage> analyzeData(
-        @McpParam(name = "dataset") String dataset) {
+import org.atmosphere.mcp.annotation.McpPrompt;
+import org.atmosphere.mcp.protocol.McpMessage;
+
+import java.util.List;
+
+@McpPrompt(name = "chat_summary",
+           description = "Summarize current chat status")
+public List<McpMessage> chatSummary() {
+    var broadcaster = chatBroadcaster();
+    var userCount = broadcaster != null
+            ? broadcaster.getAtmosphereResources().size() : 0;
     return List.of(
-        McpMessage.system("You are a data analyst..."),
-        McpMessage.user("Analyze: " + dataset)
+            McpMessage.system("You are a chat moderator assistant."),
+            McpMessage.user("There are currently " + userCount
+                    + " users connected. Summarize the chat status.")
     );
 }
 ```
 
-| Attribute | Default | Description |
-|-----------|---------|-------------|
-| `name` | (required) | Prompt template name |
-| `description` | `""` | Description of what this prompt does |
+## Step 5 -- Access the Atmosphere runtime from your tools
 
-### @McpParam
-
-Annotates method parameters to provide MCP metadata:
-
-| Attribute | Default | Description |
-|-----------|---------|-------------|
-| `name` | (required) | Parameter name as reported to MCP clients |
-| `description` | `""` | Human-readable description |
-| `required` | `true` | Whether the parameter is required |
-
-## McpMessage
-
-The `McpMessage` record provides factory methods for building prompt messages:
+Because `DemoMcpServer` is a Spring bean, you can inject any Spring dependency. Atmosphere itself injects `AtmosphereConfig` through the framework's own injection when the class is wired in by the agent processor:
 
 ```java
-public record McpMessage(String role, Map<String, String> content) {
-    public static McpMessage system(String text) { ... }
-    public static McpMessage user(String text) { ... }
-}
-```
+import jakarta.inject.Inject;
+import org.atmosphere.cpr.AtmosphereConfig;
+import org.atmosphere.cpr.Broadcaster;
 
-## Complete example: DemoMcpServer
+@Inject
+private AtmosphereConfig config;
 
-From the `spring-boot-mcp-server` sample -- a real MCP server that exposes chat administration tools, server resources, and prompt templates:
-
-```java
-@McpServer(name = "atmosphere-demo", version = "1.0.0", path = "/atmosphere/mcp")
-public class DemoMcpServer {
-
-    @Inject
-    private AtmosphereConfig config;
-
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    // ── Tools ──
-
-    @McpTool(name = "list_users",
-             description = "List all users currently connected to the chat")
-    public List<Map<String, String>> listUsers() {
-        var broadcaster = chatBroadcaster();
-        return broadcaster.getAtmosphereResources().stream()
-                .map(r -> Map.of(
-                        "uuid", r.uuid(),
-                        "transport", r.transport().name()))
-                .toList();
-    }
-
-    @McpTool(name = "broadcast_message",
-             description = "Send a message to all connected chat users")
-    public Map<String, Object> broadcastMessage(
-            @McpParam(name = "message",
-                      description = "The message text to broadcast") String message,
-            @McpParam(name = "author",
-                      description = "Author name",
-                      required = false) String author) {
-        var broadcaster = chatBroadcaster();
-        var msg = new Message(author != null ? author : "MCP Admin", message);
-        broadcaster.broadcast(mapper.writeValueAsString(msg));
-        return Map.of("status", "sent",
-                       "recipients", broadcaster.getAtmosphereResources().size());
-    }
-
-    // ── Resources ──
-
-    @McpResource(uri = "atmosphere://server/status",
-                 name = "Server Status",
-                 description = "Current server status",
-                 mimeType = "application/json")
-    public String serverStatus() {
-        var status = new LinkedHashMap<String, Object>();
-        status.put("status", "running");
-        status.put("framework", "Atmosphere " + Version.getRawVersion());
-        status.put("connectedUsers", config.resourcesFactory().findAll().size());
-        status.put("timestamp", Instant.now().toString());
-        return status.toString();
-    }
-
-    // ── Prompts ──
-
-    @McpPrompt(name = "chat_summary",
-               description = "Summarize current chat status")
-    public List<McpMessage> chatSummary() {
-        var broadcaster = chatBroadcaster();
-        var userCount = broadcaster != null
-                ? broadcaster.getAtmosphereResources().size() : 0;
-        return List.of(
-                McpMessage.system("You are a chat moderator..."),
-                McpMessage.user("There are currently " + userCount
-                        + " users connected. Summarize the status.")
-        );
-    }
-
-    private Broadcaster chatBroadcaster() {
+private Broadcaster chatBroadcaster() {
+    try {
         return config.getBroadcasterFactory().lookup("/atmosphere/chat", false);
+    } catch (Exception e) {
+        return null;
     }
 }
 ```
 
-Key points from this example:
+From there, `config.getBroadcasterFactory()` and `config.resourcesFactory()` give tools full access to live connections, broadcasters, and the framework state. This is the key insight of Atmosphere's MCP module: **your AI tools run in the same JVM as your real-time transport, so they can query and push to live WebSocket/SSE clients directly.**
 
-- `@Inject private AtmosphereConfig config` gives access to `BroadcasterFactory` and `AtmosphereResourceFactory`, so MCP tools can interact with live connections.
-- Tool methods can return any serializable type -- `List`, `Map`, `String`, records, etc.
-- Optional parameters use `required = false` on `@McpParam`.
-- The `path` attribute on `@McpServer` determines both the HTTP and WebSocket endpoint.
+### Injectable framework parameters
 
-## Programmatic Registration
+`@McpTool` methods can also declare framework types as method parameters. The runtime auto-injects them at invocation time and excludes them from the JSON schema advertised to the AI agent:
 
-For dynamic tools or when you prefer lambdas over annotations, register tools, resources, and prompts programmatically:
+| Parameter type | What's injected | Notes |
+|----------------|-----------------|-------|
+| `Broadcaster` | The broadcaster for the `topic` argument | Requires a `@McpParam(name = "topic")` argument on the method |
+| `StreamingSession` | A `BroadcasterStreamingSession` wrapping the topic's broadcaster | Requires `atmosphere-ai` on the classpath |
+| `AtmosphereConfig` | The framework's `AtmosphereConfig` | Always available |
+| `BroadcasterFactory` | The framework's `BroadcasterFactory` | Always available |
+| `AtmosphereFramework` | The framework instance | Always available |
+
+Example -- a tool that pushes a message to any chat topic the agent specifies:
 
 ```java
-McpRegistry registry = McpRegistry.get();
-
-registry.registerTool("greet", "Greet a user by name",
-    List.of(new McpRegistry.ParamEntry("name", "User name", true)),
-    args -> "Hello, " + args.get("name") + "!"
-);
-
-registry.registerResource("atmosphere://app/version",
-    "App Version", "Current application version", "text/plain",
-    () -> "4.0.0"
-);
-
-registry.registerPrompt("welcome", "Welcome message for new users",
-    List.of(),
-    args -> List.of(
-        McpMessage.system("You are a friendly assistant."),
-        McpMessage.user("Welcome the user warmly.")
-    )
-);
+@McpTool(name = "broadcast", description = "Send a message to a chat topic")
+public String broadcast(
+        @McpParam(name = "message") String message,
+        @McpParam(name = "topic") String topic,
+        Broadcaster broadcaster) {
+    broadcaster.broadcast(message);
+    return "sent to " + topic;
+}
 ```
 
-Programmatic and annotation-based registrations coexist -- agents see all of them via `tools/list`.
+When an AI agent calls this tool with `{"message": "hello", "topic": "/chat"}`, the runtime looks up the `/chat` broadcaster, injects it as `broadcaster`, and the message is delivered to every subscribed WebSocket, SSE, and long-polling client.
 
-## Runtime components
+## Step 6 -- Configure the application
 
-The MCP module includes several runtime classes:
+The Spring Boot starter reads a single Atmosphere-specific property so the framework knows which packages to scan for annotated classes:
 
-| Class | Role |
-|-------|------|
-| `McpHandler` | Handles the MCP protocol over HTTP (Streamable HTTP transport) |
-| `McpWebSocketHandler` | WebSocket transport for MCP |
-| `McpProtocolHandler` | Core JSON-RPC processing for both transports |
-| `McpSession` | Per-client MCP session state |
-| `McpRegistry` | Discovers and registers `@McpTool`, `@McpResource`, and `@McpPrompt` methods |
-| `McpServerProcessor` | Atmosphere annotation processor that wires `@McpServer` classes |
-| `McpTracing` | Tracing integration for MCP operations |
-| `McpMessage` | Prompt message factory (`system()`, `user()`) |
-| `McpMethod` | MCP method name constants |
-| `JsonRpc` | JSON-RPC protocol helpers |
+```properties
+# src/main/resources/application.properties
+server.port=8083
 
-## Transports
-
-Atmosphere's MCP module supports three transports:
-
-| Transport | URL | Use Case |
-|-----------|-----|----------|
-| WebSocket | `ws://host/atmosphere/mcp` | Full-duplex, lowest latency |
-| Streamable HTTP | `POST http://host/atmosphere/mcp` | MCP spec 2025-03-26, SSE responses |
-| stdio (via bridge) | `java -jar atmosphere-mcp-stdio-bridge.jar <url>` | Claude Desktop, VS Code |
-
-### WebSocket
-
-Clients connect via WebSocket to the server path. The `McpWebSocketHandler` processes JSON-RPC messages over the WebSocket connection. This is the lowest-latency option and supports full-duplex communication.
-
-### Streamable HTTP
-
-The Streamable HTTP transport follows the MCP 2025-03-26 specification:
-
-- **POST** -- send JSON-RPC requests. Set `Accept: text/event-stream` to receive SSE responses
-- **GET** -- open an SSE stream for server-initiated notifications
-- **DELETE** -- terminate the session
-- Sessions tracked via the `Mcp-Session-Id` header
-
-## McpStdioBridge
-
-The `McpStdioBridge` (in `org.atmosphere.mcp.bridge`) bridges stdio to HTTP, enabling CLI-based MCP clients like Claude Desktop and VS Code to connect to your Atmosphere MCP server.
-
-It reads JSON-RPC messages from stdin (one per line), POSTs them to the Streamable HTTP endpoint, and writes responses to stdout:
-
+# Tell Atmosphere to scan the MCP runtime package plus your own
+atmosphere.packages=org.atmosphere.mcp,com.example.mcp
 ```
-java -jar atmosphere-mcp-stdio-bridge.jar http://localhost:8083/atmosphere/mcp
+
+No other configuration is required. `atmosphere.enabled` defaults to `true`, and the MCP endpoint is registered automatically when the agent processor sees your `@Agent` class.
+
+## Step 7 -- Run it
+
+```bash
+./mvnw spring-boot:run
 ```
+
+The MCP endpoint is now live at `http://localhost:8083/atmosphere/mcp`. Three transports are available on the same URL:
+
+| Transport | How to connect |
+|-----------|---------------|
+| Streamable HTTP (MCP 2025-03-26) | `POST http://localhost:8083/atmosphere/mcp` |
+| WebSocket | `ws://localhost:8083/atmosphere/mcp` |
+| SSE | `GET http://localhost:8083/atmosphere/mcp` |
+
+The transport is chosen by the client based on the request method and `Accept` header. Agents get automatic reconnection, heartbeats, and transport fallback from Atmosphere's transport layer.
+
+## Step 8 -- Call a tool with curl
+
+Use the Streamable HTTP transport to initialize a session and invoke a tool:
+
+```bash
+# Initialize the session
+curl -s -X POST http://localhost:8083/atmosphere/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize",
+       "params":{"protocolVersion":"2025-03-26",
+                 "clientInfo":{"name":"curl","version":"1.0"}}}'
+
+# List the tools the server advertises
+curl -s -X POST http://localhost:8083/atmosphere/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+
+# Call list_users
+curl -s -X POST http://localhost:8083/atmosphere/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call",
+       "params":{"name":"list_users","arguments":{}}}'
+```
+
+The server responds with JSON-RPC replies; the `initialize` response includes an `Mcp-Session-Id` header that the MCP spec encourages clients to echo back on subsequent requests.
 
 ## Connecting AI clients
 
 ### Claude Desktop
 
-Claude Desktop supports three transport configurations. Add to `claude_desktop_config.json`:
-
-**Via WebSocket:**
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "atmosphere": {
-      "transport": "websocket",
-      "url": "ws://localhost:8080/atmosphere/mcp"
+    "atmosphere-demo": {
+      "url": "http://localhost:8083/atmosphere/mcp"
     }
   }
 }
 ```
 
-**Via Streamable HTTP:**
+### VS Code (GitHub Copilot)
+
+Add to `.vscode/mcp.json`:
 
 ```json
 {
-  "mcpServers": {
-    "atmosphere": {
-      "transport": "streamable-http",
-      "url": "http://localhost:8080/atmosphere/mcp"
-    }
-  }
-}
-```
-
-**Via stdio bridge:**
-
-```json
-{
-  "mcpServers": {
-    "atmosphere": {
-      "command": "java",
-      "args": [
-        "-jar",
-        "atmosphere-mcp-stdio-bridge.jar",
-        "http://localhost:8083/atmosphere/mcp"
-      ]
-    }
-  }
-}
-```
-
-### VS Code (Copilot / Continue)
-
-For VS Code extensions that support MCP, use the stdio bridge configuration:
-
-```json
-{
-  "mcpServers": {
-    "atmosphere": {
-      "command": "java",
-      "args": [
-        "-jar",
-        "atmosphere-mcp-stdio-bridge.jar",
-        "http://localhost:8083/atmosphere/mcp"
-      ]
+  "servers": {
+    "atmosphere-demo": {
+      "url": "http://localhost:8083/atmosphere/mcp"
     }
   }
 }
@@ -348,115 +311,97 @@ For VS Code extensions that support MCP, use the stdio bridge configuration:
 
 ### Cursor
 
-Cursor supports MCP natively. Add to your project's `.cursor/mcp.json`:
+Add to Cursor Settings -> MCP Servers the same URL-based configuration.
+
+### stdio bridge
+
+For clients that only support stdio, build the bridge JAR and point the client at it:
+
+```bash
+./mvnw package -Pstdio-bridge -DskipTests -pl modules/mcp
+```
 
 ```json
 {
   "mcpServers": {
-    "atmosphere": {
+    "atmosphere-demo": {
       "command": "java",
-      "args": [
-        "-jar",
-        "atmosphere-mcp-stdio-bridge.jar",
-        "http://localhost:8083/atmosphere/mcp"
-      ]
+      "args": ["-jar", "path/to/atmosphere-mcp-stdio-bridge.jar",
+               "http://localhost:8083/atmosphere/mcp"]
     }
   }
 }
 ```
 
-## How it works
+The bridge reads JSON-RPC messages from stdin, POSTs them to the Streamable HTTP endpoint, and writes responses to stdout.
 
-When Atmosphere starts, the `McpServerProcessor` scans for classes annotated with `@McpServer`. For each one, it:
+## Programmatic registration
 
-1. Creates an `McpRegistry` that discovers all `@McpTool`, `@McpResource`, and `@McpPrompt` methods via reflection.
-2. Registers an `McpHandler` (for Streamable HTTP) at the configured path.
-3. Registers an `McpWebSocketHandler` (for WebSocket) at the same path.
-
-When an MCP client connects and sends `initialize`, the server responds with its name, version, and a list of capabilities (tools, resources, prompts). The client can then:
-
-- Call `tools/list` to discover available tools.
-- Call `tools/call` with arguments to invoke a tool.
-- Call `resources/list` and `resources/read` to access resources.
-- Call `prompts/list` and `prompts/get` to retrieve prompt templates.
-
-The `McpProtocolHandler` handles the JSON-RPC dispatch, parameter binding (via `@McpParam`), and response serialization.
-
-## MCP + Atmosphere: the key insight
-
-The real power of Atmosphere's MCP module is that your MCP tools have full access to the Atmosphere runtime. An AI agent can:
-
-- **Query live connections**: list connected users, inspect transport types, check UUIDs.
-- **Push messages**: broadcast to all clients or send to a specific user by UUID.
-- **Manage rooms**: join/leave rooms, query room membership, read message history.
-- **Inspect server state**: check framework version, async support type, broadcaster count.
-
-This means an AI agent can act as a **real-time chat moderator**, **notification system**, or **admin console** -- all through the standard MCP protocol that works with Claude Desktop, Cursor, and VS Code out of the box.
-
-## Bidirectional Tool Bridge
-
-Most MCP implementations are one-directional: the client calls tools on the server. Atmosphere's `BiDirectionalToolBridge` enables the **server to call tools on the client** — for example, invoking a JavaScript function in the user's browser.
-
-### How It Works
-
-The bridge sends a JSON-RPC tool call request over the Atmosphere transport (WebSocket/SSE) and waits for the client to respond asynchronously:
+For tools built at runtime (plugin systems, user-defined macros, feature flags), you can skip annotations and register handlers programmatically against `McpRegistry`:
 
 ```java
-var bridge = new BiDirectionalToolBridge(); // 30-second default timeout
+var registry = new McpRegistry();
 
-// Call a tool on the connected client
-CompletableFuture<String> result = bridge.callClientTool(
-    resource,
-    "getLocation",
-    Map.of()
+registry.registerTool("greet", "Greet a user by name",
+    List.of(new McpRegistry.ParamEntry("name", "User name", true, String.class)),
+    args -> "Hello, " + args.get("name") + "!"
 );
 
-// Non-blocking: process the result when it arrives
-result.thenAccept(location ->
-    logger.info("Client location: {}", location));
+registry.registerResource("atmosphere://app/version",
+    "App Version", "Current application version", "text/plain",
+    args -> "1.0.0"
+);
 
-// Or block (on a virtual thread):
-String location = result.join();
+registry.registerPrompt("welcome", "Welcome message", List.of(),
+    args -> List.of(
+        McpMessage.system("You are a friendly assistant."),
+        McpMessage.user("Welcome the user warmly.")
+    )
+);
 ```
 
-### Client-Side Handler
+Annotation-based and programmatic registrations coexist: agents see all of them in a single `tools/list` response.
 
-The client must handle incoming tool call requests and respond:
+## Bidirectional tool invocation
 
-```javascript
-atmosphere.onMessage = function(response) {
-    var msg = JSON.parse(response.responseBody);
-    if (msg.type === 'tool-call') {
-        var result = executeClientTool(msg.toolName, msg.arguments);
-        atmosphere.push(JSON.stringify({
-            type: 'tool-response',
-            id: msg.id,
-            result: result
-        }));
-    }
-};
-```
-
-### Use Cases
-
-- **Browser-side data collection**: ask the client for geolocation, local storage data, or DOM state
-- **User confirmation**: request approval before executing a sensitive server-side action
-- **Client-side computation**: offload work to the browser (e.g., image processing in a Web Worker)
-
-The bridge is thread-safe, uses `ConcurrentHashMap` for pending calls, and supports custom timeouts:
+Most MCP servers are request/response from client to server. Atmosphere adds a reverse channel: `BiDirectionalToolBridge` lets the **server call tools on the connected client** -- typically a JavaScript function in the user's browser -- and asynchronously receive the result.
 
 ```java
-var bridge = new BiDirectionalToolBridge(Duration.ofSeconds(60));
+var bridge = new BiDirectionalToolBridge();  // 30-second default timeout
+
+CompletableFuture<String> result = bridge.callClientTool(
+        resource, "getLocation", Map.of("highAccuracy", true));
+
+result.thenAccept(location -> logger.info("Client location: {}", location));
 ```
 
-Monitor pending calls via `bridge.pendingCount()` or `bridge.pendingCalls()` for observability.
+On the wire, the server sends:
 
-## Sample
-
-The `samples/spring-boot-mcp-server/` sample contains the complete `DemoMcpServer` shown above, including a chat application that the MCP tools can interact with. Run it with:
-
-```bash
-./mvnw spring-boot:run -pl samples/spring-boot-mcp-server
+```json
+{"type":"tool_call","id":"uuid","name":"getLocation","args":{"highAccuracy":true}}
 ```
 
-Then connect from Claude Desktop, VS Code, or Cursor using the configuration examples in [Connecting AI clients](#connecting-ai-clients).
+And the client replies with:
+
+```json
+{"id":"uuid","result":"40.7128,-74.0060"}
+```
+
+To receive those client responses, register a `ToolResponseHandler` on the framework. This is the one bit of wiring that is not automatic:
+
+```java
+framework.addAtmosphereHandler("/_mcp/tool-response",
+        new ToolResponseHandler(bridge));
+```
+
+Typical use cases: asking the browser for geolocation or local storage, requesting user confirmation before an admin action, or offloading work (image processing in a Web Worker) to the client.
+
+## Observability
+
+If `opentelemetry-api` is on the classpath, every `tools/call`, `resources/read`, and `prompts/get` invocation is wrapped in an OpenTelemetry trace span. The Spring Boot starter auto-configures `McpTracing` when an `OpenTelemetry` bean is present. Span attributes include `mcp.tool.name`, `mcp.tool.type`, `mcp.tool.arg_count`, and `mcp.tool.error`. See the [Observability](/docs/tutorial/18-observability/) chapter for the full setup.
+
+## Next steps
+
+- **Working sample**: `samples/spring-boot-mcp-server/` is the complete `DemoMcpServer` shown in this chapter, including a React frontend where human users chat in real time while AI agents connect via MCP to moderate them.
+- **Reference**: [`reference/mcp`](/docs/reference/mcp/) -- the annotations, auto-configuration, injectable parameters, and observability attributes in one page.
+- **Related**: [`tutorial/10-ai-tools`](/docs/tutorial/10-ai-tools/) -- how `@AiTool` methods on `@AiEndpoint` classes are automatically bridged into the MCP registry.
