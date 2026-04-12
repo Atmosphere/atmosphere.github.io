@@ -79,6 +79,7 @@ public interface AgentRuntime {
 | `atmosphere-adk` | Google ADK `Runner` | 100 |
 | `atmosphere-embabel` | Embabel `AgentPlatform` | 100 |
 | `atmosphere-koog` | JetBrains Koog `AIAgent` | 100 |
+| `atmosphere-semantic-kernel` | Microsoft Semantic Kernel `ChatCompletionService` | 100 |
 
 To switch runtimes, change a single Maven dependency — no code changes needed.
 
@@ -415,7 +416,7 @@ Default timeout: 5 minutes. Configurable via `@RequiresApproval(timeoutSeconds =
 
 When running on Google ADK, Atmosphere also calls `toolContext.requestConfirmation()` to give ADK native visibility into the approval pause. If ADK resolves a confirmation before Atmosphere (e.g., via its own UI), the ADK denial short-circuits without calling the executor. This creates a two-layer model: Atmosphere-level (cross-runtime) + ADK-native (runtime-specific).
 
-ADK runtimes declare `AiCapability.TOOL_APPROVAL`.
+All runtimes with `TOOL_CALLING` also declare `AiCapability.TOOL_APPROVAL` (Built-in, Spring AI, LangChain4j, ADK, Koog). SK and Embabel are excluded: SK because its tool bridge is deferred; Embabel because it has no tool-calling path.
 
 ## Context Compaction SPI
 
@@ -550,11 +551,17 @@ Available on **all** runtimes:
 
 ### Runtime-Dependent
 
-| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog |
-|-----------|----------|-------------|-----------|-----|---------|------|
-| `TOOL_CALLING` | Y | Y | Y | Y | | Y |
-| `STRUCTURED_OUTPUT` | Y | Y | Y | Y | Y | Y |
-| `CONVERSATION_MEMORY` | | | | Y | | Y |
+| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog | SK |
+|-----------|----------|-------------|-----------|-----|---------|------|----|
+| `TOOL_CALLING` | Y | Y | Y | Y | | Y | |
+| `STRUCTURED_OUTPUT` | Y | Y | Y | Y | Y | Y | Y |
+| `CONVERSATION_MEMORY` | | | | Y | | Y | Y |
+| `TOOL_APPROVAL` | Y | Y | Y | Y | | Y | |
+| `VISION` | Y | Y | Y | Y | | | |
+| `AUDIO` | | Y | Y | Y | | | |
+| `MULTI_MODAL` | Y | Y | Y | Y | | | |
+| `PROMPT_CACHING` | Y | Y | Y | | | | |
+| `TOKEN_USAGE` | Y | Y | Y | Y | Y | Y | Y |
 
 **How structured output works:** `AiPipeline` wraps the streaming session with `StructuredOutputCapturingSession` and augments the system prompt with JSON-schema instructions before the runtime runs. Any runtime that honors `SYSTEM_PROMPT` therefore gets `STRUCTURED_OUTPUT` automatically via the pipeline — no per-runtime adapter code required. `BuiltInAgentRuntime` additionally enables native `jsonMode` on the OpenAI-compatible client for provider-level JSON enforcement on top of the pipeline wrap. Source: `modules/ai/src/main/java/org/atmosphere/ai/pipeline/AiPipeline.java:128-135`, `modules/ai/src/main/java/org/atmosphere/ai/llm/BuiltInAgentRuntime.java:72-74`.
 
@@ -563,12 +570,9 @@ Available on **all** runtimes:
 
 ### Experimental
 
-| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog |
-|-----------|----------|-------------|-----------|-----|---------|------|
-| `AGENT_ORCHESTRATION` | | | | Y | Y | Y |
-| `TOOL_APPROVAL` | | | | Y | | |
-| `VISION` | | | | | | |
-| `AUDIO` | | | | | | |
+| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog | SK |
+|-----------|----------|-------------|-----------|-----|---------|------|----|
+| `AGENT_ORCHESTRATION` | | | | Y | Y | Y | |
 
 ## Cross-Runtime Contract Tests (TCK)
 
