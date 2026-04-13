@@ -1,0 +1,63 @@
+name: "Sync: Atmosphere release version"
+
+# Triggered by a repository_dispatch from the main atmosphere repo's
+# release-4x.yml workflow after a successful release. Runs the local
+# scripts/update-doc-versions.sh to bump every stale version reference
+# in the Starlight tutorial + Async-IO landing site, then commits and
+# pushes under the default GITHUB_TOKEN — no cross-repo auth needed.
+#
+# Release 4.0.36 shipped the sibling repo with 23 stale SNAPSHOT
+# references because this workflow did not exist. It closes the gap.
+
+on:
+  repository_dispatch:
+    types: [sync-version]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Atmosphere release version (e.g. 4.0.37)'
+        required: true
+        type: string
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version from payload
+        id: version
+        run: |
+          VERSION="${{ github.event.client_payload.version || inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            echo "::error ::No version supplied in client_payload or workflow_dispatch input" >&2
+            exit 1
+          fi
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$'; then
+            echo "::error ::Invalid version format: $VERSION" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Syncing atmosphere.github.io to $VERSION"
+
+      - name: Run update-doc-versions.sh
+        run: ./scripts/update-doc-versions.sh "${{ steps.version.outputs.version }}"
+
+      - name: Commit and push version sync
+        run: |
+          git config user.name "atmosphere-release-bot"
+          git config user.email "actions@github.com"
+          if git diff --quiet; then
+            echo "::notice ::Already at ${{ steps.version.outputs.version }} — no version changes to sync"
+            exit 0
+          fi
+          git add -A
+          git commit -m "chore(docs): sync to Atmosphere ${{ steps.version.outputs.version }}"
+          git push origin main
+          echo "::notice ::atmosphere.github.io synced to ${{ steps.version.outputs.version }}"
