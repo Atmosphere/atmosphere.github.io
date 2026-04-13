@@ -55,37 +55,41 @@ All runtimes depend on `atmosphere-ai`, which provides the framework-agnostic in
 
 ## Per-runtime capability matrix
 
-Not every runtime supports every feature. The table below shows what each runtime's `capabilities()` set actually declares — runtime truth, not wishful thinking (Correctness Invariant #5). When an adapter can't honor a capability through its framework's native API, the cell is blank and the sample README documents the exclusion.
+This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()` method returns — runtime truth, not wishful thinking (Correctness Invariant #5). Each row is pinned in the runtime's contract test via `expectedCapabilities()` in `AbstractAgentRuntimeContractTest`, so adding or removing a capability from the code without updating this table (or vice versa) breaks the build.
 
 | Capability | Built-in | Spring AI | LC4j | ADK | Embabel | Koog | SK |
 |------------|:--------:|:---------:|:----:|:---:|:-------:|:----:|:--:|
 | `TEXT_STREAMING`      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `SYSTEM_PROMPT`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `CONVERSATION_MEMORY` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `STRUCTURED_OUTPUT`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `TOOL_CALLING`        | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
 | `TOOL_APPROVAL`       | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
-| `TOKEN_USAGE`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `VISION`              | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
-| `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
+| `AUDIO`               |  — | ✅ | ✅ | ✅ |  — |  — |  — |
 | `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
-| `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ⚠️ |  — |  — |  — |
+| `PROMPT_CACHING`      | ✅ | ✅ | ✅ |  — |  — |  — |  — |
 | `PER_REQUEST_RETRY`   | ✅ |  — |  — |  — |  — |  — |  — |
-| `AGENT_ORCHESTRATION` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `CONVERSATION_MEMORY` |  — |  — |  — | ✅ |  — | ✅ | ✅ |
+| `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |
+| `TOKEN_USAGE`         |  — |  — |  — |  — |  — |  — | ✅ |
 
 **Legend:**
-- ✅ Supported
-- ⚠️ App-scoped only (ADK `ContextCacheConfig` is set at `App.Builder` construction time, not per-request; the per-request hint is logged and ignored)
-- — Not supported by the underlying framework
+- ✅ Declared in `capabilities()` and honored at runtime
+- — Not declared. Either the framework's native API does not expose the feature, or the bridge has not threaded it through yet
 
 **Notes on per-runtime gaps:**
 
-- **Embabel** has no tool-calling path in its current release — the framework is goal-driven rather than tool-driven. `@AiTool` methods are ignored when Embabel is the active runtime.
-- **Semantic Kernel** tool-calling is deferred in 4.0.36 — the Java SDK's tool-calling API is still stabilizing. `TOOL_CALLING` will be added in a follow-up release.
-- **Koog** lacks multi-modal and prompt-caching passthroughs because Koog 0.7.x does not expose a stable multi-modal input surface on the bridge path and its prompt caching is Bedrock-specific (no OpenAI-compatible hint).
-- **PER_REQUEST_RETRY** is Built-in only. Framework runtimes inherit their native retry layers (Spring Retry, LC4j `RetryUtils`, ADK's HttpClient, etc.) and do not expose a per-request override through the bridge. Setting `context.retryPolicy(RetryPolicy.NONE)` on a framework runtime silently inherits the framework's default instead. See the [AI / LLM Reference](../../reference/ai/) for the full documented deviation.
+- **`CONVERSATION_MEMORY`** is declared only by runtimes whose native SPI threads a conversation ID into the provider call (ADK `Runner`, Koog `AIAgent`, SK `ChatHistory`). The other runtimes still accept `AgentExecutionContext.conversationId()` but rebuild history from `context.conversationHistory()` on every call — that's not the same contract, so declaring the capability would be dishonest.
+- **`AGENT_ORCHESTRATION`** tracks whether the underlying framework owns a multi-agent dispatch loop (ADK `LlmAgent`, Embabel goal graph, Koog `chatAgentStrategy`). Built-in / Spring AI / LC4j / SK can participate in `@Coordinator` fleets but do not own the loop themselves.
+- **`TOKEN_USAGE`** is currently declared only by Semantic Kernel. The other runtimes forward `ai.tokens.*` metadata through the pipeline whenever the provider returns it, but the capability flag is gated on a typed `TokenUsage` extraction path — Tier 1 follow-up work will graduate Spring AI / LC4j / ADK / Koog / Built-in as each bridge is updated.
+- **`PROMPT_CACHING`** is honored by Built-in / Spring AI / LC4j through the `CacheHint` metadata attached to `AgentExecutionContext`. ADK's `ContextCacheConfig` is set at `App.Builder` construction time rather than per-request, so the hint has nowhere to go on the bridge path; the capability is not declared.
+- **`AUDIO`** is not declared by Built-in because the OpenAI-compatible client does not yet emit an `input_audio` content block — `Content.Audio` parts are accepted at the API surface but silently skipped during message assembly. Tier 2 work will wire this up.
+- **`PER_REQUEST_RETRY`** is Built-in only. Framework runtimes inherit their own retry layers (Spring Retry, LC4j `RetryUtils`, ADK's `HttpClient`, Koog `CallRetryPolicy`) and do not expose a per-request override through the bridge. Setting `context.retryPolicy(...)` on a framework runtime silently inherits the framework's default instead.
+- **Embabel** has no tool-calling surface in its current release — the framework is goal-driven rather than tool-driven. `@AiTool` methods are ignored when Embabel is the active runtime.
+- **Semantic Kernel** tool-calling is deferred in 4.0.36 — the Java SK's `KernelFunction` binding is on the Tier 2 roadmap. `TOOL_CALLING` and `TOOL_APPROVAL` will be added when the bridge routes through `ToolExecutionHelper.executeWithApproval` like the other runtimes.
+- **Koog** 0.7.x does not expose a stable multi-modal or prompt-cache surface on the bridge path; both capabilities are omitted until Koog 0.8.x's `Message.Media` lands.
 
-The Built-in runtime is designed as the **reference implementation** that declares every capability; framework adapters declare what their underlying API can actually deliver. If a framework adds a capability in a new release, the adapter picks it up without a breaking change.
+When a framework adds a capability in a new release, update both the runtime's `capabilities()` method and the `expectedCapabilities()` override in its contract test in the same commit. The contract test will fail on either side of a drift, which is the intended safety net.
 
 ## The adapter architecture
 
