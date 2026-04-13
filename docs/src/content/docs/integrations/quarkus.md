@@ -93,6 +93,32 @@ cd samples/quarkus-chat && ../../mvnw clean package -Pnative
 
 Requires GraalVM JDK 21+ or Mandrel. Use `-Dquarkus.native.container-build=true` to build without a local GraalVM installation.
 
+## `@AiEndpoint` annotation surfaces (new in 4.0.36)
+
+The `@AiEndpoint` annotation works identically across Spring Boot and Quarkus — both frameworks use the same `AiEndpointProcessor` to read the annotation's `promptCache` and `retry` attributes. In Quarkus the annotation processor runs at build time through the Atmosphere extension and wires the endpoint into the Undertow deployment.
+
+```java
+@AiEndpoint(
+    path = "/ai/chat",
+    systemPrompt = "You are a helpful assistant",
+    promptCache = CacheHint.CachePolicy.CONSERVATIVE,
+    retry = @Retry(maxRetries = 3, initialDelayMs = 1000)
+)
+public class AiChat {
+
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) {
+        session.stream(message);
+    }
+}
+```
+
+See [Spring Boot → `@AiEndpoint` annotation surfaces](spring-boot/#aiendpoint-annotation-surfaces-new-in-4036) for the full attribute reference. The only Quarkus-specific consideration:
+
+- **`load-on-startup`** must be > 0 for the endpoint to register at boot time (Quarkus's `UndertowDeploymentRecorder` skips on `<= 0`, unlike the Servlet spec).
+
+**Runtime coverage:** per-request retry is **Built-in only** in 4.0.36. Framework runtimes inherit their native retry layers. See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix).
+
 ## Samples
 
 - [Quarkus Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/quarkus-chat) -- real-time chat with WebSocket and long-polling fallback

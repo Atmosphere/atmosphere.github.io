@@ -181,6 +181,75 @@ cd samples/spring-boot-chat && ../../mvnw -Pnative package
 
 Requires GraalVM JDK 21+ (Spring Boot 4.0.5 / Spring Framework 6.2.8 baseline).
 
+## `@AiEndpoint` annotation surfaces (new in 4.0.36)
+
+Spring Boot's `@AiEndpoint` annotation gained two declarative attributes in 4.0.36 that let you configure prompt caching and per-request retry without touching `AgentExecutionContext` directly.
+
+### `@AiEndpoint.promptCache` — prompt caching policy
+
+Attach a `CacheHint.CachePolicy` to every request produced by an endpoint. The pipeline seeds each request's `CacheHint` before dispatching to the runtime — Spring AI, LangChain4j, and the Built-in OpenAI path emit `prompt_cache_key` on the wire, and the pipeline-level `ResponseCache` also honors the hint regardless of runtime.
+
+```java
+@AiEndpoint(
+    path = "/ai/chat",
+    systemPrompt = "You are a helpful assistant",
+    promptCache = CacheHint.CachePolicy.CONSERVATIVE
+)
+public class AiChat {
+
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) {
+        session.stream(message);
+    }
+}
+```
+
+Three policy values:
+
+- `CachePolicy.NONE` (default) — no caching hint
+- `CachePolicy.CONSERVATIVE` — short TTL (30 min), only cache if the prefix is identical
+- `CachePolicy.AGGRESSIVE` — longer TTL (24 h), cache any semantically similar prefix
+
+The policy is endpoint-scoped. To set the cache hint per request, use `context.withCacheHint()` directly.
+
+### `@AiEndpoint.retry` — per-request retry policy
+
+Override the client-level retry policy on a per-endpoint basis. Useful when a particular endpoint needs tighter or looser semantics than the global default (for example, a strict endpoint that must fail fast, or a best-effort background endpoint that can retry aggressively).
+
+```java
+@AiEndpoint(
+    path = "/ai/strict",
+    systemPrompt = "You are a mission-critical assistant",
+    retry = @Retry(maxRetries = 0)
+)
+public class StrictChat {
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) {
+        session.stream(message);  // fails fast — no retries on transient errors
+    }
+}
+
+@AiEndpoint(
+    path = "/ai/background",
+    retry = @Retry(maxRetries = 5, initialDelayMs = 2000, backoffMultiplier = 2.0)
+)
+public class BackgroundChat {
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) {
+        session.stream(message);  // retries up to 5 times with exponential backoff
+    }
+}
+```
+
+`@Retry` attributes:
+
+- `maxRetries` — sentinel `-1` means "inherit client-level default", 0 disables retries, 1+ retries
+- `initialDelayMs` — base delay before the first retry (default `1000`)
+- `maxDelayMs` — cap on exponential backoff (default `30000`)
+- `backoffMultiplier` — exponential factor (default `2.0`)
+
+**Runtime coverage:** per-request retry is **Built-in only** in 4.0.36. Framework runtimes (Spring AI, LangChain4j, ADK, Koog, Embabel, Semantic Kernel) inherit their native retry layers and ignore the per-request override. The Built-in runtime threads `context.retryPolicy()` into `OpenAiCompatibleClient.sendWithRetry` as a real override. See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix) for the full breakdown.
+
 ## Samples
 
 - [Spring Boot Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat) -- rooms, presence, REST API, Micrometer metrics, Actuator health

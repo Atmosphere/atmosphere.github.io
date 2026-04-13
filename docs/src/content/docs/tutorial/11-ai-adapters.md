@@ -39,7 +39,7 @@ The built-in client is what powers `session.stream(message)` inside `@AiEndpoint
 
 ## Runtimes
 
-Atmosphere ships six `AgentRuntime` implementations — one built-in and five adapter modules for popular frameworks:
+Atmosphere ships **seven** `AgentRuntime` implementations — one built-in and six adapter modules for popular frameworks:
 
 | Runtime | Module / Artifact | AI Framework | Version |
 |---------|------------------|-------------|---------|
@@ -49,8 +49,43 @@ Atmosphere ships six `AgentRuntime` implementations — one built-in and five ad
 | Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) | 1.0.0 |
 | Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) | 0.3.4 |
 | Koog | `atmosphere-koog` | Koog (Kotlin agent framework) | 0.7.3 |
+| Semantic Kernel | `atmosphere-semantic-kernel` | Microsoft Semantic Kernel (`ChatCompletionService`) | 1.4.0 |
 
 All runtimes depend on `atmosphere-ai`, which provides the framework-agnostic interfaces: `AgentRuntime`, `AiStreamingAdapter<T>`, `StreamingSession`, `AiRequest`, and the `@AiTool`/`@AiEndpoint` annotations.
+
+## Per-runtime capability matrix
+
+Not every runtime supports every feature. The table below shows what each runtime's `capabilities()` set actually declares — runtime truth, not wishful thinking (Correctness Invariant #5). When an adapter can't honor a capability through its framework's native API, the cell is blank and the sample README documents the exclusion.
+
+| Capability | Built-in | Spring AI | LC4j | ADK | Embabel | Koog | SK |
+|------------|:--------:|:---------:|:----:|:---:|:-------:|:----:|:--:|
+| `TEXT_STREAMING`      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `SYSTEM_PROMPT`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `CONVERSATION_MEMORY` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `STRUCTURED_OUTPUT`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `TOOL_CALLING`        | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
+| `TOOL_APPROVAL`       | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
+| `TOKEN_USAGE`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `VISION`              | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
+| `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
+| `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
+| `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ⚠️ |  — |  — |  — |
+| `PER_REQUEST_RETRY`   | ✅ |  — |  — |  — |  — |  — |  — |
+| `AGENT_ORCHESTRATION` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+**Legend:**
+- ✅ Supported
+- ⚠️ App-scoped only (ADK `ContextCacheConfig` is set at `App.Builder` construction time, not per-request; the per-request hint is logged and ignored)
+- — Not supported by the underlying framework
+
+**Notes on per-runtime gaps:**
+
+- **Embabel** has no tool-calling path in its current release — the framework is goal-driven rather than tool-driven. `@AiTool` methods are ignored when Embabel is the active runtime.
+- **Semantic Kernel** tool-calling is deferred in 4.0.36 — the Java SDK's tool-calling API is still stabilizing. `TOOL_CALLING` will be added in a follow-up release.
+- **Koog** lacks multi-modal and prompt-caching passthroughs because Koog 0.7.x does not expose a stable multi-modal input surface on the bridge path and its prompt caching is Bedrock-specific (no OpenAI-compatible hint).
+- **PER_REQUEST_RETRY** is Built-in only. Framework runtimes inherit their native retry layers (Spring Retry, LC4j `RetryUtils`, ADK's HttpClient, etc.) and do not expose a per-request override through the bridge. Setting `context.retryPolicy(RetryPolicy.NONE)` on a framework runtime silently inherits the framework's default instead. See the [AI / LLM Reference](../../reference/ai/) for the full documented deviation.
+
+The Built-in runtime is designed as the **reference implementation** that declares every capability; framework adapters declare what their underlying API can actually deliver. If a framework adds a capability in a new release, the adapter picks it up without a breaking change.
 
 ## The adapter architecture
 

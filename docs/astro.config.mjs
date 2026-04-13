@@ -43,6 +43,7 @@ export default defineConfig({
                 { label: 'Introduction', slug: 'tutorial/01-introduction' },
                 { label: '@Agent & @Prompt', slug: 'agents/agent' },
                 { label: '@AiTool & Human-in-the-Loop', slug: 'tutorial/10-ai-tools' },
+                { label: 'Durable HITL Workflows', slug: 'tutorial/24-durable-hitl' },
                 { label: '@Command & Skill Files', slug: 'agents/skills' },
                 { label: '@Coordinator & Multi-Agent', slug: 'agents/coordinator' },
                 { label: 'AI Adapters', slug: 'tutorial/11-ai-adapters' },
