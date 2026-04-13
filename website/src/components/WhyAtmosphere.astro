@@ -1,0 +1,898 @@
+---
+// The value prop in two parallel lists:
+//   1. abstracted — features every framework provides, but normalized behind
+//      the @Agent / @AiEndpoint / @AiTool surface so they're portable
+//   2. atmosphereOnly — features no framework ships on its own
+// Replaces the per-framework checkmark matrix, which was just "everyone has
+// the same thing" and demonstrated nothing.
+const abstractedFeatures = [
+  'Streaming text to any client',
+  'Tool calling with @AiTool and JSON-schema parameters',
+  'Human-in-the-loop approval gates via @RequiresApproval',
+  'Structured output with response schemas',
+  'Conversation memory across turns',
+  'Vision and multi-modal input on any framework that supports it',
+  'Token-usage accounting on every response',
+  'Per-request retry policy and prompt caching',
+];
+
+const atmosphereOnlyFeatures = [
+  'Cross-framework @Agent portability — one codebase, seven runtimes',
+  'Real-time streaming transport: WebSocket, SSE, WebTransport/HTTP3, gRPC, long-poll with automatic fallback',
+  '@Coordinator + @Fleet multi-agent orchestration with A2A protocol',
+  'Durable HITL workflows — agent state survives JVM restart via CheckpointStore',
+  '@Command routing to Slack, Telegram, Discord, WhatsApp, Messenger',
+  'Rooms, presence, and broadcaster clustering over Kafka or Redis',
+  'MCP server — expose @AiTool to Claude, Copilot, Cursor, any MCP client',
+  'atmosphere.js client SDK with React, Vue, Svelte, and React Native hooks',
+  'Enterprise support every year since 2014 — eleven consecutive years',
+];
+
+// The "buy Atmosphere support to escape lock-in" story, told as a before/after
+// comparison instead of another row of checkmarks. Each item is the same shape
+// on both sides so the swap story lines up visually.
+const lockInStory = [
+  {
+    without: 'One framework, chosen up front.',
+    with: 'Seven frameworks, portable @Agent code. Swap the dependency when the winner changes.',
+  },
+  {
+    without: 'One LLM provider, locked into its pricing and SLA.',
+    with: 'Any LLM provider supported by any of the seven frameworks. Move when pricing shifts, rate limits bite, or a new model lands.',
+  },
+  {
+    without: 'Rewrite the agent when the framework changes direction, goes EOL, or gets acquired.',
+    with: 'The abstraction holds. Your @Agent, @AiEndpoint, and @AiTool code do not move.',
+  },
+  {
+    without: 'Separate support contracts with each vendor. No one owns the integration.',
+    with: 'One support contract with Async-IO.org. Eleven years of shipping Atmosphere and writing every bridge on this page.',
+  },
+  {
+    without: 'No escape hatch if the bet goes wrong.',
+    with: 'The escape hatch is the product. The swap is what you are paying us to maintain.',
+  },
+];
+
+const frameworks = [
+  {
+    name: 'Spring AI',
+    short: 'Spring AI',
+    vendor: 'Spring / VMware',
+    language: 'Java',
+    summary: 'Spring\'s official AI framework. ChatClient, advisors, RAG, VectorStore, and full auto-configuration.',
+    bridge: 'atmosphere-spring-ai',
+  },
+  {
+    name: 'LangChain4j',
+    short: 'LC4j',
+    vendor: 'Community',
+    language: 'Java',
+    summary: 'Java port of the LangChain ecosystem. Chains, AI services, streaming chat models, and tool bridging.',
+    bridge: 'atmosphere-langchain4j',
+  },
+  {
+    name: 'Google ADK',
+    short: 'ADK',
+    vendor: 'Google',
+    language: 'Java',
+    summary: 'Agent Development Kit. Multi-agent orchestration, sessions, and the Runner execution engine.',
+    bridge: 'atmosphere-adk',
+  },
+  {
+    name: 'Embabel',
+    short: 'Embabel',
+    vendor: 'Embabel',
+    language: 'Kotlin',
+    summary: 'Goal-driven agent framework from the creator of Spring. Declarative goals, planned execution, native PromptRunner.',
+    bridge: 'atmosphere-embabel',
+  },
+  {
+    name: 'JetBrains Koog',
+    short: 'Koog',
+    vendor: 'JetBrains',
+    language: 'Kotlin',
+    summary: 'Kotlin-native AI framework. Structured concurrency, typed tools, and a composable agent DSL.',
+    bridge: 'atmosphere-koog',
+  },
+  {
+    name: 'Semantic Kernel',
+    short: 'SK',
+    vendor: 'Microsoft',
+    language: 'Java',
+    summary: 'Microsoft\'s enterprise-grade AI orchestration SDK. ChatCompletionService, kernel plugins, memory, planners.',
+    bridge: 'atmosphere-semantic-kernel',
+  },
+  {
+    name: 'Built-in',
+    short: 'Built-in',
+    vendor: 'Async-IO.org',
+    language: 'Java',
+    summary: 'Atmosphere\'s zero-dependency OpenAI-compatible client. Built for tests and local dev without pulling in a framework &mdash; works with OpenAI, Gemini, Ollama, and any compatible endpoint.',
+    bridge: 'atmosphere-ai',
+  },
+];
+---
+
+<section class="why" id="why">
+  <div class="why-container">
+    <div class="section-header">
+      <span class="section-label">Framework Support</span>
+      <h2 class="section-title">One support contract. Every Java AI framework.</h2>
+      <p class="section-description">
+        The Java AI ecosystem has seven frameworks. Each one is moving fast, each
+        one has its own release cadence, and each one could change direction
+        tomorrow. Atmosphere is the <strong>runtime-abstraction layer</strong> that
+        makes your <code>@Agent</code>, <code>@AiEndpoint</code>, and
+        <code>@AiTool</code> code portable across all seven &mdash; swap the
+        dependency, keep the code. Async-IO.org maintains the abstraction and the
+        bridges; our support contract is the insurance policy against vendor
+        lock-in.
+      </p>
+    </div>
+
+    <div class="frameworks-grid">
+      {frameworks.map((fw, idx) => (
+        <article class="framework-card" style={`--delay: ${(idx * 0.05).toFixed(2)}s`}>
+          <div class="framework-head">
+            <h3 class="framework-name">{fw.name}</h3>
+            <span class="framework-vendor">{fw.vendor}</span>
+          </div>
+          <p class="framework-summary">{fw.summary}</p>
+          <div class="framework-foot">
+            <span class="framework-bridge">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              {fw.bridge}
+            </span>
+            <span class="framework-support">Bridged</span>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <div class="matrix-wrapper">
+      <table class="matrix">
+        <caption class="matrix-caption">
+          At-a-glance: seven frameworks, one bridge layer, one support contract.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="col-framework">Framework</th>
+            <th scope="col">Language</th>
+            <th scope="col">Vendor</th>
+            <th scope="col">Atmosphere bridge</th>
+            <th scope="col" class="col-sla">Atmosphere support</th>
+          </tr>
+        </thead>
+        <tbody>
+          {frameworks.map((fw) => (
+            <tr>
+              <th scope="row" class="row-name">{fw.name}</th>
+              <td class="row-language">{fw.language}</td>
+              <td class="row-vendor">{fw.vendor}</td>
+              <td class="row-bridge">
+                <span class="bridge-artifact">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  {fw.bridge}
+                </span>
+              </td>
+              <td class="row-sla">
+                <span class="sla-badge">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Included
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="valueadd-intro">
+      <h3 class="valueadd-title">Abstracted, portable, and then some</h3>
+      <p class="valueadd-lead">
+        Atmosphere runs <strong>on top of</strong> each framework and its
+        ecosystem &mdash; Spring for Spring AI, the LangChain4j chain
+        library, Google ADK, Microsoft Semantic Kernel, JetBrains Koog, and
+        Embabel's planning engine. The <strong>Built-in</strong> runtime is
+        a zero-dependency OpenAI-compatible client for tests and local dev.
+        Whichever you pick, you code against one surface &mdash;
+        <code>@Agent</code>, <code>@AiEndpoint</code>, <code>@AiTool</code>
+        &mdash; and you get <strong>more than any framework ships on its own</strong>.
+      </p>
+    </div>
+
+    <div class="featurelists">
+      <div class="featurelist featurelist-abstracted">
+        <div class="featurelist-head">
+          <span class="featurelist-label">Abstracted through the @Agent API</span>
+          <h4 class="featurelist-title">Portable across all 7 runtimes</h4>
+          <p class="featurelist-sub">
+            Every framework provides these. Atmosphere normalizes them
+            behind one annotation surface, so your agent code is identical
+            whether you run on Spring AI, Koog, or anything in between.
+          </p>
+        </div>
+        <ul class="featurelist-items">
+          {abstractedFeatures.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+
+      <div class="featurelist featurelist-only">
+        <div class="featurelist-head">
+          <span class="featurelist-label">Only with Atmosphere</span>
+          <h4 class="featurelist-title">Wired to your agent, not to your infra team</h4>
+          <p class="featurelist-sub">
+            The wider JVM ecosystem has pieces of some of these &mdash;
+            Spring has WebSocket and Kafka, Spring Integration has channel
+            adapters, there are community MCP clients. Atmosphere is what
+            wires every item below directly to your
+            <code>@Agent</code> / <code>@AiTool</code> code, shipped as one
+            coherent stack and covered by one SLA &mdash; instead of half a
+            dozen separate libraries your team glues together.
+          </p>
+        </div>
+        <ul class="featurelist-items">
+          {atmosphereOnlyFeatures.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+    </div>
+
+    <div class="lockin-block">
+      <div class="lockin-intro">
+        <h3 class="lockin-title">No vendor lock-in. One support contract.</h3>
+        <p class="lockin-lead">
+          You are not shopping between Spring AI and LangChain4j &mdash; you
+          already want an agent stack that does not lock you into one
+          framework, one LLM provider, or one vendor. Atmosphere is that
+          stack. Async-IO.org has been selling the support contract that
+          covers the abstraction and the swap &mdash; every year, since 2014.
+        </p>
+      </div>
+
+      <div class="lockin-compare">
+        <div class="lockin-col lockin-without">
+          <span class="lockin-col-label">Without Atmosphere</span>
+          <h4 class="lockin-col-title">Locked in</h4>
+          <ul class="lockin-list">
+            {lockInStory.map((row) => <li>{row.without}</li>)}
+          </ul>
+        </div>
+        <div class="lockin-divider" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+        </div>
+        <div class="lockin-col lockin-with">
+          <span class="lockin-col-label">With Atmosphere + Async-IO.org support</span>
+          <h4 class="lockin-col-title">Portable, covered</h4>
+          <ul class="lockin-list">
+            {lockInStory.map((row) => <li>{row.with}</li>)}
+          </ul>
+        </div>
+      </div>
+
+      <div class="lockin-cta">
+        <a href="/contact/" class="btn btn-primary">
+          Talk to Us
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="#support" class="btn btn-secondary">
+          Support Tiers
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .why {
+    padding: var(--space-4xl) var(--space-xl);
+    position: relative;
+  }
+
+  .why::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-border-accent), transparent);
+  }
+
+  .why-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto var(--space-3xl);
+  }
+
+  .section-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    margin-bottom: var(--space-md);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-md);
+  }
+
+  .section-description {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .section-description strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .section-description code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    padding: 0.1em 0.4em;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-accent);
+  }
+
+  .frameworks-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+    margin-bottom: var(--space-3xl);
+  }
+
+  .framework-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: var(--space-xl);
+    transition: all 0.3s var(--ease-out-quad);
+    animation: fadeInUp 0.6s var(--ease-out-expo) var(--delay) both;
+  }
+
+  .framework-card:hover {
+    border-color: var(--color-border-accent);
+    transform: translateY(-2px);
+  }
+
+  .framework-head {
+    margin-bottom: var(--space-md);
+  }
+
+  .framework-name {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin: 0 0 0.15em 0;
+    letter-spacing: -0.01em;
+  }
+
+  .framework-vendor {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .framework-summary {
+    flex-grow: 1;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-md) 0;
+  }
+
+  .framework-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .framework-bridge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-accent);
+  }
+
+  .framework-support {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+    background: var(--color-bg-tertiary);
+    padding: 0.2em 0.6em;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .matrix-wrapper {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    overflow-x: auto;
+    margin-bottom: var(--space-3xl);
+  }
+
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    min-width: 780px;
+  }
+
+  .matrix-caption {
+    caption-side: top;
+    padding: var(--space-lg) var(--space-xl);
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .matrix th,
+  .matrix td {
+    padding: var(--space-md) var(--space-lg);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+
+  .matrix thead th {
+    background: var(--color-bg-tertiary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--color-border-accent);
+  }
+
+  .matrix tbody tr:last-child th,
+  .matrix tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .matrix tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .col-framework {
+    width: 180px;
+  }
+
+  .col-sla {
+    background: var(--color-accent-glow) !important;
+  }
+
+  .row-name {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .row-language,
+  .row-vendor {
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+  }
+
+  .bridge-artifact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-accent);
+  }
+
+  .sla-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .valueadd-intro {
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto var(--space-2xl);
+  }
+
+  .valueadd-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-md) 0;
+  }
+
+  .valueadd-lead {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  .valueadd-lead code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    padding: 0.1em 0.4em;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-accent);
+  }
+
+  .featurelists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-3xl);
+  }
+
+  .featurelist {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2xl);
+    background: var(--color-bg-secondary);
+    border-radius: 16px;
+  }
+
+  .featurelist-abstracted {
+    border: 1px solid var(--color-border);
+  }
+
+  .featurelist-only {
+    border: 1px solid var(--color-border-accent);
+    box-shadow: 0 0 0 1px var(--color-accent-glow), 0 24px 48px -24px rgba(0, 0, 0, 0.5);
+  }
+
+  .featurelist-head {
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-lg);
+  }
+
+  .featurelist-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-sm);
+  }
+
+  .featurelist-only .featurelist-label {
+    color: var(--color-accent);
+  }
+
+  .featurelist-title {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-sm) 0;
+    letter-spacing: -0.01em;
+  }
+
+  .featurelist-sub {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  .featurelist-sub code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 0.1em 0.35em;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    color: var(--color-accent);
+  }
+
+  .featurelist-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .featurelist-items li {
+    position: relative;
+    padding-left: var(--space-lg);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+  }
+
+  .featurelist-items li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 14px;
+    height: 14px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23d4b060' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8l3 3 7-7'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .featurelist-only .featurelist-items li {
+    color: var(--color-text-primary);
+  }
+
+  .lockin-block {
+    padding: var(--space-3xl) var(--space-2xl);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-accent);
+    border-radius: 20px;
+    box-shadow: 0 0 0 1px var(--color-accent-glow), 0 24px 48px -24px rgba(0, 0, 0, 0.5);
+  }
+
+  .lockin-intro {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto var(--space-2xl);
+  }
+
+  .lockin-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-md) 0;
+  }
+
+  .lockin-lead {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  .lockin-compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-xl);
+    align-items: stretch;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .lockin-col {
+    padding: var(--space-2xl);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .lockin-without {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    opacity: 0.85;
+  }
+
+  .lockin-with {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-accent);
+    box-shadow: 0 0 0 1px var(--color-accent-glow), 0 24px 48px -24px rgba(0, 0, 0, 0.5);
+  }
+
+  .lockin-col-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-xs);
+  }
+
+  .lockin-with .lockin-col-label {
+    color: var(--color-accent);
+  }
+
+  .lockin-col-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-lg) 0;
+  }
+
+  .lockin-with .lockin-col-title {
+    color: var(--color-text-primary);
+  }
+
+  .lockin-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .lockin-list li {
+    position: relative;
+    padding-left: var(--space-lg);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+
+  .lockin-without .lockin-list li::before {
+    content: '×';
+    position: absolute;
+    left: 0;
+    top: -0.1em;
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  .lockin-with .lockin-list li {
+    color: var(--color-text-primary);
+  }
+
+  .lockin-with .lockin-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .lockin-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-accent);
+    padding: 0 var(--space-sm);
+  }
+
+  .lockin-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-xl);
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s var(--ease-out-quad);
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px var(--color-accent-glow);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-accent);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-text-muted);
+    background: var(--color-bg-elevated);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 1024px) {
+    .frameworks-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .featurelists {
+      grid-template-columns: 1fr;
+    }
+
+    .lockin-compare {
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+    }
+
+    .lockin-divider {
+      transform: rotate(90deg);
+      justify-self: center;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .why {
+      padding: var(--space-3xl) var(--space-md);
+    }
+
+    .frameworks-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .lockin-block {
+      padding: var(--space-2xl) var(--space-lg);
+    }
+
+    .lockin-cta {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
