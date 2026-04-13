@@ -92,6 +92,10 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'AI / LLM', slug: 'reference/ai' },
+            { label: 'Embeddings', slug: 'agents/embeddings' },
+            { label: 'AgentLifecycleListener', slug: 'reference/lifecycle-listener' },
+            { label: 'ExecutionHandle', slug: 'reference/execution-handle' },
+            { label: 'ToolApprovalPolicy', slug: 'reference/tool-approval-policy' },
             { label: 'AI Testing', slug: 'reference/testing' },
             { label: 'Core Runtime', slug: 'reference/core' },
             { label: 'Rooms & Presence', slug: 'reference/rooms' },
@@ -115,6 +119,8 @@ export default defineConfig({
             { label: 'LangChain4j', slug: 'integrations/langchain4j' },
             { label: 'Google ADK', slug: 'integrations/adk' },
             { label: 'Embabel', slug: 'integrations/embabel' },
+            { label: 'JetBrains Koog', slug: 'integrations/koog' },
+            { label: 'Semantic Kernel', slug: 'integrations/semantic-kernel' },
           ],
         },
         {
