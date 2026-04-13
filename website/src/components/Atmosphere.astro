@@ -39,6 +39,19 @@ const pillars = [
     ],
     extras: ['Portable @AiTool across all backends', 'Conversation memory', 'Structured output', 'Usage tracking'],
   },
+  {
+    label: 'Orchestration',
+    title: 'Multi-agent out of the box',
+    description: 'Coordinate fleets of specialist agents, gate tools behind human approval, hand off conversations mid-flight, and persist state across JVM restarts &mdash; all declarative.',
+    items: [
+      { name: '@Coordinator & @Fleet', detail: 'Declarative multi-agent orchestration. A @Coordinator injects an AgentFleet and dispatches work to @Agent beans over local, A2A, or MCP transports. Portable across Spring Boot, Quarkus, and plain JVM.', url: 'https://async-io.org/docs/agents/coordinator/', urlLabel: 'Coordinator Docs' },
+      { name: '@RequiresApproval (HITL)', detail: 'Park a virtual thread until a user approves or denies a tool call via the /__approval/ wire protocol. Every @AiTool annotated with @RequiresApproval gates through the ToolApprovalPolicy sealed interface (AllowAll, DenyAll, Annotated, Custom).', url: 'https://async-io.org/docs/reference/tool-approval-policy/', urlLabel: 'ToolApprovalPolicy' },
+      { name: 'Agent Handoffs', detail: 'session.handoff("billing", message) transfers a conversation with full history to another @Agent. Built-in cycle guard prevents infinite handoff loops; AiEvent.Handoff surfaces on the wire for UI state transitions.', url: 'https://async-io.org/docs/tutorial/10-ai-tools/', urlLabel: 'Tutorial' },
+      { name: 'Durable HITL', detail: 'CheckpointStore SPI (in-memory, SQLite, Redis) persists parent-chained conversation snapshots. An approval that arrives after a JVM restart resumes the exact turn and resurrects the execution on a fresh virtual thread.', url: 'https://async-io.org/docs/tutorial/24-durable-hitl/', urlLabel: 'Durable HITL Tutorial' },
+      { name: 'ExecutionHandle', detail: 'Cooperative cancel for in-flight agent executions. Each runtime wraps its native cancel primitive (HTTP close, coroutine Job cancel, Reactor Flux dispose). handle.cancel() is idempotent and thread-safe.', url: 'https://async-io.org/docs/reference/execution-handle/', urlLabel: 'ExecutionHandle Docs' },
+    ],
+    extras: ['LLM-as-judge eval', 'Long-term memory', 'Conditional routing', 'Lifecycle listeners'],
+  },
 ];
 ---
 
@@ -46,10 +59,10 @@ const pillars = [
   <div class="pillars-container">
     <div class="section-header">
       <span class="section-label">The Platform</span>
-      <h2 class="section-title">Transports. Protocols. Runtimes.</h2>
+      <h2 class="section-title">Transports. Protocols. Runtimes. Orchestration.</h2>
       <p class="section-description">
-        Build once with <code>@Agent</code> &mdash; deliver over any transport and any protocol.
-        Three distinct layers, each independently extensible.
+        Build once with <code>@Agent</code> &mdash; deliver over any transport and any protocol,
+        on any LLM runtime, with multi-agent coordination and human approval built in.
       </p>
     </div>
 
@@ -217,7 +230,7 @@ const pillars = [
 
   .pillars-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-lg);
   }
 
