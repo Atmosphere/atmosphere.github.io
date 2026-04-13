@@ -11,7 +11,7 @@ Cross-node broadcasting via Kafka. Messages broadcast on one node are delivered 
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+    <atmosphere.version>4.0.36</atmosphere.version>
 </properties>
 
 <dependency>

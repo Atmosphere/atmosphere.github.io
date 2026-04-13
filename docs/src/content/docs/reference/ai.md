@@ -11,7 +11,7 @@ AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `Stre
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+    <atmosphere.version>4.0.36</atmosphere.version>
 </properties>
 
 <dependency>

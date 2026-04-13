@@ -13,7 +13,7 @@ Before reaching for an adapter module, know that `atmosphere-ai` itself includes
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+    <atmosphere.version>4.0.36</atmosphere.version>
 </properties>
 
 <dependency>
@@ -324,7 +324,7 @@ Embabel is a Kotlin-based agent framework with built-in planning, tool calling, 
 <dependency>
     <groupId>com.embabel.agent</groupId>
     <artifactId>embabel-agent-platform-autoconfigure</artifactId>
-    <version>0.3.4</version>
+    <version>4.0.36</version>
 </dependency>
 ```
 

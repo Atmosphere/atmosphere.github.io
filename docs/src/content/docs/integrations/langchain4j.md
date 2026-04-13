@@ -11,7 +11,7 @@ description: "AgentRuntime backed by LangChain4j"
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+    <atmosphere.version>4.0.36</atmosphere.version>
 </properties>
 
 <dependency>

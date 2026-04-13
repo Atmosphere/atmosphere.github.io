@@ -11,7 +11,7 @@ Bidirectional streaming transport for Atmosphere using grpc-java. Clients can su
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36-SNAPSHOT</atmosphere.version>
+    <atmosphere.version>4.0.36</atmosphere.version>
 </properties>
 
 <dependency>

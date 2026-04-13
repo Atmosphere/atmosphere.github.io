@@ -26,7 +26,7 @@ const pillars = [
   },
   {
     label: 'AI Runtimes',
-    title: '6 backends, swap by dependency',
+    title: '7 backends, swap by dependency',
     description: 'Atmosphere is the infrastructure layer underneath your LLM library. Your @Agent and @AiTool annotations work identically across all backends.',
     items: [
       { name: 'Built-in', detail: 'Atmosphere\'s zero-dependency OpenAI-compatible client. Supports function calling (up to 5 rounds), streaming, and structured output with Gemini, OpenAI, and Ollama out of the box.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
@@ -35,6 +35,7 @@ const pillars = [
       { name: 'Google ADK', detail: 'Google\'s Agent Development Kit for building multi-agent systems. Atmosphere integrates as a transport and protocol layer for ADK agents.', url: 'https://google.github.io/adk-docs/', urlLabel: 'Google ADK Docs' },
       { name: 'Embabel', detail: 'Goal-driven agent framework by Rod Johnson (creator of Spring). Agents define goals and Embabel plans execution. Atmosphere provides the real-time delivery layer.', url: 'https://embabel.com', urlLabel: 'embabel.com' },
       { name: 'JetBrains Koog', detail: 'Kotlin-native AI framework by JetBrains. Brings structured concurrency and Kotlin idioms to agent development. Atmosphere serves as the transport and protocol layer.', url: 'https://github.com/JetBrains/koog', urlLabel: 'GitHub' },
+      { name: 'Semantic Kernel', detail: 'Microsoft\'s enterprise-grade AI orchestration SDK. ChatCompletionService, plugins, memory, and planners. Atmosphere ships a Semantic Kernel runtime bridge so @Agent and @AiTool work across SK-based deployments.', url: 'https://learn.microsoft.com/en-us/semantic-kernel/', urlLabel: 'Microsoft Docs' },
     ],
     extras: ['Portable @AiTool across all backends', 'Conversation memory', 'Structured output', 'Usage tracking'],
   },
