@@ -44,17 +44,19 @@ Each adapter wraps its framework's native cancel mechanism so a single
 | Runtime | Native primitive | Hard cancel |
 |---------|------------------|:-----------:|
 | Built-in        | `HttpClient` request + SSE `InputStream.close()` | ✅ true HTTP-level cancel |
-| Google ADK      | `AdkEventAdapter.whenDone()` + `Flux.dispose()` on Runner subscription | ✅ Reactor disposal |
-| JetBrains Koog  | `coroutineContext[Job].cancel()` captured inside `runBlocking` | ✅ coroutine cancel |
-| Spring AI       | `Disposable.dispose()` on the streaming `Flux` | ✅ Reactor disposal |
-| LangChain4j     | `CompletableFuture.completeExceptionally(CancellationException)` + soft-cancel flag | ⚠️ caller-side unblock; underlying HTTP drains naturally |
-| Embabel         | Soft-cancel flag polled at goal boundaries | ⚠️ cooperative only |
-| Semantic Kernel | Soft-cancel flag polled at message boundaries | ⚠️ cooperative only |
+| Spring AI       | `reactor.core.Disposable.dispose()` on the streaming `Flux` | ✅ Reactor disposal |
+| LangChain4j     | `CompletableFuture.completeExceptionally(CancellationException)` + `AtomicBoolean` soft-cancel flag consulted in the streaming response handler | ⚠️ caller-side unblock; underlying HTTP drains naturally |
+| Google ADK      | `AdkEventAdapter.cancel()` → `io.reactivex.rxjava3.disposables.Disposable.dispose()` on the Runner subscription | ✅ RxJava3 disposal |
+| JetBrains Koog  | `AtomicReference<Job>` captured by `executeInternal` → `Job.cancel()` + virtual-thread `Thread.interrupt()` belt-and-suspenders + immediate `done.complete(null)` fallback | ✅ coroutine cancel |
+| Semantic Kernel | **None**. `SemanticKernelAgentRuntime` does not override `doExecuteWithHandle`, so it inherits `AbstractAgentRuntime`'s default which calls `doExecute(...)` and returns the `ExecutionHandle.completed()` sentinel. `handle.cancel()` is a no-op. | — |
+| Embabel         | **None**. `EmbabelAgentRuntime` does not override `executeWithHandle`, so it inherits the `AgentRuntime` interface default which calls `execute(...)` and returns the `ExecutionHandle.completed()` sentinel. `handle.cancel()` is a no-op. | — |
 
-"Hard cancel" means the underlying HTTP or coroutine is actually torn down.
-"Cooperative" means the caller sees cancellation immediately but the
-runtime's internal thread continues draining the stream until the LLM
-finishes — token budgets may still be consumed.
+"Hard cancel" means the underlying HTTP request, coroutine, or Reactor/RxJava
+subscription is actually torn down. "Caller-side unblock" means the caller
+sees cancellation immediately but the runtime's internal thread continues
+draining the stream until the LLM finishes — token budgets may still be
+consumed. **None** means no cancel primitive is wired and `cancel()` is an
+idempotent no-op — a known gap for Embabel and Semantic Kernel.
 
 ## Usage
 

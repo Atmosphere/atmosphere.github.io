@@ -179,7 +179,7 @@ Every concrete `EmbeddingRuntime` ships with a contract-test subclass of
 deterministic fake embedder so the bridge plumbing is validated without
 live network calls.
 
-The six parity assertions are:
+The seven parity assertions are:
 
 1. `runtimeHasStableName()` — `name()` returns a non-blank, stable identifier
 2. `embedSingleTextReturnsVectorOfExpectedDimension()` — single-text round-trip
@@ -187,6 +187,7 @@ The six parity assertions are:
 4. `embedAllWithEmptyListReturnsEmptyList()` — edge case
 5. `runtimeIsAvailableAfterFakeInjection()` — availability gate flips on injection
 6. `dimensionsAccessorIsNonNegativeOrMinusOne()` — dimension advertising contract
+7. `runtimeDeclaresStablePriority()` — `priority()` returns a stable integer
 
 If you add a new `EmbeddingRuntime` implementation, subclass the base and
 supply a deterministic fake embedder via `installFakeEmbedder()` — no

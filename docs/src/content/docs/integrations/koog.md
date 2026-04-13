@@ -76,9 +76,11 @@ See [ExecutionHandle](../../reference/execution-handle/) for the full cancel con
 |-------|---------|
 | `KoogAgentRuntime` | `AgentRuntime` SPI implementation |
 | `AtmosphereToolBridge` | Converts `ToolDefinition` → Koog `ToolDescriptor` + `ToolRegistry` with approval-gate hooks |
-| `KoogEmbeddingRuntime` | `EmbeddingRuntime` SPI for Koog-provided embedders (deferred — see below) |
 
 ## Capability matrix
+
+This mirrors `KoogAgentRuntime.capabilities()` exactly — runtime truth, not
+aspiration.
 
 | Capability | Status | Notes |
 |------------|:------:|-------|
@@ -88,14 +90,14 @@ See [ExecutionHandle](../../reference/execution-handle/) for the full cancel con
 | `STRUCTURED_OUTPUT` | ✅ | System-prompt schema injection via the pipeline layer |
 | `SYSTEM_PROMPT` | ✅ | Honored by the Koog prompt builder |
 | `CONVERSATION_MEMORY` | ✅ | Per-session memory threaded through `AgentExecutionContext` |
-| `TOKEN_USAGE` | ✅ | Emitted as `ai.tokens.*` metadata when the Koog client reports it |
 | `AGENT_ORCHESTRATION` | ✅ | Works with `@Coordinator` and `@Fleet` |
+| `TOKEN_USAGE` | — | Not declared. Koog reports usage on its response objects but the bridge does not yet thread it into `StreamingSession.usage(TokenUsage)`. Tier 1 follow-up. |
 | `VISION` | — | Koog 0.7.x does not expose a stable multi-modal input API on the bridge path |
 | `MULTI_MODAL` | — | Same limitation |
 | `PROMPT_CACHING` | — | Koog 0.7.3 only ships Bedrock-specific cache variants; no OpenAI-compatible passthrough |
 | `PER_REQUEST_RETRY` | — | Inherits Koog's native retry layer (not per-request overridable from the bridge) |
 
-Exclusions are **honest** — Koog declares them as absent in its `capabilities()` set so runtime-truth advertising is accurate (Correctness Invariant #5). When Koog upstream adds these surfaces in a future release, the bridge will honor them without a breaking change.
+Exclusions are **honest** — Koog declares them as absent in its `capabilities()` set so runtime-truth advertising is accurate (Correctness Invariant #5). When Koog upstream adds these surfaces in a future release, the bridge will honor them without a breaking change. No `KoogEmbeddingRuntime` ships today — if you need Koog-backed embeddings, wire a Spring AI or LangChain4j `EmbeddingModel` alongside the Koog agent runtime.
 
 ## Samples
 

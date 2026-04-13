@@ -83,7 +83,7 @@ Text streaming, system prompts, conversation memory, structured output (via pipe
 | `CONVERSATION_MEMORY` | ✅ | Per-session memory threaded through `AgentExecutionContext` |
 | `STRUCTURED_OUTPUT`   | ✅ | Via pipeline-layer schema injection (no runtime-specific support needed) |
 | `TOKEN_USAGE`         | ✅ | Reported via `TokenUsage` when SK surfaces it |
-| `AGENT_ORCHESTRATION` | ✅ | Works with `@Coordinator` and `@Fleet` |
+| `AGENT_ORCHESTRATION` | — | Not declared. SK can participate in a `@Coordinator` fleet as a worker runtime, but it does not own a multi-agent dispatch loop the way ADK / Embabel / Koog do, so the capability flag is not advertised. |
 | `TOOL_CALLING`        | — | **Deferred in 4.0.36.** SK's Java tool-calling API is still stabilizing; bridging will land in a follow-up. Documented as an honest exclusion in `modules/semantic-kernel/README.md`. |
 | `TOOL_APPROVAL`       | — | Requires `TOOL_CALLING` — see above |
 | `VISION`              | — | SK Java does not yet expose a stable multi-modal input API |

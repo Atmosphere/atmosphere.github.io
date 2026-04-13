@@ -113,11 +113,18 @@ with another.
 
 ## Runtime coverage
 
-Every tool-calling `AgentRuntime` bridge fires `onToolCall` and `onToolResult`
-through the `AgentLifecycleListener.fireToolCall()` /
-`fireToolResult()` static dispatch helpers. The helpers catch and swallow any
-exception so one broken listener cannot abort the pipeline (Correctness
-Invariant #2 — Terminal Path Completeness).
+Tool-calling runtime bridges fire `onToolCall` and `onToolResult` through the
+`AgentLifecycleListener.fireToolCall()` / `fireToolResult()` static dispatch
+helpers. `onStart` / `onCompletion` / `onError` are fired by
+`AbstractAgentRuntime`'s template-method wrapper via the protected
+`fireStart` / `fireCompletion` / `fireError` helpers — so they fire
+automatically for any runtime that extends `AbstractAgentRuntime`. Runtimes
+that implement `AgentRuntime` directly are responsible for firing lifecycle
+events themselves.
+
+All helpers catch and swallow listener exceptions so one broken listener
+cannot abort the pipeline (Correctness Invariant #2 — Terminal Path
+Completeness).
 
 | Runtime | `onStart` | `onToolCall` | `onToolResult` | `onCompletion` | `onError` |
 |---------|:---------:|:------------:|:--------------:|:--------------:|:---------:|
@@ -125,13 +132,22 @@ Invariant #2 — Terminal Path Completeness).
 | Spring AI       | ✅ | ✅ | ✅ | ✅ | ✅ |
 | LangChain4j     | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Google ADK      | ✅ | ✅ | ✅ | ✅ | ✅ |
-| JetBrains Koog  | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Embabel         | ✅ |  —  |  —  | ✅ | ✅ |
-| Semantic Kernel | ✅ | ⚠️ | ⚠️ | ✅ | ✅ |
+| Semantic Kernel | ✅ | — | — | ✅ | ✅ |
+| JetBrains Koog  | — | ✅ | ✅ | — | — |
+| Embabel         | — | — | — | — | — |
 
-Embabel has no tool-calling path — `onToolCall`/`onToolResult` never fire.
-Semantic Kernel's tool-calling is deferred in 4.0.36 (documented in the
-`modules/semantic-kernel/README.md` exclusion note).
+Built-in / Spring AI / LC4j / ADK / Semantic Kernel all extend
+`AbstractAgentRuntime`, so `onStart` / `onCompletion` / `onError` fire
+automatically in the base-class `execute` wrapper. SK is also honest about
+having no tool-calling path in 4.0.36.
+
+Koog and Embabel implement `AgentRuntime` directly. Koog's `AtmosphereToolBridge`
+fires `onToolCall` / `onToolResult`, but `KoogAgentRuntime.executeWithHandle`
+does not currently call `fireStart` / `fireCompletion` / `fireError` — that's
+a documented gap the bridge will close once it either subclasses
+`AbstractAgentRuntime` or inlines the three calls. Embabel's runtime does
+neither and has no tool path, so no lifecycle events fire today — that is
+also a known gap.
 
 ## Listener error isolation
 
@@ -222,17 +238,39 @@ replay, debugging, or eval harnesses. See
 
 ## Testing
 
-The `AiTestClient` in `atmosphere-ai-test` exposes a capturing listener for
-assertions:
+The easiest pattern is a tiny anonymous subclass that records events into a
+list you can assert against:
 
 ```java
-var captured = new CapturingLifecycleListener();
-var context = testContext.withListeners(List.of(captured));
+var captured = new java.util.ArrayList<String>();
+var listener = new AgentLifecycleListener() {
+    @Override
+    public void onStart(AgentExecutionContext ctx) { captured.add("start"); }
+
+    @Override
+    public void onToolCall(String toolName, java.util.Map<String, Object> args) {
+        captured.add("toolCall:" + toolName);
+    }
+
+    @Override
+    public void onToolResult(String toolName, String resultPreview) {
+        captured.add("toolResult:" + toolName);
+    }
+
+    @Override
+    public void onCompletion(AgentExecutionContext ctx) { captured.add("complete"); }
+
+    @Override
+    public void onError(AgentExecutionContext ctx, Throwable error) {
+        captured.add("error:" + error.getClass().getSimpleName());
+    }
+};
+
+var context = testContext.withListeners(java.util.List.of(listener));
 runtime.execute(context, session);
 
-assertThat(captured.toolCalls()).containsExactly("get_weather");
-assertThat(captured.toolResults()).hasSize(1);
-assertThat(captured.completed()).isTrue();
+assertThat(captured).containsExactly("start", "toolCall:get_weather",
+        "toolResult:get_weather", "complete");
 ```
 
 See [AI Testing](../testing/) for the full contract test surface.

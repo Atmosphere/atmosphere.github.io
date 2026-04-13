@@ -3,9 +3,9 @@ const rows = [
   {
     feature: 'Unified runtime abstraction',
     atmosphere: { value: '7 backends', tone: 'yes' },
-    langchain: { value: 'Python/JS only', tone: 'partial' },
-    litellm: { value: '100+ LLM APIs', tone: 'yes', note: 'provider abstraction, not runtime' },
-    vercel: { value: '20+ providers', tone: 'yes', note: 'TypeScript only' },
+    langchain: { value: 'Python/JS primary; Java subset', tone: 'partial' },
+    litellm: { value: 'OpenAI-compatible proxy', tone: 'partial', note: 'provider abstraction, not runtime' },
+    vercel: { value: 'Provider abstraction', tone: 'partial', note: 'TypeScript only' },
   },
   {
     feature: 'JVM-native',
@@ -37,7 +37,7 @@ const rows = [
   },
   {
     feature: 'Durable workflows',
-    atmosphere: { value: 'CheckpointStore SPI — SQLite, Redis, pluggable', tone: 'yes' },
+    atmosphere: { value: 'CheckpointStore SPI — InMemory, SQLite, pluggable', tone: 'yes' },
     langchain: { value: 'LangGraph checkpoints', tone: 'partial' },
     litellm: { value: 'Not in scope', tone: 'no' },
     vercel: { value: 'Not in scope', tone: 'no' },

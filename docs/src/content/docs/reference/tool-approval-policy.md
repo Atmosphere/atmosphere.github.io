@@ -222,19 +222,21 @@ void denyAllSkipsApprovalGate() {
     var context = testContext()
             .withApprovalPolicy(ToolApprovalPolicy.denyAll());
 
+    // Signature: (toolName, tool, args, session, strategy, policy)
     var result = ToolExecutionHelper.executeWithApproval(
             tool.name(), tool, Map.of(),
+            testSession,                        // streaming session sink
             ApprovalStrategy.autoApprove(),     // strategy should NEVER fire
-            context.approvalPolicy(),
-            context.listeners());
+            context.approvalPolicy());          // DenyAll short-circuits before strategy
 
     assertThat(result).contains("\"status\":\"cancelled\"");
     // Tool executor never ran — the AssertionError is never thrown
 }
 ```
 
-Contract tests in `AbstractAgentRuntimeContractTest.runtimeWithToolApprovalHonorsPolicy()`
-exercise every runtime subclass against all four policy variants.
+Contract assertions in `AbstractAgentRuntimeContractTest` exercise every
+runtime subclass against the four policy variants through
+`hitlPendingApprovalEmitsProtocolEvent` and related assertions.
 
 ## See also
 

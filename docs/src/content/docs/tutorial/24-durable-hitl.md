@@ -43,7 +43,8 @@ Three pieces cooperate:
    the invocation through the `ApprovalStrategy`. You already know this.
 2. **`CheckpointStore`** — SPI that persists the `WorkflowSnapshot` (the
    agent's conversation history, pending tool call, approval ID) to a
-   durable backend (SQLite, Redis, Postgres) before the thread parks.
+   durable backend (SQLite in-tree; Redis/Postgres/etc. are pluggable)
+   before the thread parks.
 3. **`/__approval/<id>/approve`** REST endpoint that accepts the decision
    out-of-band, loads the snapshot, and resumes execution on the new JVM.
 
@@ -53,16 +54,17 @@ for the REST callback.
 
 ## Wiring the CheckpointStore
 
-Atmosphere ships three `CheckpointStore` implementations:
+Atmosphere 4.0.36 ships two `CheckpointStore` implementations in-tree:
 
-- **`InMemoryCheckpointStore`** — default; non-durable (lost on restart)
+- **`InMemoryCheckpointStore`** — default; non-durable (lost on restart).
+  Use in tests and single-process dev environments.
 - **`SqliteCheckpointStore`** — file-backed; survives restarts on the same
-  host (single-node durability)
-- **`RedisCheckpointStore`** — network-backed; survives restarts across a
-  fleet (multi-node durability)
+  host (single-node durability).
 
-Pick SQLite for single-host deployments, Redis for multi-host. Both share
-the same SPI, so your agent code doesn't change.
+The `CheckpointStore` interface is an SPI: you can implement your own
+backing store (Redis, Postgres, DynamoDB, S3…) by writing an adapter that
+implements `save`, `load`, `listByCoordination`, and `delete`. `SqliteCheckpointStore`
+is the reference implementation and the file to copy.
 
 ### Spring Boot configuration
 
@@ -73,19 +75,6 @@ atmosphere:
       store: sqlite
       sqlite:
         path: /var/lib/atmosphere/checkpoints.db
-```
-
-Or for Redis:
-
-```yaml
-atmosphere:
-  ai:
-    checkpoint:
-      store: redis
-      redis:
-        host: redis.internal
-        port: 6379
-        keyspace: atmosphere:checkpoints
 ```
 
 The auto-config wires the chosen store to the coordination journal and to
