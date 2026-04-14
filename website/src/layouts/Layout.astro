@@ -4,7 +4,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = "Async-IO.org is the company behind Atmosphere — the real-time transport layer for Java AI agents. Enterprise support, agent protocols (MCP, A2A, AG-UI), 6 AI runtimes, and 5 transports including WebTransport/HTTP3." } = Astro.props;
+const { title, description = "Async IO is the company behind Atmosphere — the real-time transport layer for Java AI agents. Enterprise support, agent protocols (MCP, A2A, AG-UI), 6 AI runtimes, and 5 transports including WebTransport/HTTP3." } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -41,7 +41,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Async-IO.org",
+      "name": "Async IO",
       "url": "https://async-io.org",
       "description": description,
       "foundingDate": "2008",
