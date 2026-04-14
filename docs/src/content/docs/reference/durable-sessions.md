@@ -11,7 +11,7 @@ Sessions survive server restarts. On reconnection, the client sends its session 
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36</atmosphere.version>
+    <atmosphere.version>4.0.37</atmosphere.version>
 </properties>
 
 <dependency>

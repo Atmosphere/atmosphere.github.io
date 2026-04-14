@@ -13,7 +13,7 @@ The extension is split into two artifacts following Quarkus conventions:
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36</atmosphere.version>
+    <atmosphere.version>4.0.37</atmosphere.version>
 </properties>
 
 <!-- Runtime module (what your application depends on) -->

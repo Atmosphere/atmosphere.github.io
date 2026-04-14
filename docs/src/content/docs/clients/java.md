@@ -13,7 +13,7 @@ Supports **WebSocket**, **Server-Sent Events (SSE)**, **HTTP Streaming**, **Long
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36</atmosphere.version>
+    <atmosphere.version>4.0.37</atmosphere.version>
 </properties>
 
 <dependency>

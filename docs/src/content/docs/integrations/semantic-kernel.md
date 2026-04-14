@@ -13,7 +13,7 @@ Semantic Kernel is the **7th runtime** added to Atmosphere in 4.0.36.
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36</atmosphere.version>
+    <atmosphere.version>4.0.37</atmosphere.version>
 </properties>
 
 <dependency>
@@ -29,12 +29,12 @@ You will also need Semantic Kernel's own dependencies (kernel core + the aiservi
 <dependency>
     <groupId>com.microsoft.semantic-kernel</groupId>
     <artifactId>semantickernel-api</artifactId>
-    <version>1.4.0</version>
+    <version>4.0.37</version>
 </dependency>
 <dependency>
     <groupId>com.microsoft.semantic-kernel</groupId>
     <artifactId>semantickernel-aiservices-openai</artifactId>
-    <version>1.4.0</version>
+    <version>4.0.37</version>
 </dependency>
 ```
 

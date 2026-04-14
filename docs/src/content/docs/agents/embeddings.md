@@ -54,7 +54,7 @@ Add the corresponding `atmosphere-*` dependency to your project:
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36</atmosphere.version>
+    <atmosphere.version>4.0.37</atmosphere.version>
 </properties>
 
 <!-- Spring AI embedding runtime (priority 200) -->

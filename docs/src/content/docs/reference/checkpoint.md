@@ -11,7 +11,7 @@ Agent workflows persist as parent-chained snapshots. Pause without holding a liv
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.36</atmosphere.version>
+    <atmosphere.version>4.0.37</atmosphere.version>
 </properties>
 
 <dependency>
