@@ -11,7 +11,7 @@ A Quarkus extension that integrates Atmosphere with Quarkus 3.31.3+. Provides bu
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.37</atmosphere.version>
+    <atmosphere.version>4.0.38</atmosphere.version>
 </properties>
 
 <dependency>

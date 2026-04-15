@@ -11,7 +11,7 @@ Cross-node broadcasting via Redis pub/sub. Messages broadcast on one node are de
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.37</atmosphere.version>
+    <atmosphere.version>4.0.38</atmosphere.version>
 </properties>
 
 <dependency>

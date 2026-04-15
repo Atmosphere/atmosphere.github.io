@@ -11,7 +11,7 @@ The core framework for building real-time web applications in Java. Provides a p
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.37</atmosphere.version>
+    <atmosphere.version>4.0.38</atmosphere.version>
 </properties>
 
 <dependency>

@@ -11,7 +11,7 @@ description: "AgentRuntime backed by Embabel AgentPlatform"
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.37</atmosphere.version>
+    <atmosphere.version>4.0.38</atmosphere.version>
 </properties>
 
 <dependency>

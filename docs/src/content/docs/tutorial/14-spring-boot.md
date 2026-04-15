@@ -11,7 +11,7 @@ The `atmosphere-spring-boot-starter` module provides auto-configuration for Spri
 
 ```xml
 <properties>
-    <atmosphere.version>4.0.37</atmosphere.version>
+    <atmosphere.version>4.0.38</atmosphere.version>
 </properties>
 
 <dependency>
