@@ -340,15 +340,15 @@ Auto-detection resolves the base URL from the model name:
 - All other remote models route to `https://generativelanguage.googleapis.com/v1beta/openai`
 - Local mode routes to `http://localhost:11434/v1` (Ollama)
 
-:::note[Gemini OpenAI-compat wire contract]
-Gemini's `v1beta/openai` layer is stricter than OpenAI itself in two places:
-assistant messages carrying a tool call must emit the full `tool_calls` array
-(not null content), and tool messages must emit the `name` field so Gemini
-can populate its native `function_response.name`. `OpenAiCompatibleClient`
-serializes both unconditionally — OpenAI treats them as additive. If you
-ever see `GenerateContentRequest…function_response.name: Name cannot be
-empty`, you are running an older build; upgrade `atmosphere-ai` to `4.0.39`
-or later.
+:::note[OpenAI API compatibility on strict endpoints]
+Some OpenAI-compatible endpoints are stricter than OpenAI itself on
+tool-call round trips: the assistant message carrying a tool call must
+emit the full `tool_calls` array (not null content), and the tool-role
+reply must carry the function `name`. `OpenAiCompatibleClient` now
+serializes both unconditionally — additive for OpenAI, required for the
+stricter crowd. The serialized wire shape is pinned by unit tests in
+`atmosphere-ai` so future refactors cannot silently regress either side.
+Applies from `atmosphere-ai` `4.0.39` onward.
 :::
 
 ### Atmosphere Init-Params
