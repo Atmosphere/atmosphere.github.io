@@ -5,7 +5,11 @@ sidebar:
   order: 0
 ---
 
-Atmosphere is a transport-agnostic real-time framework for the JVM. Write to a Broadcaster, and the framework delivers to every subscriber — whether they're on a WebSocket, SSE stream, long-polling loop, or gRPC channel. Use `@ManagedService` for classic real-time (chat, dashboards, notifications, collaboration), or `@Agent` for AI-powered agents with tool calling, conversation memory, and multi-protocol exposure (MCP, A2A, AG-UI). Same framework, same transports, same clustering — you choose how much AI you need.
+Atmosphere is a transport-agnostic real-time framework for the JVM. Write to a Broadcaster, and the framework delivers to every subscriber — whether they're on **WebTransport over HTTP/3**, WebSocket, SSE, long-polling, or gRPC. Use `@ManagedService` for classic real-time (chat, dashboards, notifications, collaboration), or `@Agent` for AI-powered agents with tool calling, conversation memory, and multi-protocol exposure (MCP, A2A, AG-UI).
+
+Because Atmosphere owns the broadcaster end-to-end, the framework does things a pure orchestration layer cannot: rewrites **PII tokens in-flight** before bytes reach the client, blocks outbound `@Prompt` dispatch when a tenant hits its **cost ceiling**, **replays mid-stream events** after a client reconnect via `X-Atmosphere-Run-Id`, stamps **tenant / customer / revenue tags** onto every log record for observability joins (Dynatrace / Datadog / OTel), and grounds every agent turn in deterministic **`FactResolver`** facts so the model stops making up the user's plan tier or the current time. Admin writes run a triple-gate (feature flag → Principal → `ControlAuthorizer`) with an opt-in read-side gate for multi-tenant deployments.
+
+Same framework, same transports, same clustering — you choose how much AI you need.
 
 ## How to Use This Documentation
 
@@ -40,7 +44,12 @@ Atmosphere is a transport-agnostic real-time framework for the JVM. Write to a B
 | Multi-agent orchestration | [@Coordinator](/docs/agents/coordinator/) |
 | AI/LLM streaming | [Chapter 9: @AiEndpoint](/docs/tutorial/09-ai-endpoint/) |
 | Tool calling | [Chapter 10: @AiTool](/docs/tutorial/10-ai-tools/) |
+| Guardrails (PII, drift, cost ceiling) | [Chapter 12: AI Filters](/docs/tutorial/12-ai-filters/) |
 | MCP server | [Chapter 13](/docs/tutorial/13-mcp/) |
+| Trust phases (`PermissionMode`) | [Chapter 25](/docs/tutorial/25-trust-phases/) |
+| Business-outcome tagging (MDC) | [Chapter 27](/docs/tutorial/27-business-metadata-observability/) |
+| Grounded facts (`FactResolver`) | [Chapter 28](/docs/tutorial/28-fact-resolver/) |
+| Agent-to-agent flow viewer | [Chapter 29](/docs/tutorial/29-admin-flow-viewer/) |
 | Testing AI agents | [AI Testing](/docs/reference/testing/) |
 
 ### Deployment
