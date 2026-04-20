@@ -140,7 +140,10 @@ Each specialist agent gets its own system prompt, tools, guardrails, and channel
 The Atmosphere CLI imports skills from GitHub and generates a complete Spring Boot project:
 
 ```bash
-# Import from Anthropic's skills repository
+# Import from the Atmosphere-curated skills registry
+atmosphere import https://github.com/Atmosphere/atmosphere-skills/blob/main/skills/dentist/SKILL.md
+
+# Or from Anthropic's skills repository
 atmosphere import https://github.com/anthropics/skills/blob/main/skills/frontend-design/SKILL.md
 
 cd frontend-design && LLM_API_KEY=your-key ./mvnw spring-boot:run
@@ -153,7 +156,24 @@ The import command:
 3. Places the skill file at `META-INF/skills/` for auto-discovery
 4. Generates a Spring Boot project that compiles and runs immediately
 
-Compatible with [Anthropic](https://github.com/anthropics/skills), [Antigravity](https://github.com/sickn33/antigravity-awesome-skills) (1,200+ skills), [K-Dense AI](https://github.com/K-Dense-AI/claude-scientific-skills), and any repository following the [Agent Skills](https://agentskills.io/specification) format.
+### Atmosphere Skills registry
+
+[`Atmosphere/atmosphere-skills`](https://github.com/Atmosphere/atmosphere-skills)
+is the framework's curated skill-file registry — each skill ships a
+tested personality, tool manifest, channel routing, and guardrail set
+that plugs directly into `@Agent` via `atmosphere import`. The
+Atmosphere samples (dentist agent, multi-agent startup team, personal
+assistant) ship skill files that also live in this registry for reuse
+across projects.
+
+### Third-party registries
+
+`atmosphere import` also works against any repository following the
+[Agent Skills](https://agentskills.io/specification) standard:
+[Anthropic](https://github.com/anthropics/skills),
+[Antigravity](https://github.com/sickn33/antigravity-awesome-skills)
+(1,200+ skills), and
+[K-Dense AI](https://github.com/K-Dense-AI/claude-scientific-skills).
 
 ## Trusted Sources
 

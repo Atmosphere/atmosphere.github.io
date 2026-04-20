@@ -167,6 +167,14 @@ public class DevOpsAgent { ... }
 
 If no `skillFile` is specified, Atmosphere matches by convention — an agent named `devops` will pick up `META-INF/skills/devops.skills` if present.
 
+The companion [`Atmosphere/atmosphere-skills`](https://github.com/Atmosphere/atmosphere-skills)
+repository ships a curated registry of skill files — personality
+packs, tool bundles, guardrail templates — that work out of the box
+with `@Agent`. Pull one with `atmosphere import <url>` (see
+[`Skills`](/docs/agents/skills/#importing-skills-from-github)) and
+the CLI drops it under `META-INF/skills/` so convention-based
+auto-discovery picks it up without a code change.
+
 ## Conversation Memory
 
 Conversation memory is enabled by default. Atmosphere maintains a session-scoped conversation history — the history is passed to the LLM on every request, giving the agent context about previous exchanges.
