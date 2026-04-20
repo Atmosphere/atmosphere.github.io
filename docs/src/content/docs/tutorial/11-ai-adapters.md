@@ -9,19 +9,7 @@ Atmosphere's AI layer follows the same adapter pattern as its transport layer. J
 
 ## Built-in LLM Client (zero extra dependencies)
 
-Before reaching for an adapter module, know that `atmosphere-ai` itself includes a built-in `OpenAiCompatibleClient`. This client works with **OpenAI**, **Google Gemini**, **Ollama**, **Azure OpenAI**, and any OpenAI-compatible endpoint -- with zero additional dependencies beyond `atmosphere-ai`.
-
-```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
-<dependency>
-    <groupId>org.atmosphere</groupId>
-    <artifactId>atmosphere-ai</artifactId>
-    <version>${atmosphere.version}</version>
-</dependency>
-```
+Before reaching for an adapter module, know that `atmosphere-ai` itself includes a built-in `OpenAiCompatibleClient`. This client works with **OpenAI**, **Google Gemini**, **Ollama**, **Azure OpenAI**, and any OpenAI-compatible endpoint — with zero additional dependencies beyond `atmosphere-ai`. The Maven coordinates for every module in this chapter are listed in the [Runtimes table](#runtimes) below and in the [Spring Boot integration guide](/docs/tutorial/14-spring-boot/).
 
 Use it directly via `AiConfig`:
 
@@ -133,16 +121,6 @@ When multiple `AgentRuntime` implementations are on the classpath, the one with 
 | `SpringAiToolBridge` | Converts Atmosphere `ToolDefinition` to Spring AI `ToolCallback`. Spring AI handles the tool call loop automatically. |
 | `AtmosphereSpringAiAutoConfiguration` | Spring Boot `@AutoConfiguration`. Activates when `ChatClient` is on the classpath. |
 
-### Dependency
-
-```xml
-<dependency>
-    <groupId>org.atmosphere</groupId>
-    <artifactId>atmosphere-spring-ai</artifactId>
-    <version>${atmosphere.version}</version>
-</dependency>
-```
-
 ### Auto-configuration
 
 The auto-configuration creates a `SpringAiStreamingAdapter` bean and, if a `ChatClient` bean exists, wires it into `SpringAiAgentRuntime`:
@@ -209,16 +187,6 @@ When an `@AiEndpoint` receives a message, `SpringAiAgentRuntime.execute()` runs 
 | `LangChain4jAgentRuntime` | `AgentRuntime` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, `SYSTEM_PROMPT`. |
 | `LangChain4jToolBridge` | Converts `ToolDefinition` to `ToolSpecification` and handles tool execution. |
 | `AtmosphereLangChain4jAutoConfiguration` | Activates when `StreamingChatLanguageModel` is on the classpath. |
-
-### Dependency
-
-```xml
-<dependency>
-    <groupId>org.atmosphere</groupId>
-    <artifactId>atmosphere-langchain4j</artifactId>
-    <version>${atmosphere.version}</version>
-</dependency>
-```
 
 ### Configuration example
 
@@ -289,16 +257,6 @@ Unlike Spring AI, LangChain4j does not execute tool callbacks automatically. Whe
 | `AdkEventAdapter` | Subscribes to a `Flowable<Event>` and forwards partial streaming texts, turn completions, and errors to a `StreamingSession`. |
 | `AtmosphereAdkAutoConfiguration` | Activates when `com.google.adk.runner.Runner` is on the classpath. |
 
-### Dependency
-
-```xml
-<dependency>
-    <groupId>org.atmosphere</groupId>
-    <artifactId>atmosphere-adk</artifactId>
-    <version>${atmosphere.version}</version>
-</dependency>
-```
-
 ### ADK-specific details
 
 ADK requires tools to be registered at agent construction time. You cannot add tools dynamically per-request. Use `AdkAgentRuntime.configureWithTools()`:
@@ -351,21 +309,6 @@ The adapter handles three event types:
 **Package:** `org.atmosphere.ai.embabel`
 
 Embabel is a Kotlin-based agent framework with built-in planning, tool calling, and orchestration. The `atmosphere-embabel` adapter bridges Embabel's `OutputChannel` pattern to `StreamingSession`, streaming agent events (thinking, tool calls, results) to the browser.
-
-### Dependency
-
-```xml
-<dependency>
-    <groupId>org.atmosphere</groupId>
-    <artifactId>atmosphere-embabel</artifactId>
-    <version>${atmosphere.version}</version>
-</dependency>
-<dependency>
-    <groupId>com.embabel.agent</groupId>
-    <artifactId>embabel-agent-platform-autoconfigure</artifactId>
-    <version>4.0.38</version>
-</dependency>
-```
 
 ### Usage
 

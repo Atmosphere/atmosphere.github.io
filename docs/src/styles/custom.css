@@ -10,3 +10,39 @@
   --sl-color-accent: #4338ca;
   --sl-color-accent-high: #1e1b4b;
 }
+
+/* --------------------------------------------------------------------
+ * Tables with inline `code` identifiers.
+ *
+ * Starlight's default `code` styling inherits `overflow-wrap:
+ * break-word` from the container, which causes identifiers like
+ * `skillFile`, `description`, `responseAs`, `journalFormat`,
+ * `Class<?>` to split mid-character (e.g. `skillFil` / `e`) when a
+ * narrow table column is too tight for the full token. That is
+ * unreadable. Keep identifiers intact — a narrow cell would rather
+ * widen or let the token sit on its own line than break it in half.
+ * ------------------------------------------------------------------ */
+.sl-markdown-content table code,
+.sl-markdown-content table :not(pre) > code {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+/* Allow the first column (typically `Attribute` / `Type`) to grow as
+ * needed so the identifier fits. Starlight's default table CSS uses
+ * `table-layout: auto`, which already respects this — the explicit
+ * `white-space: nowrap` above + this `min-width: 0` ensures the
+ * browser doesn't artificially constrain the column. */
+.sl-markdown-content table th,
+.sl-markdown-content table td {
+  min-width: 0;
+}
+
+/* On very narrow viewports the table may need horizontal scroll
+ * rather than broken identifiers. Starlight already wraps tables in
+ * an overflow-x container; make sure it still works with nowrap. */
+.sl-markdown-content .expressive-code + table,
+.sl-markdown-content table {
+  max-width: 100%;
+}
