@@ -1,0 +1,142 @@
+---
+title: "Tag agent calls with business outcomes"
+description: "Join every AI call to the tenant, customer, session, and event that drove it — so Dynatrace / Datadog / OTel dashboards can answer 'how much did this agent cost me per paying customer?'"
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+# Tag agent calls with business outcomes
+
+Your AI bill is growing. Your LLM spend per tenant is something you
+can compute from provider invoices. Your LLM spend per *feature* or
+per *paying customer* is a guess — because nothing links the outbound
+call to the business context that triggered it.
+
+`BusinessMetadata` is the primitive that closes that loop. You tag
+each request with tenant id, customer id, session revenue, session
+cost, and the kind of event it belongs to; the framework publishes
+those tags onto SLF4J MDC for the duration of the turn; any
+observability backend that consumes MDC (Dynatrace, Datadog,
+OpenTelemetry log exporters, plain Logback JSON appenders) propagates
+them onto the active span.
+
+## The fix
+
+```java
+session.stream(request.withMetadata(Map.of(
+    BusinessMetadata.TENANT_ID,          "acme-corp",
+    BusinessMetadata.CUSTOMER_ID,        "cust-42",
+    BusinessMetadata.CUSTOMER_SEGMENT,   "enterprise",
+    BusinessMetadata.SESSION_REVENUE,    4500.00,
+    BusinessMetadata.SESSION_COST,       12.40,
+    BusinessMetadata.SESSION_CURRENCY,   "USD",
+    BusinessMetadata.SESSION_ID,         session.id(),
+    BusinessMetadata.EVENT_KIND,
+        BusinessMetadata.EventKind.BILLING_ENQUIRY.wireName(),
+    BusinessMetadata.EVENT_SUBJECT,      "invoice-2026-03")));
+```
+
+On the wire those land in `AiRequest.metadata`, which
+`AiEndpointHandler` copies onto SLF4J MDC via `applyBusinessMdc` on
+the dispatching virtual thread. Every log record emitted during the
+turn — pipeline, runtime, tool calls, guardrails — carries the tags.
+When the turn completes, MDC is cleared in `finally` so the next turn
+on the same VT pool starts clean.
+
+## Reading the tags back in your dashboards
+
+The published keys map 1:1 onto OpenTelemetry semantic-convention
+attribute names under the `business.*` namespace. Point your log
+exporter at MDC and the span attributes appear automatically.
+
+```
+business.tenant.id            → acme-corp
+business.customer.id          → cust-42
+business.customer.segment     → enterprise
+business.session.revenue      → 4500.00
+business.session.cost         → 12.40
+business.session.currency     → USD
+business.session.id           → sess-9f21...
+business.event.kind           → billing_enquiry
+business.event.subject        → invoice-2026-03
+```
+
+Now every Micrometer `ai.tokens.*` meter, every pipeline log line,
+every `AgentLifecycleListener` span — all of them are joinable with
+the business KPI. Dashboards like "cost per paying customer per
+conversation" become a group-by query.
+
+## Event kinds
+
+`BusinessMetadata.EventKind` is a small enum of canonical event tags:
+
+| Enum | Wire name |
+|------|-----------|
+| `NEW_CONVERSATION`     | `new_conversation` |
+| `RETURNING_USER`       | `returning_user` |
+| `PURCHASE`             | `purchase` |
+| `SUPPORT_ESCALATION`   | `support_escalation` |
+| `CHURN_RISK`           | `churn_risk` |
+| `BILLING_ENQUIRY`      | `billing_enquiry` |
+| `OTHER`                | `other` |
+
+Use `.wireName()` when writing, `EventKind.fromWire(raw)` when
+reading — unknown wire strings normalize to `OTHER` so a typo cannot
+pollute the dashboard with cardinality-exploding values.
+
+:::caution[What not to put in MDC]
+MDC tags leak into every log line. The framework publishes only the
+nine well-known keys listed above. Do not extend the set with
+free-form user content — that includes message bodies, PII, prompts,
+tool arguments. Use the [`PiiRedactionGuardrail`](./12-ai-filters/) if
+you need to strip PII from the request/response path.
+:::
+
+:::note[When NOT to use this]
+- **A single-tenant hobby project** — the overhead is not worth it.
+- **Debugging a specific call-path** — MDC is for aggregation; use
+  structured logging for individual-request troubleshooting.
+- **Per-token cost attribution** — use the `AiMetrics.recordUsage`
+  surface instead (Micrometer tags are cheaper than MDC at high
+  cardinality).
+:::
+
+## Wiring into your observability stack
+
+**Logback JSON** (`logback.xml`):
+
+```xml
+<appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+  <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+    <includeMdcKeyName>business.tenant.id</includeMdcKeyName>
+    <includeMdcKeyName>business.customer.id</includeMdcKeyName>
+    <includeMdcKeyName>business.session.revenue</includeMdcKeyName>
+    <includeMdcKeyName>business.session.cost</includeMdcKeyName>
+    <includeMdcKeyName>business.event.kind</includeMdcKeyName>
+  </encoder>
+</appender>
+```
+
+**OpenTelemetry Java agent** already propagates MDC onto span
+attributes by default — no extra wiring required.
+
+**Dynatrace / Datadog** — any MDC-aware log processor picks the tags
+up automatically; they appear as custom attributes on the correlated
+span.
+
+## See also
+
+<CardGrid>
+  <Card title="AI Filters & Guardrails" icon="seti:default">
+    PII redaction + drift detection sit on the same request/response
+    path. [`/tutorial/12-ai-filters/`](./12-ai-filters/)
+  </Card>
+  <Card title="Ground every turn in real facts" icon="approve-check">
+    Sibling primitive — injects deterministic facts into the system
+    prompt on every turn. [`/tutorial/28-fact-resolver/`](./28-fact-resolver/)
+  </Card>
+  <Card title="Foundation Primitives Tour" icon="open-book">
+    How the other seven primitives fit together.
+    [`/tutorial/26-foundation-primitives/`](./26-foundation-primitives/)
+  </Card>
+</CardGrid>

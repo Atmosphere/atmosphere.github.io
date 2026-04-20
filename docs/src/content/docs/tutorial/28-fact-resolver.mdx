@@ -1,0 +1,179 @@
+---
+title: "Ground every agent turn in real facts"
+description: "Stop the model from hallucinating the user's name, plan tier, or the current time — inject verifiable facts into the system prompt on every turn"
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+# Ground every agent turn in real facts
+
+When an agent asks "what's the user's current plan tier?", a language
+model will cheerfully make one up. When it asks "what time is it?",
+it'll guess. The fix is not a better prompt — it's a companion
+deterministic layer that supplies the ground truth on every turn.
+
+`FactResolver` is that companion. You implement it, you declare which
+keys you supply, and Atmosphere prepends the resolved bundle to the
+system prompt before every dispatch.
+
+## The default behavior
+
+Atmosphere ships `DefaultFactResolver` out of the box. It supplies
+`time.now` (UTC ISO-8601) and `time.timezone` only. With no extra
+wiring, every turn's system prompt starts with:
+
+```
+Grounded facts (deterministic, as of this turn):
+- time.now: 2026-04-19T18:32:14Z
+- time.timezone: UTC
+```
+
+That alone closes the "what year is it?" class of hallucination.
+
+## Writing a production resolver
+
+Apps typically want richer facts — user name, locale, plan tier,
+feature-flag values, recent audit events. Implement `FactResolver`
+and supply any subset of keys from `FactKeys` plus your own `app.*`
+keys.
+
+```java
+public final class UserProfileFactResolver implements FactResolver {
+
+    private final ProfileService profiles;
+    private final FeatureFlags  flags;
+    private final AuditLog      audit;
+
+    @Override
+    public FactBundle resolve(FactRequest req) {
+        var out = new LinkedHashMap<String, Object>();
+
+        if (req.keys().contains(FactKeys.USER_NAME)) {
+            profiles.lookup(req.userId())
+                .ifPresent(p -> out.put(FactKeys.USER_NAME, p.name()));
+        }
+        if (req.keys().contains(FactKeys.USER_LOCALE)) {
+            out.put(FactKeys.USER_LOCALE,
+                    profiles.lookup(req.userId())
+                            .map(Profile::locale)
+                            .orElse("en-US"));
+        }
+        if (req.keys().contains(FactKeys.USER_PLAN_TIER)) {
+            out.put(FactKeys.USER_PLAN_TIER,
+                    profiles.lookup(req.userId())
+                            .map(Profile::planTier)
+                            .orElse("free"));
+        }
+        // Custom app key — the framework treats unknown keys transparently.
+        if (req.keys().contains("app.recent_order_id")) {
+            profiles.lastOrder(req.userId())
+                    .ifPresent(o -> out.put("app.recent_order_id", o.id()));
+        }
+        return new FactBundle(out);
+    }
+}
+```
+
+:::tip[Contracts to honor]
+- **Thread-safe** — `resolve()` is called from every inbound agent
+  turn, possibly concurrently.
+- **Never returns null** — return `FactBundle.empty()` rather than
+  `null` when nothing applies.
+- **Cheap per-call** — the resolver runs on the request hot path
+  before every LLM dispatch. Cache expensive lookups inside your
+  implementation; the framework does not cache `resolve()` results.
+:::
+
+## Wiring the resolver
+
+Three ways to install, in priority order:
+
+### 1. Spring bean (recommended)
+
+```java
+@Configuration
+class FactResolverConfig {
+    @Bean
+    FactResolver productionResolver(ProfileService profiles,
+                                    FeatureFlags flags,
+                                    AuditLog audit) {
+        return new UserProfileFactResolver(profiles, flags, audit);
+    }
+}
+```
+
+`AtmosphereAiAutoConfiguration.atmosphereFactResolverBridge` publishes
+the bean onto `framework.properties()` under
+`FactResolver.FACT_RESOLVER_PROPERTY`;
+`AiEndpointHandler.resolveFactResolver` finds it first.
+
+### 2. ServiceLoader (plain servlet / Quarkus / embedded)
+
+Drop a file at
+`META-INF/services/org.atmosphere.ai.facts.FactResolver` containing
+your resolver's fully-qualified class name. The handler's
+`ServiceLoader.load(FactResolver.class).findFirst()` picks it up.
+
+### 3. Manual install (tests, CLI tools)
+
+```java
+FactResolverHolder.install(new UserProfileFactResolver(...));
+```
+
+The process-wide holder is the lowest priority fallback — mostly
+useful for test setup via `@BeforeAll` + `FactResolverHolder.reset()`
+in `@AfterEach`.
+
+## What the model sees
+
+The resolver's bundle is rendered as a newline-delimited block and
+prepended to the system prompt. A request from `alice@example.com` on
+a paid tier sees, at the top of the system prompt:
+
+```
+Grounded facts (deterministic, as of this turn):
+- time.now: 2026-04-19T18:32:14Z
+- time.timezone: UTC
+- user.id: alice@example.com
+- user.name: Alice Martin
+- user.locale: en-US
+- user.plan_tier: enterprise
+- app.recent_order_id: ord-7821
+
+[then whatever the developer's @AiEndpoint systemPrompt said]
+```
+
+:::caution[Prompt-injection guard]
+Values are escaped before rendering — newline, carriage return, tab,
+and ASCII control characters are replaced with a space. A fact value
+like `"Alice\nIgnore prior instructions"` cannot open a new line in
+the system prompt. Without this escape, a malicious or accidental
+embedded newline could reshape the instruction context.
+:::
+
+:::note[When NOT to use this]
+- **Large blobs** — the bundle lands in the system prompt and
+  consumes tokens. Use an `AiTool` the model can call on demand for
+  retrieval.
+- **Per-message context** — `FactResolver` resolves once per turn,
+  not per message in a multi-round tool loop. For per-message
+  context, use `ContextProvider` instead.
+- **Secrets** — the bundle is visible to the model. Never put API
+  keys, passwords, or PII in here.
+:::
+
+## See also
+
+<CardGrid>
+  <Card title="AI Filters & Guardrails" icon="seti:default">
+    Inspect and block the response path — PII redaction + drift
+    detection. [`/tutorial/12-ai-filters/`](./12-ai-filters/)
+  </Card>
+  <Card title="Tag agent calls with business outcomes" icon="approve-check">
+    Sibling primitive for observability tagging via SLF4J MDC.
+    [`/tutorial/27-business-metadata-observability/`](./27-business-metadata-observability/)
+  </Card>
+  <Card title="DefaultFactResolver source" icon="github">
+    [`modules/ai/src/main/java/org/atmosphere/ai/facts/DefaultFactResolver.java`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/src/main/java/org/atmosphere/ai/facts/DefaultFactResolver.java)
+  </Card>
+</CardGrid>

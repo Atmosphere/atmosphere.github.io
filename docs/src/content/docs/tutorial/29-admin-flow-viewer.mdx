@@ -1,0 +1,214 @@
+---
+title: "See your agents call each other"
+description: "Render the coordination journal as a live agent-to-agent graph — which coordinator dispatched which agent, how often, how successfully, and how fast"
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+# See your agents call each other
+
+Once you have a `@Coordinator` with three or four crew members, the
+question "which agent is doing the heavy lifting?" stops being
+answerable from logs. You need a graph. Atmosphere has one.
+
+Every `@Coordinator` writes to `CoordinationJournal`. The journal is
+the same event stream your durable HITL + audit surfaces read. The
+admin plane exposes two REST endpoints that turn the journal into a
+graph payload your UI can render.
+
+## The shape at a glance
+
+<div style={{ display: 'flex', justifyContent: 'center', margin: '1.5rem 0' }}>
+<svg viewBox="0 0 540 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ceo dispatches to research-agent and finance-agent">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#888" />
+    </marker>
+  </defs>
+  <g fontFamily="ui-sans-serif, system-ui, sans-serif" fontSize="13">
+    <circle cx="270" cy="50" r="36" fill="#4f46e5" />
+    <text x="270" y="55" textAnchor="middle" fill="#fff" fontWeight="600">ceo</text>
+
+    <circle cx="120" cy="200" r="36" fill="#0f766e" />
+    <text x="120" y="205" textAnchor="middle" fill="#fff" fontWeight="600">research</text>
+
+    <circle cx="420" cy="200" r="36" fill="#0f766e" />
+    <text x="420" y="205" textAnchor="middle" fill="#fff" fontWeight="600">finance</text>
+
+    <line x1="245" y1="82" x2="150" y2="172" stroke="#888" strokeWidth="2" markerEnd="url(#arrow)" />
+    <text x="165" y="130" fill="#888">11/12 · 842ms</text>
+
+    <line x1="295" y1="82" x2="390" y2="172" stroke="#888" strokeWidth="2" markerEnd="url(#arrow)" />
+    <text x="335" y="130" fill="#888">6/6 · 304ms</text>
+  </g>
+</svg>
+</div>
+
+`ceo` dispatched `research` twelve times (eleven successful,
+averaging 842 ms) and `finance` six times (all successful,
+averaging 304 ms). Exactly what the two endpoints below return in
+JSON.
+
+## The endpoints
+
+### `GET /api/admin/flow`
+
+Render the entire journal as a flow graph. Optional
+`lookbackMinutes=N` constrains the window; omit for "all recorded
+history".
+
+```bash
+curl http://localhost:8080/api/admin/flow?lookbackMinutes=60
+```
+
+```json
+{
+  "nodes": [
+    {"id": "ceo", "label": "ceo"},
+    {"id": "research-agent", "label": "research-agent"},
+    {"id": "finance-agent", "label": "finance-agent"}
+  ],
+  "edges": [
+    {
+      "from": "ceo",
+      "to": "research-agent",
+      "dispatches": 12,
+      "successes": 11,
+      "failures": 1,
+      "averageDurationMs": 842
+    },
+    {
+      "from": "ceo",
+      "to": "finance-agent",
+      "dispatches": 6,
+      "successes": 6,
+      "failures": 0,
+      "averageDurationMs": 304
+    }
+  ]
+}
+```
+
+The shape is deliberately framework-agnostic — feed it to any graph
+library (vis.js, Cytoscape, D3 force-directed, React Flow) without
+post-processing.
+
+### `GET /api/admin/flow/{coordinationId}`
+
+Scope the graph to a single coordination run — the natural target for
+a drilldown when a user clicks a run in the audit log or admin
+dashboard.
+
+:::tip[Why a per-run map, not a cursor]
+Each event in the journal carries a `coordinationId`. `FlowController`
+keeps a `Map<coordinationId, coordinatorName>` and resolves the
+parent coordinator on every dispatch / completion / failure. A
+cursor-based approach would misattribute every second edge when two
+tenants hit the fleet at the same time — the per-run map keeps the
+graph honest under concurrent runs.
+:::
+
+## Drawing the graph
+
+Minimal React + React Flow skeleton:
+
+```tsx
+import ReactFlow from 'reactflow';
+import { useEffect, useState } from 'react';
+
+export function CoordinatorFlow() {
+  const [data, setData] = useState({ nodes: [], edges: [] });
+
+  useEffect(() => {
+    const load = () => fetch('/api/admin/flow?lookbackMinutes=60')
+        .then(r => r.json())
+        .then(setData);
+    load();
+    const t = setInterval(load, 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  const nodes = data.nodes.map((n, i) => ({
+    id: n.id,
+    data: { label: n.label },
+    position: { x: i * 180, y: 120 },
+  }));
+  const edges = data.edges.map((e, i) => ({
+    id: `e-${i}`,
+    source: e.from,
+    target: e.to,
+    label: `${e.successes}/${e.dispatches}  ${e.averageDurationMs}ms`,
+    style: { stroke: e.failures > 0 ? '#d33' : '#666' },
+  }));
+
+  return <ReactFlow nodes={nodes} edges={edges} fitView />;
+}
+```
+
+Under 60 lines and you have a live coordinator dashboard.
+
+## What the edges tell you
+
+- **`dispatches`** — raw dispatch count from parent → child.
+- **`successes`** — `AgentCompleted` events observed for the edge.
+- **`failures`** — `AgentFailed` events. Edge turns red when non-zero.
+- **`averageDurationMs`** — mean `Duration` across successful runs.
+  Sudden regressions here are the first signal of a degraded agent.
+
+If `successes + failures < dispatches`, the remaining calls are
+in-flight — useful for surfacing stuck agents.
+
+## Authorization
+
+`/api/admin/flow` and `/api/admin/flow/{coordinationId}` are **read**
+endpoints. Default posture leaves them anonymous so a local demo
+console works without credentials.
+
+:::caution[Expose on a routable network? Flip one flag.]
+Set `atmosphere.admin.http-read-auth-required=true` and the same
+principal chain as the write-side gate (`SecurityContext` →
+Atmosphere `AuthInterceptor` attribute → `ai.userId` → Quarkus
+`X-Atmosphere-Auth` header) applies to `GET` / `HEAD` / `OPTIONS` on
+`/api/admin/*`. Anonymous readers then receive `401`.
+
+Spring wires `AdminApiAuthFilter` on the servlet chain; Quarkus ships
+`AdminReadAuthFilter` as a JAX-RS `@Provider`. Multi-tenant operators
+flip the flag and delete the bespoke servlet filter they used to
+hand-roll.
+:::
+
+Write endpoints (broadcast / disconnect / cancel) have their own
+triple-gate (feature flag → Principal → `ControlAuthorizer`) —
+see [`modules/admin/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/admin/README.md)
+for the full wiring.
+
+## When the graph is empty
+
+Three possibilities:
+
+1. **No `@Coordinator` on the classpath.** The flow endpoint returns
+   `{"nodes": [], "edges": []}` — not an error.
+2. **No journal installed.** Spring Boot auto-config wires the
+   journal when `atmosphere-coordinator` is on the classpath; plain
+   servlet users install via `ServiceLoader` or by writing to
+   `CoordinatorProcessor.COORDINATION_JOURNAL_PROPERTY`.
+3. **`lookbackMinutes` is too tight.** Drop the parameter to see
+   everything the journal has retained.
+
+## See also
+
+<CardGrid>
+  <Card title="@Coordinator + @Fleet" icon="seti:default">
+    The annotation model that produces the events.
+    [`modules/coordinator/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/coordinator/README.md)
+  </Card>
+  <Card title="Three-Phase Trust Adoption" icon="approve-check">
+    `PermissionMode` + audit surfaces complement the flow viewer.
+    [`/tutorial/25-trust-phases/`](./25-trust-phases/)
+  </Card>
+  <Card title="Dynatrace 2026 Agentic AI report" icon="open-book">
+    Calls out 44% of respondents reviewing agent-to-agent flows
+    manually because the data is unstructured. This endpoint is the
+    fix.
+  </Card>
+</CardGrid>
