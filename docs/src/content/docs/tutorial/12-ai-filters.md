@@ -604,7 +604,7 @@ The `atmosphere-ai-test` module provides a lightweight testing framework for AI 
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-ai-test</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
     <scope>test</scope>
 </dependency>
 ```

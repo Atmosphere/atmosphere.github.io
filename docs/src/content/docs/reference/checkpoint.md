@@ -10,14 +10,10 @@ Agent workflows persist as parent-chained snapshots. Pause without holding a liv
 ## Maven Coordinates
 
 ```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-checkpoint</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

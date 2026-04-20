@@ -12,15 +12,11 @@ The `atmosphere-quarkus-extension` module integrates Atmosphere with Quarkus 3.3
 The extension is split into two artifacts following Quarkus conventions:
 
 ```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
 <!-- Runtime module (what your application depends on) -->
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-quarkus-extension</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

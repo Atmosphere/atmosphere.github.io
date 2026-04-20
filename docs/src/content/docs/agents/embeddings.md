@@ -53,29 +53,25 @@ callers bypass the resolver and use the Built-in implementation unconditionally.
 Add the corresponding `atmosphere-*` dependency to your project:
 
 ```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
 <!-- Spring AI embedding runtime (priority 200) -->
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-spring-ai</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 
 <!-- or LangChain4j (priority 190) -->
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-langchain4j</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 
 <!-- or Semantic Kernel (priority 180) -->
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-semantic-kernel</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

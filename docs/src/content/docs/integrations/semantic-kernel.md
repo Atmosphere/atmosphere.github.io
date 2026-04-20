@@ -12,14 +12,10 @@ Semantic Kernel is the **7th runtime** added to Atmosphere in 4.0.36.
 ## Maven Coordinates
 
 ```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-semantic-kernel</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 
@@ -29,12 +25,12 @@ You will also need Semantic Kernel's own dependencies (kernel core + the aiservi
 <dependency>
     <groupId>com.microsoft.semantic-kernel</groupId>
     <artifactId>semantickernel-api</artifactId>
-    <version>4.0.38</version>
+    <version>1.4.0</version>
 </dependency>
 <dependency>
     <groupId>com.microsoft.semantic-kernel</groupId>
     <artifactId>semantickernel-aiservices-openai</artifactId>
-    <version>4.0.38</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 
@@ -72,7 +68,7 @@ The service is a JVM-level static — set it once at application startup, usuall
 
 `SemanticKernelAgentRuntime.execute()` builds an SK `ChatHistory` from `AgentExecutionContext.systemPrompt()` + `history()` + `message()`, calls `chatService.getStreamingChatMessageContentsAsync(...)`, and collects the resulting `Flux<StreamingChatContent>` with `blockLast()` inside the sync SPI boundary. Each content frame's `content()` text is fed into `session.send(text)`.
 
-Text streaming, system prompts, conversation memory, structured output (via pipeline-layer schema injection), and token usage reporting all work identically to the other runtimes.
+Text streaming, system prompts, conversation memory, tool calling (via `SemanticKernelToolBridge`), structured output (via pipeline-layer schema injection), token usage reporting, and per-request retry all work identically to the other runtimes.
 
 ## Capability matrix
 
@@ -80,17 +76,19 @@ Text streaming, system prompts, conversation memory, structured output (via pipe
 |------------|:------:|-------|
 | `TEXT_STREAMING`      | ✅ | `Flux<StreamingChatContent>` unwrapped via `blockLast()` |
 | `SYSTEM_PROMPT`       | ✅ | Threaded into the `ChatHistory` |
-| `CONVERSATION_MEMORY` | ✅ | Per-session memory threaded through `AgentExecutionContext` |
-| `STRUCTURED_OUTPUT`   | ✅ | Via pipeline-layer schema injection (no runtime-specific support needed) |
+| `STRUCTURED_OUTPUT`   | ✅ | Pipeline-layer schema injection — any runtime honoring `SYSTEM_PROMPT` gets it free |
+| `CONVERSATION_MEMORY` | ✅ | Native SK `ChatHistory` replays `context.history()` on every dispatch |
+| `TOOL_CALLING`        | ✅ | `SemanticKernelToolBridge` builds one `AtmosphereSkFunction` per `@AiTool` and attaches them to a fresh `Kernel`'s `KernelPlugin`; the SK auto-invoke loop dispatches through `AtmosphereSkFunction.invokeAsync` |
+| `TOOL_APPROVAL`       | ✅ | Every `AtmosphereSkFunction.invokeAsync` routes through `ToolExecutionHelper.executeWithApproval`, so `@RequiresApproval` gates fire uniformly with the other runtimes |
 | `TOKEN_USAGE`         | ✅ | Reported via `TokenUsage` when SK surfaces it |
-| `AGENT_ORCHESTRATION` | — | Not declared. SK can participate in a `@Coordinator` fleet as a worker runtime, but it does not own a multi-agent dispatch loop the way ADK / Embabel / Koog do, so the capability flag is not advertised. |
-| `TOOL_CALLING`        | — | **Deferred in 4.0.36.** SK's Java tool-calling API is still stabilizing; bridging will land in a follow-up. Documented as an honest exclusion in `modules/semantic-kernel/README.md`. |
-| `TOOL_APPROVAL`       | — | Requires `TOOL_CALLING` — see above |
+| `PER_REQUEST_RETRY`   | ✅ | Honored via `AbstractAgentRuntime.executeWithOuterRetry` on top of SK's `OpenAIAsyncClient` retry layer |
+| `AGENT_ORCHESTRATION` | — | SK can participate in a `@Coordinator` fleet as a worker runtime, but does not own a multi-agent dispatch loop the way ADK / Embabel / Koog do, so the flag is not advertised |
 | `VISION`              | — | SK Java does not yet expose a stable multi-modal input API |
+| `AUDIO`               | — | Same limitation |
 | `MULTI_MODAL`         | — | Same limitation |
 | `PROMPT_CACHING`      | — | SK does not surface a `prompt_cache_key` pass-through |
 
-Exclusions are **honest** — the runtime's `capabilities()` set does not advertise tool-calling, so `@AiEndpoint(requires = {TOOL_CALLING})` explicitly fails at startup when SK is the only adapter available. Correctness Invariant #5 (Runtime Truth) is preserved.
+The runtime's `capabilities()` set is pinned by `SemanticKernelRuntimeContractTest.expectedCapabilities()`, so adding or removing a capability from the code without updating this table (or vice versa) breaks the build. Correctness Invariant #5 — Runtime Truth.
 
 ## Semantic Kernel Embedding Runtime
 

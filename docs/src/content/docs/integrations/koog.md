@@ -10,14 +10,10 @@ description: "AgentRuntime backed by JetBrains Koog — Kotlin-native AI framewo
 ## Maven Coordinates
 
 ```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-koog</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

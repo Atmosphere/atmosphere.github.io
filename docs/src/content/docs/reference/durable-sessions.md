@@ -10,14 +10,10 @@ Sessions survive server restarts. On reconnection, the client sends its session 
 ## Maven Coordinates
 
 ```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-durable-sessions</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 
@@ -56,7 +52,7 @@ Sessions are stored in a `ConcurrentHashMap`. Lost on restart -- suitable for de
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-durable-sessions-sqlite</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 
@@ -68,7 +64,7 @@ Sessions are persisted to a local SQLite database. Suitable for single-node depl
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-durable-sessions-redis</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

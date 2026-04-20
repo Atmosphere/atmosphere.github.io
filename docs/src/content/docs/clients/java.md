@@ -12,14 +12,10 @@ Supports **WebSocket**, **Server-Sent Events (SSE)**, **HTTP Streaming**, **Long
 ## Maven Coordinates
 
 ```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-wasync</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

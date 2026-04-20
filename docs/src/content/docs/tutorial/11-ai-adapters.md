@@ -382,7 +382,7 @@ Koog is a Kotlin agent framework with a concise DSL for defining agents, tools, 
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-koog</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 

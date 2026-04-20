@@ -75,7 +75,7 @@ Zero-configuration embedded storage. Just add the dependency:
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-durable-sessions-sqlite</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 
@@ -97,7 +97,7 @@ For clustered deployments where multiple nodes need access to the same session d
 <dependency>
     <groupId>org.atmosphere</groupId>
     <artifactId>atmosphere-durable-sessions-redis</artifactId>
-    <version>${atmosphere.version}</version>
+    <version>${project.version}</version>
 </dependency>
 ```
 
