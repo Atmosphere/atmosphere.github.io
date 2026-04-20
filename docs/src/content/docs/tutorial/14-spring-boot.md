@@ -48,6 +48,27 @@ Spring Boot's embedded containers do not process `@HandlesTypes` from `ServletCo
 
 The starter also performs a second pass to discover custom annotation types registered via `@AtmosphereAnnotation` processors (e.g., the AI module's `@AiEndpoint` processor), and re-scans user packages for classes annotated with those custom annotations.
 
+### Admin control plane
+
+When `atmosphere-admin` is on the classpath, the starter also registers
+`AtmosphereAdminEndpoint` under `/api/admin/*` (read endpoints open by
+default, write endpoints triple-gated: feature flag → Principal →
+`ControlAuthorizer`), plus `AtmosphereFaviconAutoConfiguration` which
+serves `/favicon.ico` and `/favicon.png` with the framework logo so
+browsers stop logging a 404 on the admin dashboard and every sample.
+
+Two opt-in flags you'll want to know about:
+
+| Property | Default | Effect |
+|----------|---------|--------|
+| `atmosphere.admin.http-write-enabled` | `false` | Enables `POST` / `DELETE` on `/api/admin/*`; still requires a Principal + `ControlAuthorizer` grant. |
+| `atmosphere.admin.http-read-auth-required` | `false` | Requires the same principal chain (minus `ControlAuthorizer`) for `GET` / `HEAD` / `OPTIONS`. Flip for multi-tenant deployments exposing `/api/admin/*` on a routable network. |
+| `atmosphere.favicon.enabled` | `true` | Set to `false` if the application ships its own `/favicon.ico`. |
+
+See [Chapter 29 — Agent-to-Agent Flow Viewer](./29-admin-flow-viewer/)
+and [`modules/admin/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/admin/README.md)
+for the full admin surface and principal-chain wiring.
+
 ## Application class
 
 The application class is a standard Spring Boot entry point:

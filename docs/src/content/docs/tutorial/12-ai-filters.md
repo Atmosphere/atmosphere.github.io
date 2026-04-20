@@ -245,6 +245,136 @@ Register guardrails on an endpoint:
 @AiEndpoint(path = "/chat", guardrails = {PiiGuardrail.class})
 ```
 
+## Built-in guardrails
+
+Two zero-dep guardrails ship in `org.atmosphere.ai.guardrails`. Both
+resolve through the framework-scoped wiring pattern (Spring bean
+bridge → `ServiceLoader` → annotation — same order
+`FactResolver` uses), so an annotation-declared `@AiEndpoint` picks
+up Spring-registered beans automatically.
+
+### PiiRedactionGuardrail
+
+Regex-based detection of email, phone, credit card number, US SSN,
+and IPv4 in both requests and responses.
+
+**Request path** (default mode) returns `Modify` with a redacted
+message — the model never sees the raw PII. `.blocking()` switches
+to `Block` on match.
+
+**Response path** Blocks on match in both modes. This is an **early
+termination**, not a retroactive redaction — by the time the guardrail
+sees the accumulated response, earlier tokens have already streamed
+to the client. Blocking suppresses *subsequent* tokens and surfaces a
+`SecurityException` on the session; it does not unsend bytes already
+on the wire. For synchronous per-token scrubbing use
+`PiiRedactionFilter` (covered earlier in this page under
+"PiiRedactionFilter") — it runs inside the broadcaster chain and
+rewrites each text frame before it is sent. The guardrail here is a
+safety net that halts the leak before more PII flows and writes the
+hit to the audit log.
+
+Enable via Spring property (recommended):
+
+```properties
+atmosphere.ai.guardrails.pii.enabled=true
+# Optional — default is redact-on-request, block-on-response
+atmosphere.ai.guardrails.pii.blocking=true
+```
+
+Or via annotation:
+
+```java
+@AiEndpoint(path = "/chat",
+            guardrails = { PiiRedactionGuardrail.class })
+```
+
+Patterns bundled:
+
+| Kind     | Example input                | Replacement          |
+|----------|------------------------------|----------------------|
+| email    | `alice@example.com`          | `[redacted-email]`   |
+| phone    | `(555) 123-4567`             | `[redacted-phone]`   |
+| us-ssn   | `123-45-6789`                | `[redacted-us-ssn]`  |
+| credit   | `4111 1111 1111 1111`        | `[redacted-card]`    |
+| ipv4     | `203.0.113.42`               | `[redacted-ip]`      |
+
+Extend by subclassing and adding patterns before calling `super`.
+
+### OutputLengthZScoreGuardrail
+
+Statistical drift detector. Maintains a rolling window of response
+lengths and Blocks any response whose length is more than N standard
+deviations above the window mean. Catches runaway prompts and
+injection payloads that balloon responses without a specific
+signature.
+
+```properties
+atmosphere.ai.guardrails.drift.enabled=true
+atmosphere.ai.guardrails.drift.window-size=50
+atmosphere.ai.guardrails.drift.z-score-threshold=3.0
+atmosphere.ai.guardrails.drift.min-samples=10
+```
+
+The first `min-samples` responses always pass — the guardrail needs a
+baseline before it can flag an outlier. A falling hit rate means the
+model's output distribution is stabilizing; a rising rate is a
+regression signal worth investigating.
+
+**Multi-tenant deployments** — the rolling window partitions by the
+`business.tenant.id` MDC tag (populated by the Business Metadata
+bridge — see [Chapter 27](./27-business-metadata-observability/)).
+A noisy tenant cannot poison another tenant's baseline. Turns without
+a tenant tag share a shared `__default__` bucket, so single-tenant
+apps behave unchanged.
+
+### CostCeilingGuardrail
+
+Blocks outbound `@Prompt` dispatch when a tenant's cumulative LLM
+cost hits a configured budget. Closes the
+observability→enforcement loop: you tag tenants via
+`BusinessMetadata`, the built-in `CostCeilingAccountant` meters
+`TokenUsage` from every runtime, and this guardrail stops the next
+request before it spends more.
+
+```java
+@Bean
+CostCeilingGuardrail costCeiling() {
+    return new CostCeilingGuardrail(/* per-tenant budget USD */ 100.00);
+}
+
+@Bean
+TokenPricing openAiPricing() {
+    // Your provider's per-model input/output dollar-per-token rates.
+    return (usage, model) -> switch (model) {
+        case "gpt-4o" -> usage.inputTokens() * 0.0000025
+                      + usage.outputTokens() * 0.00001;
+        default        -> 0.0;
+    };
+}
+```
+
+Spring Boot auto-wires the `CostAccountingSession` decorator when
+both beans are present: every `@Prompt` session's `TokenUsage` event
+flows into `addCost(tenantId, dollars)` keyed by the same
+`business.tenant.id` MDC tag the drift guardrail uses. Reset
+counters on a monthly boundary via `resetTenant(...)` /
+`resetAll()`.
+
+Request-side blocks surface on the session as a `SecurityException`
+with the reason string `cost ceiling reached for tenant X (spent Y
+of budget Z)`, so the client sees a terminal error envelope rather
+than an infinite hang.
+
+### Together
+
+Register all three in a production deployment — PII for compliance
+(blocks the leak), drift for incident detection (flags a model
+behaving badly), cost ceiling for spend enforcement (halts a runaway
+tenant before the next invoice). None is on by default: the
+framework's position is that a guardrail that fires unexpectedly is
+worse than no guardrail at all, so you opt in explicitly.
+
 ## Model routing
 
 The `ModelRouter` interface (in `org.atmosphere.ai`) mirrors Atmosphere's transport failover pattern (WebSocket -> SSE -> long-polling) applied to the AI layer (GPT-4 -> Claude -> Gemini).

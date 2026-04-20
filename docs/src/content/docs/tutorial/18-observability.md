@@ -309,6 +309,27 @@ framework.interceptor(new MDCInterceptor());
 
 MDC keys are automatically included as top-level fields in JSON layouts (logstash-logback-encoder, logback-contrib).
 
+### Business-outcome MDC for AI calls
+
+When `atmosphere-ai` is on the classpath, `AiEndpointHandler` layers a
+second MDC snapshot on top of the transport-level keys above. For
+every `@Prompt` turn it publishes the `business.*` keys
+(`tenant.id`, `customer.id`, `customer.segment`, `session.revenue`,
+`session.cost`, `session.currency`, `session.id`, `event.kind`,
+`event.subject`) onto the dispatching virtual thread and clears them
+in `finally`. Any log record emitted during the turn — pipeline,
+runtime, tool calls, guardrails — carries the tags, so Dynatrace /
+Datadog / OpenTelemetry log exporters can join LLM cost and latency
+against per-tenant KPIs without a separate correlation pipeline.
+
+Performance of the snapshot → apply → clear cycle is pinned by
+`BusinessMdcBenchmark` in `modules/benchmarks` (JMH, baseline vs.
+six-key production vs. empty-snapshot) so regressions on the hot
+path show as numbers.
+
+See [Chapter 27 — Tag agent calls with business outcomes](/docs/tutorial/27-business-metadata-observability/)
+for the complete wiring and exporter integration.
+
 ## BackpressureInterceptor
 
 The `BackpressureInterceptor` protects against slow consumers by limiting the number of pending messages per client:

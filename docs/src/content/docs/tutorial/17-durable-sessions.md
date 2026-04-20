@@ -234,6 +234,35 @@ Two implementations are provided:
 
 These share the same backend connections as the corresponding `SessionStore` implementations. The `PersistentConversationMemory` class handles serialization and sliding-window logic on top of the persistence SPI.
 
+## Companion: mid-stream reattach for `@Prompt` runs
+
+Durable sessions restore room + broadcaster memberships after a
+disconnect — the client sees the same presence and subscriptions it
+had before. But an `@Prompt` that was *actively streaming* when the
+client dropped needs a parallel mechanism: the buffered events the
+client didn't finish receiving.
+
+That's what `RunRegistry` + `X-Atmosphere-Run-Id` do. On every
+`@Prompt` dispatch `AiEndpointHandler` registers a run with an
+`AgentResumeHandle` and returns the run id as the
+`X-Atmosphere-Run-Id` response header. `RunEventCapturingSession`
+mirrors every `session.send` / `complete` / `error` into the run's
+bounded `RunEventReplayBuffer`. When the client reconnects carrying
+the run id, `RunReattachSupport.replayPendingRun` drains the buffer
+onto the new resource so the user catches up on the tokens they
+missed — routed through the broadcaster's filter chain so
+`PiiRedactionFilter` applies identically to replay and live frames.
+
+`DurableSessionInterceptor` stashes the header into the request
+attribute `org.atmosphere.session.runId` so `AiEndpointHandler.onReady`
+sees it without a compile-time dependency on the durable-sessions
+module.
+
+Ownership is enforced: replay refuses when the reconnecting caller's
+`userId` does not match the run's registered `userId`, so a bearer
+token leak cannot replay someone else's conversation. Anonymous runs
+keep the open-mode carve-out for demo deployments.
+
 ## Combining with Clustering
 
 Durable sessions and clustering serve different purposes and work well together:

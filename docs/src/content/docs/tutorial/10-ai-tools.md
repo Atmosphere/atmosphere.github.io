@@ -503,7 +503,7 @@ The canonical tool-calling sample is:
 
 - **[`samples/spring-boot-ai-tools/`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools)** — uses the built-in LLM client with `@AiTool` methods (`AssistantTools`), conversation memory, and the `CostMeteringInterceptor`. Run with: `./mvnw spring-boot:run -pl samples/spring-boot-ai-tools`
 
-Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` class works with any of the six runtimes (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog) by swapping the adapter dependency.
+Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` class works with any of the seven runtimes (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel) by swapping the adapter dependency.
 
 ## Summary
 

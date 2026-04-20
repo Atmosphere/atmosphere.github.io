@@ -164,6 +164,35 @@ The extension supports Quarkus dev mode (`quarkus:dev`) with live reload. The `A
 | Config phase | Runtime | `BUILD_AND_RUN_TIME_FIXED` |
 | SCI handling | Overridden via servlet context attribute | Suppressed via `IgnoredServletContainerInitializerBuildItem` |
 
+## Admin extension
+
+`atmosphere-quarkus-admin-extension` mirrors the Spring `/api/admin/*`
+surface for Quarkus apps, with three Quarkus-shaped deltas:
+
+- **Fourth principal source** — on top of the Spring chain
+  (`SecurityContext` → `org.atmosphere.auth.principal` attribute →
+  `ai.userId` attribute), `AdminResource` also accepts the
+  `X-Atmosphere-Auth` header and validates it constant-time against
+  `atmosphere.admin.auth.token`. Intended for sample fixtures and
+  operator tooling that haven't integrated Jakarta Security yet;
+  production stacks still resolve Jakarta Security first.
+- **`AdminReadAuthFilter`** — Quarkus JAX-RS `@Provider` that
+  enforces the same `atmosphere.admin.http-read-auth-required`
+  opt-in flag as the Spring `AdminApiAuthFilter`. Default off;
+  multi-tenant operators flip it when exposing `/api/admin/*` on a
+  routable network.
+- **Vert.x dispatch** — `resteasy-reactive` runs on Vert.x, so
+  servlet attribute access throws `IllegalStateException: UT000048`.
+  `AdminResource` guards against this and reads `X-Atmosphere-Auth`
+  via `@Context HttpHeaders`, which works on both servlet and
+  reactive transports.
+
+Everything else matches the Spring starter one-for-one — triple-gate
+writes, audit log, `ControlAuthorizer` bean resolution via CDI (the
+Quarkus `AdminProducer` looks up a user-supplied `ControlAuthorizer`
+bean before falling back to `REQUIRE_PRINCIPAL`), and the MCP-tool
+admin surface when `atmosphere-mcp` is also on the classpath.
+
 ## Running the sample
 
 The `quarkus-chat` sample demonstrates a complete chat application:
