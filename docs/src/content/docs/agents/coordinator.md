@@ -52,22 +52,6 @@ public class CeoCoordinator {
 }
 ```
 
-## Dependency
-
-```xml
-<properties>
-    <atmosphere.version>4.0.38</atmosphere.version>
-</properties>
-
-<dependency>
-    <groupId>org.atmosphere</groupId>
-    <artifactId>atmosphere-coordinator</artifactId>
-    <version>${atmosphere.version}</version>
-</dependency>
-```
-
-The coordinator module transitively pulls in `atmosphere-agent` and `atmosphere-a2a`.
-
 ## Annotations
 
 ### `@Coordinator`
