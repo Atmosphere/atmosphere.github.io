@@ -111,13 +111,26 @@ This scaffolds a complete Spring Boot + Atmosphere project with `pom.xml`, sourc
 
 ### Available Templates
 
-| Template | What you get |
-|----------|-------------|
-| `chat` | WebSocket chat with Broadcaster and `@ManagedService` |
-| `ai-chat` | `@AiEndpoint` with streaming, conversation memory, and configurable LLM backend |
-| `ai-tools` | AI tool calling with `@AiTool` and LangChain4j |
-| `rag` | RAG chat with Spring AI vector store and embeddings |
-| `quarkus-chat` | Real-time chat on Quarkus instead of Spring Boot |
+`atmosphere new` sparse-clones the matching sample from
+`cli/samples.json` and rewrites the cloned `pom.xml` so its parent
+resolves from Maven Central — the result compiles standalone with
+plain `mvn compile`.
+
+| Template | Source sample | What you get |
+|----------|--------------|-------------|
+| `chat` | `spring-boot-chat` | WebSocket chat with Broadcaster and `@ManagedService` |
+| `ai-chat` | `spring-boot-ai-chat` | `@AiEndpoint` with streaming, conversation memory, configurable LLM backend |
+| `ai-tools` | `spring-boot-ai-tools` | `@AiTool` tool calling, approval gates |
+| `mcp-server` | `spring-boot-mcp-server` | MCP tools, resources, and prompts |
+| `rag` | `spring-boot-rag-chat` | RAG chat with Spring AI vector store + embeddings |
+| `agent` | `spring-boot-dentist-agent` | Single agent with `@Agent` / `@Command` + skill file |
+| `koog` | `spring-boot-koog-chat` | JetBrains Koog runtime (Kotlin) |
+| `semantic-kernel` | `spring-boot-semantic-kernel-chat` | Microsoft Semantic Kernel runtime |
+| `multi-agent` | `spring-boot-multi-agent-startup-team` | 5-agent `@Coordinator` fleet with A2A specialists |
+| `classroom` | `spring-boot-ai-classroom` | Multi-room shared AI (Spring Boot + Expo React Native client) |
+
+Pass `--skill-file <path>` to auto-select the `agent` template with
+your skill file wired in.
 
 ### npx Alternative (Zero Install)
 
@@ -128,15 +141,9 @@ npx create-atmosphere-app my-chat-app
 npx create-atmosphere-app my-ai-app --template ai-chat
 ```
 
-### JBang Generator (Advanced)
-
-For full control over the generated project:
-
-```bash
-jbang generator/AtmosphereInit.java --name my-app --handler ai-chat --ai spring-ai --tools
-```
-
-Options: `--handler` (chat, ai-chat, mcp-server), `--ai` (builtin, spring-ai, langchain4j, adk), `--tools` (include `@AiTool` methods). See [generator/README.md](https://github.com/Atmosphere/atmosphere/tree/main/generator) for details.
+`create-atmosphere-app` is a thin shim over the same `atmosphere new`
+CLI — it delegates to the installed binary, so the template list is
+always in sync.
 
 ## Sample Catalog
 
@@ -205,7 +212,6 @@ atmosphere run spring-boot-ai-chat \
 | Requirement | Version | How to install |
 |-------------|---------|---------------|
 | Java | 21+ | `brew install openjdk@21` or [SDKMAN](https://sdkman.io) |
-| JBang | (optional) | `brew install jbang` — only for `atmosphere new` with full templates |
 | fzf | (optional) | `brew install fzf` — for fuzzy-search sample picker |
 
 ## What's Next

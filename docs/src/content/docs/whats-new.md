@@ -8,7 +8,7 @@ description: "Highlights from the Atmosphere 4.0.x release line"
 Atmosphere 4.0 is the JDK 21+ rewrite of the framework. The 4.0.0 release shipped the
 core platform migration (Jakarta EE 10, virtual threads, Jetty 12 / Tomcat 11, native
 image support, rooms, AI streaming SPI, MCP, TypeScript client). Since then the 4.0.x
-line has grown into a full multi-agent runtime — unified agent annotations, six
+line has grown into a full multi-agent runtime — unified agent annotations, seven
 pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Native
 support, and major compatibility refreshes.
 
@@ -43,11 +43,12 @@ This page is a highlights reel. For the per-patch history, see the
   agent loop — tool calling, memory, RAG, retries — to whichever AI framework is on
   the classpath. Write your `@Agent` once, run it on any runtime. Switch runtimes by
   changing a single Maven dependency.
-- **Six runtimes** share a unified capability baseline (tool calling, structured
-  output, progress events, usage metadata): **Built-in**, **LangChain4j**,
-  **Spring AI**, **Google ADK**, **Embabel**, and the new **JetBrains Koog**
-  adapter. The built-in runtime gained full OpenAI-compatible tool calling
-  (max 5 rounds), so `@AiTool` works with zero framework dependencies.
+- **Seven runtimes** share a unified capability baseline (tool calling,
+  structured output, progress events, usage metadata): **Built-in**,
+  **LangChain4j**, **Spring AI**, **Google ADK**, **Embabel**,
+  **JetBrains Koog**, and **Microsoft Semantic Kernel**. The built-in runtime
+  gained full OpenAI-compatible tool calling (max 5 rounds), so `@AiTool`
+  works with zero framework dependencies.
 - **Auto-detection** via `ServiceLoader` — the highest-`priority()` runtime that
   reports `isAvailable()` wins. The AI Console subtitle and `/api/console/info`
   report the active runtime.
@@ -233,6 +234,7 @@ Highlights:
 | `spring-boot-durable-sessions` | Session persistence across restarts |
 | `spring-boot-channels-chat` | Multi-channel (Slack/Telegram/Discord) chat |
 | `spring-boot-koog-chat` | Koog runtime streaming chat |
+| `spring-boot-semantic-kernel-chat` | Microsoft Semantic Kernel runtime streaming chat |
 | `spring-boot-otel-chat` | OpenTelemetry tracing with Jaeger |
 | `quarkus-chat` | Quarkus extension chat |
 | `grpc-chat` | Standalone gRPC transport |
@@ -264,7 +266,7 @@ Heads up before you upgrade:
   `com.fasterxml.jackson.*` need to be updated.
 - **`AiSupport` → `AgentRuntime`.** Code that implemented the legacy `AiSupport`
   SPI should migrate to `AgentRuntime`. The capability baseline, tool calling,
-  and usage metadata contracts are now unified across all six runtimes.
+  and usage metadata contracts are now unified across all seven runtimes.
 - **WebSocket HTML sanitization (4.0.11).** HTML sanitization was disabled for
   the WebSocket transport because encoding JSON in WebSocket frames broke the
   AI streaming wire protocol. HTTP transports continue to sanitize write
