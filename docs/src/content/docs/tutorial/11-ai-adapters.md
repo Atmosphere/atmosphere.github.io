@@ -50,32 +50,38 @@ This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()`
 | `TEXT_STREAMING`      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `SYSTEM_PROMPT`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `STRUCTURED_OUTPUT`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `TOOL_CALLING`        | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
-| `TOOL_APPROVAL`       | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
-| `VISION`              | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
-| `AUDIO`               |  — | ✅ | ✅ | ✅ |  — |  — |  — |
-| `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
-| `PROMPT_CACHING`      | ✅ | ✅ | ✅ |  — |  — |  — |  — |
-| `PER_REQUEST_RETRY`   | ✅ |  — |  — |  — |  — |  — |  — |
-| `CONVERSATION_MEMORY` |  — |  — |  — | ✅ |  — | ✅ | ✅ |
+| `TOOL_CALLING`        | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `TOOL_APPROVAL`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `CONVERSATION_MEMORY` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `PER_REQUEST_RETRY`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `TOKEN_USAGE`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `VISION`              | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
+| `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |
 | `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |
-| `TOKEN_USAGE`         |  — |  — |  — |  — |  — |  — | ✅ |
+| `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |
 
 **Legend:**
 - ✅ Declared in `capabilities()` and honored at runtime
-- — Not declared. Either the framework's native API does not expose the feature, or the bridge has not threaded it through yet
+- — Not declared. Either the framework's native API does not expose the feature, or the bridge has not threaded it through yet.
 
-**Notes on per-runtime gaps:**
+### Why the baseline is so high
 
-- **`CONVERSATION_MEMORY`** is declared only by runtimes whose native SPI threads a conversation ID into the provider call (ADK `Runner`, Koog `AIAgent`, SK `ChatHistory`). The other runtimes still accept `AgentExecutionContext.conversationId()` but rebuild history from `context.conversationHistory()` on every call — that's not the same contract, so declaring the capability would be dishonest.
-- **`AGENT_ORCHESTRATION`** tracks whether the underlying framework owns a multi-agent dispatch loop (ADK `LlmAgent`, Embabel goal graph, Koog `chatAgentStrategy`). Built-in / Spring AI / LC4j / SK can participate in `@Coordinator` fleets but do not own the loop themselves.
-- **`TOKEN_USAGE`** is currently declared only by Semantic Kernel. The other runtimes forward `ai.tokens.*` metadata through the pipeline whenever the provider returns it, but the capability flag is gated on a typed `TokenUsage` extraction path — Tier 1 follow-up work will graduate Spring AI / LC4j / ADK / Koog / Built-in as each bridge is updated.
-- **`PROMPT_CACHING`** is honored by Built-in / Spring AI / LC4j through the `CacheHint` metadata attached to `AgentExecutionContext`. ADK's `ContextCacheConfig` is set at `App.Builder` construction time rather than per-request, so the hint has nowhere to go on the bridge path; the capability is not declared.
-- **`AUDIO`** is not declared by Built-in because the OpenAI-compatible client does not yet emit an `input_audio` content block — `Content.Audio` parts are accepted at the API surface but silently skipped during message assembly. Tier 2 work will wire this up.
-- **`PER_REQUEST_RETRY`** is Built-in only. Framework runtimes inherit their own retry layers (Spring Retry, LC4j `RetryUtils`, ADK's `HttpClient`, Koog `CallRetryPolicy`) and do not expose a per-request override through the bridge. Setting `context.retryPolicy(...)` on a framework runtime silently inherits the framework's default instead.
-- **Embabel** has no tool-calling surface in its current release — the framework is goal-driven rather than tool-driven. `@AiTool` methods are ignored when Embabel is the active runtime.
-- **Semantic Kernel** tool-calling is deferred in 4.0.36 — the Java SK's `KernelFunction` binding is on the Tier 2 roadmap. `TOOL_CALLING` and `TOOL_APPROVAL` will be added when the bridge routes through `ToolExecutionHelper.executeWithApproval` like the other runtimes.
-- **Koog** 0.7.x does not expose a stable multi-modal or prompt-cache surface on the bridge path; both capabilities are omitted until Koog 0.8.x's `Message.Media` lands.
+The first eight rows are universal because `AbstractAgentRuntime` and the pipeline layer implement them once and every runtime that extends or delegates to them inherits the behavior. The framework builds the default, the adapter only plugs in where it differs.
+
+- **`STRUCTURED_OUTPUT`** is implemented at the pipeline layer — `AiPipeline.StructuredOutputCapturingSession` plus system-prompt schema injection — so any runtime that honors `SYSTEM_PROMPT` gets it for free (`BuiltInAgentRuntime` additionally enables native JSON mode).
+- **`CONVERSATION_MEMORY`** is implemented by `AbstractAgentRuntime.assembleMessages`, which threads `context.history()` into the outgoing message list on every dispatch. Runtimes with a native conversation-id path (ADK `Runner`, Koog `AIAgent`, SK `ChatHistory`) use that; the rest honor the pipeline-managed history via the base class.
+- **`PER_REQUEST_RETRY`** is implemented by `AbstractAgentRuntime.executeWithOuterRetry`, which wraps each runtime's dispatch in a retry loop respecting `context.retryPolicy(...)`. Each adapter stacks this on top of its own native retry layer (Spring Retry, LC4j `RetryUtils`, ADK `HttpClient`, Koog `CallRetryPolicy`, SK `OpenAIAsyncClient`), giving an "at least N retries" guarantee that is uniform across every runtime.
+- **`TOOL_CALLING` / `TOOL_APPROVAL`** are implemented per-adapter (`SpringAiToolBridge`, `LangChain4jToolBridge`, `AdkFunctionToolBridge`, `EmbabelToolBridge`, `AtmosphereToolBridge` for Koog, `SemanticKernelToolBridge`) — each routes every invocation through `ToolExecutionHelper.executeWithApproval` so `@RequiresApproval` gates fire uniformly regardless of which runtime handles the call.
+- **`TOKEN_USAGE`** is honest wherever each bridge threads a typed `TokenUsage` record through `session.usage(...)` — done per-runtime but declared universally, because the pipeline surfaces the record on every adapter today.
+
+### Notes on the remaining gaps
+
+- **`VISION` / `AUDIO` / `MULTI_MODAL`** — Semantic Kernel has no multi-modal surface yet. Embabel's Atmosphere-native dispatch path translates `Content.Image` into Embabel `AgentImage` (no audio); the deployed-agent path ignores multi-modal parts, matching Embabel's own semantics where a deployed `@Agent` owns its own handling. Koog 0.7.3 accepts vision, audio, and multi-modal natively via `ContentPart.Image` / `ContentPart.Audio`, but its tool-calling surface (`AIAgent.run(String)`) only accepts a plain text message — multi-modal + tools together degrade gracefully (the tool path wins with a WARN).
+- **`PROMPT_CACHING`** — Built-in / Spring AI / LC4j / ADK / Koog all honor the portable `CacheHint` attached to `AgentExecutionContext`. Mechanism varies per provider (OpenAI `prompt_cache_key`, Anthropic / Bedrock `CacheControl.Bedrock.{FiveMinutes, OneHour}`, ADK's per-request `ContextCacheConfig` wired via `buildRequestRunner`). Embabel and Semantic Kernel do not expose a caching hook that maps to `CacheHint` today.
+- **`AGENT_ORCHESTRATION`** tracks whether the underlying framework owns a multi-agent dispatch loop (ADK `LlmAgent`, Embabel goal graph, Koog `chatAgentStrategy`). Built-in / Spring AI / LC4j / SK can still participate in `@Coordinator` fleets — the coordinator dispatches from Atmosphere — but do not own the loop themselves.
+- **`TOOL_CALL_DELTA`** is Built-in only. `OpenAiCompatibleClient` forwards every `delta.tool_calls[].function.arguments` fragment through `session.toolCallDelta(id, chunk)` on both the chat-completions and responses-API streaming paths. The six framework bridges cannot emit deltas without bypassing their high-level streaming APIs; they honor the default no-op contract instead.
 
 When a framework adds a capability in a new release, update both the runtime's `capabilities()` method and the `expectedCapabilities()` override in its contract test in the same commit. The contract test will fail on either side of a drift, which is the intended safety net.
 
@@ -406,6 +412,8 @@ Tools are registered globally and selected per-endpoint:
 
 **Koog** is the best fit when you want a concise Kotlin DSL for defining agents and tools and already live in a Kotlin codebase.
 
+**Microsoft Semantic Kernel** is the best fit when you're already invested in the SK ecosystem — Plugins, Planners, shared `KernelFunction` definitions across .NET and Java — or want to bind server-side SK skills to Atmosphere's streaming transport. The bridge ships tool calling via `SemanticKernelToolBridge` (auto-invoke through `ToolExecutionHelper.executeWithApproval`), conversation memory via `ChatHistory`, and embeddings via `SemanticKernelEmbeddingRuntime`.
+
 All runtimes produce the same wire protocol on the Atmosphere side: text-by-text JSON messages delivered over WebTransport, WebSocket, SSE, or long-polling to any connected client.
 
 ## Samples
@@ -419,6 +427,7 @@ Each runtime has a corresponding sample application in the repo:
 | `spring-boot-ai-tools` | Built-in, `@AiTool` tool calling | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools) |
 | `spring-boot-rag-chat` | Spring AI + vector store | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-rag-chat) |
 | `spring-boot-koog-chat` | Koog | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-koog-chat) |
+| `spring-boot-semantic-kernel-chat` | Microsoft Semantic Kernel | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-semantic-kernel-chat) |
 | `spring-boot-dentist-agent` | Built-in + `@Agent`/`@Command` workflow | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-dentist-agent) |
 | `spring-boot-multi-agent-startup-team` | Coordinator + multi-agent | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team) |
 
