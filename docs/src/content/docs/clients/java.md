@@ -148,21 +148,14 @@ var socket = client.create(options)
 
 ## Architecture
 
-```
-+--------------------------------------------------+
-|                  Your Application                 |
-+--------------------------------------------------+
-|  Socket API   |  Encoder/Decoder Pipeline         |
-|  .on()        |  fire(POJO) -> encode -> send     |
-|  .fire()      |  receive -> decode -> on(MESSAGE)  |
-|  .close()     |                                    |
-+--------------------------------------------------+
-|            Transport Layer (auto-fallback)         |
-|  WebSocket | SSE | Streaming | Long-Poll | gRPC   |
-+--------------------------------------------------+
-|  java.net.http (JDK 21+) | grpc-java (optional)   |
-+--------------------------------------------------+
-```
+wAsync stacks four layers on top of the JDK's own HTTP client. Each row below is a horizontal plane in the client; a call to `.fire()` travels top-down through the codec and transport layers and lands on a JDK socket.
+
+| Layer | Surface | What it does |
+|-------|---------|--------------|
+| **Your application** | Spring / Quarkus / plain Java | Business code that calls into the `Socket` API |
+| **Socket API + codec pipeline** | `.on(...)`, `.fire(...)`, `.close()`; `Encoder` / `Decoder` | Outbound: `fire(POJO) → encode → send`. Inbound: `receive → decode → on(MESSAGE)`. Type-safe, pluggable per transport. |
+| **Transport layer (auto-fallback)** | `Request.Builder.transport(...)` | `WEBSOCKET` → `SSE` → `STREAMING` → `LONG_POLLING` → `GRPC`. Picks the first one the server accepts; falls back automatically on failure. |
+| **Network backend** | `java.net.http.HttpClient` + `grpc-java` (optional) | JDK-native HTTP/2 + WebSocket via `java.net.http` (JDK 21+); bidirectional streaming over HTTP/2 via `grpc-java` when `atmosphere-grpc` is on the classpath. |
 
 ## Samples
 
