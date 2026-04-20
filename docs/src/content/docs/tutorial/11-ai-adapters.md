@@ -7,6 +7,29 @@ sidebar:
 
 Atmosphere's AI layer follows the same adapter pattern as its transport layer. Just as Atmosphere auto-detects WebSocket, SSE, or long-polling support at runtime, it auto-detects which AI framework is on the classpath and bridges it to the `StreamingSession` API via the `AgentRuntime` SPI.
 
+## Dependencies
+
+Add the Atmosphere Spring Boot starter and the adapter module for the framework you want. Adapter modules transitively pull in `atmosphere-ai` (the framework-agnostic SPI) and declare the underlying AI framework as `<scope>provided</scope>` — you supply the framework itself on your application classpath:
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-spring-boot-starter</artifactId>
+    <version>${project.version}</version>
+</dependency>
+
+<!-- Pick one adapter (or add multiple and let priority() pick a winner): -->
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-spring-ai</artifactId>
+    <version>${project.version}</version>
+</dependency>
+<!-- or atmosphere-langchain4j, atmosphere-adk,
+     atmosphere-embabel, atmosphere-koog, atmosphere-semantic-kernel -->
+```
+
+Zero-extra-dep option: drop the adapter line and let the built-in OpenAI-compatible client in `atmosphere-ai` serve the requests. See the next section for when that's the right choice. Native framework versions Atmosphere is tested against are pinned in the [Runtimes table](#runtimes) two sections below.
+
 ## Built-in LLM Client (zero extra dependencies)
 
 Before reaching for an adapter module, know that `atmosphere-ai` itself includes a built-in `OpenAiCompatibleClient`. This client works with **OpenAI**, **Google Gemini**, **Ollama**, **Azure OpenAI**, and any OpenAI-compatible endpoint — with zero additional dependencies beyond `atmosphere-ai`. The Maven coordinates for every module in this chapter are listed in the [Runtimes table](#runtimes) below and in the [Spring Boot integration guide](/docs/tutorial/14-spring-boot/).

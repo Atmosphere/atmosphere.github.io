@@ -52,6 +52,18 @@ public class CeoCoordinator {
 }
 ```
 
+## Dependency
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-coordinator</artifactId>
+    <version>${project.version}</version>
+</dependency>
+```
+
+The coordinator module transitively pulls in `atmosphere-agent` and `atmosphere-a2a`, so one dependency line covers `@Agent` discovery, A2A wire support, and the coordinator annotations.
+
 ## Annotations
 
 ### `@Coordinator`
