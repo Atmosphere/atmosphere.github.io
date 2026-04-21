@@ -162,6 +162,18 @@ This page is a highlights reel. For the per-patch history, see the
   the Spring Boot Actuator `AtmosphereHealthIndicator`.
 - **MDC interceptor** — sets `atmosphere.uuid`, `atmosphere.transport`, and
   `atmosphere.broadcaster` in the SLF4J MDC for structured logging.
+- **Governance policy plane** — declarative `GovernancePolicy` SPI layered on
+  top of `AiGuardrail`. `YamlPolicyParser` loads Atmosphere-native
+  (`policies:` / `type:`) or **Microsoft Agent Governance Toolkit**
+  (`rules:` / `condition:`) YAML verbatim — all nine MS operators and four
+  actions ported faithfully, conformance pinned against MS's own example
+  YAMLs. `PolicyAdmissionGate` extends governance to non-pipeline code
+  paths; `GovernanceController` exposes `/api/admin/governance/policies`,
+  `/summary`, and a Microsoft-`/check`-compatible decision endpoint so
+  external gateways (Envoy, Kong, Azure APIM) can point at Atmosphere as
+  their policy provider without code changes. See
+  [Governance Policy Plane tutorial](/docs/tutorial/30-governance-policy-plane/)
+  and [reference](/docs/reference/governance/).
 
 ## Integrations
 
