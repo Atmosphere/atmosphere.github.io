@@ -88,6 +88,45 @@ Built-in types:
 | `cost-ceiling` | `CostCeilingGuardrail` | `budget-usd: <number>` |
 | `output-length-zscore` | `OutputLengthZScoreGuardrail` | `window-size`, `z-threshold`, `min-samples` |
 
+### `@AgentScope` + `ScopeGuardrail`
+
+Annotation + SPI for architectural goal-hijacking prevention. See [tutorial 31](/docs/tutorial/31-agent-scope/) for usage.
+
+```java
+public @interface AgentScope {
+    String purpose() default "";
+    String[] forbiddenTopics() default {};
+    Breach onBreach() default Breach.POLITE_REDIRECT;
+    String redirectMessage() default "";
+    Tier tier() default Tier.EMBEDDING_SIMILARITY;
+    double similarityThreshold() default 0.45;
+    boolean unrestricted() default false;
+    String justification() default "";
+    boolean postResponseCheck() default false;
+    enum Breach { POLITE_REDIRECT, DENY, CUSTOM_MESSAGE }
+    enum Tier { RULE_BASED, EMBEDDING_SIMILARITY, LLM_CLASSIFIER }
+}
+
+public interface ScopeGuardrail {
+    AgentScope.Tier tier();
+    Decision evaluate(AiRequest request, ScopeConfig config);
+    record Decision(Outcome outcome, String reason, double similarity) { }
+    enum Outcome { IN_SCOPE, OUT_OF_SCOPE, ERROR }
+}
+```
+
+Three tier implementations ship in-tree:
+
+- `RuleBasedScopeGuardrail` — keyword / regex + bundled hijacking probes. Sub-ms. No dependencies.
+- `EmbeddingScopeGuardrail` — cosine similarity against purpose vector via `EmbeddingRuntime`. ~5–20ms. **Default tier.**
+- `LlmClassifierScopeGuardrail` — zero-shot YES/NO against the resolved `AgentRuntime`. ~100–500ms. Opt-in via `tier = LLM_CLASSIFIER`.
+
+`ScopePolicy` wraps a `ScopeGuardrail` as a `GovernancePolicy` — breach decisions map via `AgentScope.Breach` to `Deny` / `Transform` (rewriting the request message to the redirect text).
+
+**Sample-hygiene CI lint**: `SampleAgentScopeLintTest` walks `samples/` and fails the build on any `@AiEndpoint` missing `@AgentScope` (or lacking a non-blank `justification` when `unrestricted = true`).
+
+**System-prompt hardening**: `AiPipeline` prepends an unbypassable confinement preamble to the system prompt on every turn when any `ScopePolicy` is installed. Even samples that call `session.stream(...)` with a substituted system prompt see the hardening re-applied before the runtime dispatch.
+
 ### `PolicyAdmissionGate`
 
 Static utility — runs the policy chain on an `AiRequest` **outside** `AiPipeline`. For code paths that produce responses locally (demo responders, canned replies) and therefore never reach the pipeline.
@@ -248,6 +287,29 @@ Lists the live policy chain.
 { "policyCount": 0, "sources": ["string"] }
 ```
 
+### `GET /api/admin/governance/decisions?limit=N`
+
+Ring-buffered recent `AuditEntry` records (newest first).
+
+```json
+[
+  {
+    "timestamp": "2026-04-21T22:04:08.802Z",
+    "policy_name": "scope::SupportChat",
+    "policy_source": "annotation:org.example.SupportChat",
+    "policy_version": "1.0",
+    "decision": "deny",
+    "reason": "message matched built-in hijacking probe: 'write python code'",
+    "evaluation_ms": 0.42,
+    "context_snapshot": { "phase": "pre_admission", "message": "write python code to sort an array" }
+  }
+]
+```
+
+### `GET /api/admin/governance/owasp`
+
+OWASP Agentic AI Top 10 self-assessment — full matrix with coverage + evidence pointers per row. Pairs with external `agt verify`-style compliance tooling.
+
 ### `POST /api/admin/governance/check`
 
 MS `/check`-compatible decision endpoint.
@@ -274,6 +336,22 @@ Response:
 Maps `agent_id` → `AiRequest.agentId`, each `context` entry onto `AiRequest.metadata()`. External gateways pointed at MS's ASGI app work against Atmosphere without payload translation.
 
 ---
+
+## Audit trail
+
+Every `GovernancePolicy.evaluate` decision emits:
+
+1. **`AuditEntry`** — structured record (policy identity, decision, reason, context snapshot, `evaluation_ms`) ring-buffered by `GovernanceDecisionLog` (default 500 entries). Surfaced via `GET /api/admin/governance/decisions?limit=N`.
+2. **OpenTelemetry span** — `governance.policy.evaluate` with attributes `policy.name`, `policy.source`, `policy.version`, `policy.phase`, `policy.decision`, `policy.reason`. Denied / errored spans carry status `ERROR` for Jaeger / Tempo visibility. Reflective classpath detection keeps OTel an optional dependency.
+3. **Server log** — structured `Request denied by policy <name> (source=<uri>, version=<v>): <reason>`.
+
+The context snapshot is redaction-safe: message truncated to 200 chars, metadata values coerced to primitives or `toString()`. Long-term retention is operator responsibility — wire to Kafka / Postgres / etc. by reading `GovernanceDecisionLog.installed().recent(N)` on a schedule.
+
+## OWASP Agentic Top-10 matrix
+
+`OwaspAgenticMatrix.MATRIX` is a CI-pinned self-assessment (see [tutorial 32](/docs/tutorial/32-owasp-agentic-matrix/) for the full reading and rationale). `OwaspMatrixPinTest` fails the build if any referenced `Evidence.evidenceClass` or `Evidence.testClass` no longer exists. Served over HTTP at `GET /api/admin/governance/owasp`.
+
+Current tally: 6 COVERED, 2 PARTIAL, 1 DESIGN, 1 NOT_ADDRESSED. Honest reporting is the point — silent rounding defeats the self-assessment.
 
 ## Correctness invariants
 

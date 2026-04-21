@@ -85,6 +85,8 @@ export default defineConfig({
                 { label: 'Durable Sessions', slug: 'tutorial/17-durable-sessions' },
                 { label: 'Observability', slug: 'tutorial/18-observability' },
                 { label: 'Governance Policy Plane', slug: 'tutorial/30-governance-policy-plane' },
+                { label: '@AgentScope & Goal-Hijacking', slug: 'tutorial/31-agent-scope' },
+                { label: 'OWASP Agentic Top-10 Matrix', slug: 'tutorial/32-owasp-agentic-matrix' },
                 { label: 'Migration 2.x → 4.0', slug: 'tutorial/22-migration' },
               ],
             },
