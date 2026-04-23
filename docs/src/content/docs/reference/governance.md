@@ -335,6 +335,106 @@ Response:
 
 Maps `agent_id` → `AiRequest.agentId`, each `context` entry onto `AiRequest.metadata()`. External gateways pointed at MS's ASGI app work against Atmosphere without payload translation.
 
+### `GET /api/admin/governance/health`
+
+Operator snapshot aggregating kill-switch state, dry-run counters, SLO
+status, and per-policy hash fingerprints. Admin dashboards use this as a
+single-fetch status endpoint.
+
+### `GET /api/admin/governance/agt-verify`
+
+Compliance export shaped for Microsoft's `agt verify` CLI — cross-framework
+findings (OWASP Agentic Top 10 + EU AI Act + HIPAA + SOC2) with per-row
+evidence pointers and a per-framework coverage summary. Round-trips into
+tooling that already consumes MS's Agent Compliance package format.
+
+### `POST /api/admin/governance/reload`
+
+Hot-reload a policy wrapped in `SwappablePolicy`. Body: `{swapName, yaml}`;
+response reports outgoing + incoming delegate identity.
+
+### `POST /api/admin/governance/kill-switch/{arm,disarm}`
+
+Operator break-glass. Armed state halts every admission decision in
+sub-millisecond time. Live verification on the startup-team sample
+shows the same prompt that admits at 0.11ms deny at 0.09ms while armed
+— no redeploy, no restart.
+
+```bash
+curl -X POST http://localhost:8080/api/admin/governance/kill-switch/arm \
+     -H 'Content-Type: application/json' \
+     -d '{"reason":"incident-42","operator":"oncall"}'
+```
+
+---
+
+## Multi-agent governance
+
+Single-endpoint scope is half the story — cross-agent dispatch needs the
+same enforcement. Atmosphere's `FleetInterceptor` SPI (in
+`atmosphere-coordinator`) gates every outbound `AgentCall` before it
+leaves the coordinator.
+
+### `FleetInterceptor` SPI
+
+```java
+public interface FleetInterceptor {
+    Decision before(AgentCall call);
+    sealed interface Decision {
+        record Proceed() implements Decision {}
+        record Rewrite(AgentCall modifiedCall) implements Decision {}
+        record Deny(String reason) implements Decision {}
+    }
+}
+```
+
+Install via `AgentFleet.withInterceptor(interceptor)`. Denies synthesize
+a failed `AgentResult` without consuming the transport hop.
+
+### `GovernanceFleetInterceptor`
+
+Ready-made bridge that runs the full `GovernancePolicy` chain on every
+dispatch. A coordinator mistakenly dispatching "write Python" to its
+research agent gets denied at the fleet boundary, not just at the
+user-facing entry.
+
+```java
+var governed = fleet.withInterceptor(new GovernanceFleetInterceptor(policies));
+var research = governed.agent("research").call("web_search", args);
+```
+
+### Commitment records on cross-agent dispatch
+
+When `JournalingAgentFleet.signer()` is installed and
+`CommitmentRecordsFlag.isEnabled()` is true (default off per v4 Phase B1),
+every dispatch emits a W3C Verifiable-Credential-subtype record signed
+with Ed25519. The admin **Commitments** tab renders verified records with
+a ✓ badge. Unique pairing with durable sessions: the signed audit trail
+survives pause-and-resume across the `CheckpointStore` — demonstrated in
+the [checkpoint-agent sample](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-checkpoint-agent).
+
+Enable for a sample deployment:
+
+```java
+@Bean CommitmentSigner signer() { return Ed25519CommitmentSigner.generate(); }
+@PostConstruct void enable() { CommitmentRecordsFlag.override(Boolean.TRUE); }
+```
+
+---
+
+## Samples applied to the 4 goals
+
+| Sample | Goal 1 MS YAML | Goal 2 Scope | Goal 3 Commitments | Goal 4 OWASP |
+|---|:-:|:-:|:-:|:-:|
+| [spring-boot-ms-governance-chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ms-governance-chat) | ✅ | ✅ | — | ✅ |
+| [spring-boot-ai-classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) | ✅ | ✅ | — | — |
+| [spring-boot-multi-agent-startup-team](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team) | ✅ | ✅ | ✅ | ✅ |
+| [spring-boot-checkpoint-agent](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-checkpoint-agent) | — | — | ✅ | — |
+| [spring-boot-mcp-server](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-mcp-server) | — | ✅ | — | ✅ |
+
+Each sample's e2e test boots the real Spring Boot context and asserts
+admission decisions at runtime — no mocking at the governance seam.
+
 ---
 
 ## Audit trail
