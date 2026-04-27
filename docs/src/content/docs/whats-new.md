@@ -123,6 +123,130 @@ This page is a highlights reel. For the per-patch history, see the
   `AiAssertions` for testing AI endpoints in JUnit 5. See
   [AI Testing](/docs/reference/testing/).
 
+## Governance & Compliance
+
+Introduced in **4.0.40**. A declarative layer over the guardrail SPI plus
+the wire surfaces, samples, and CI gates that make it adoptable. See the
+[governance reference](/docs/reference/governance/) for the full story.
+
+### Policy plane
+
+- **`GovernancePolicy` SPI** — admit / transform / deny vocabulary aligned
+  with OPA/Rego and Microsoft Agent Governance Toolkit; stable identity
+  (`name` / `source` / `version`) for audit-trail pinning.
+- **YAML `PolicyParser` (default)** — drop `atmosphere-policies.yaml` on
+  the classpath, restart, governance changes. Built-in types:
+  `pii-redaction`, `cost-ceiling`, `output-length-zscore`, `deny-list`,
+  `allow-list`, `message-length`, `rate-limit`, `concurrency-limit`,
+  `time-window`, `metadata-presence`, `authorization`. SnakeYAML declared
+  as an explicit runtime dep so bare-JVM and Quarkus deployments get the
+  parser out-of-the-box.
+- **Microsoft schema parity** — `YamlPolicyParser` auto-detects MS Agent
+  Governance Toolkit YAML (top-level `rules:` sequence) and produces an
+  `MsAgentOsPolicy` honoring all nine operators
+  (`eq`/`ne`/`gt`/`lt`/`gte`/`lte`/`in`/`contains`/`matches`) and four
+  actions (`allow`/`deny`/`audit`/`block`). Conformance tests load MS's
+  own examples byte-for-byte.
+- **Optional plug-in parsers** — `atmosphere-ai-policy-rego` (OPA, shells
+  to `opa eval`) and `atmosphere-ai-policy-cedar` (AWS, shells to
+  `cedar authorize` or plugs in `cedar-java`).
+
+### Goal-hijacking prevention
+
+- **`@AgentScope` annotation** — declarative purpose + forbidden topics
+  per `@AiEndpoint`. Three tiers: rule-based (sub-ms, ships with built-in
+  hijacking probes for code / medical / legal / financial),
+  embedding-similarity (default), and LLM-classifier (opt-in for
+  high-stakes scopes). Breach behavior: `POLITE_REDIRECT` /
+  `DENY` / `CUSTOM_MESSAGE`.
+- **System-prompt hardening** — `AiPipeline` prepends an unbypassable
+  scope-confinement preamble to every `execute()` call so a sample
+  author can't accidentally drop it.
+- **Sample-hygiene CI lint** — `SampleAgentScopeLintTest` walks
+  `samples/` and fails the build on any `@AiEndpoint` or `@Coordinator`
+  missing `@AgentScope` (or lacking a non-blank `justification` when
+  `unrestricted = true`). 12 existing endpoints retrofitted.
+- **`ScopePolicy.postResponseCheck`** — re-classify the streamed
+  response against the declared purpose; OUT_OF_SCOPE responses become
+  Deny with a `post-response:` prefix.
+- **Per-request scope install** — interceptors can write a `ScopeConfig`
+  for a single turn (one `@AiEndpoint` hosts four classroom personas,
+  each with its own scope).
+
+### Tool-call admission
+
+- **`PolicyAdmissionGate.admitToolCall`** — `ToolExecutionHelper`
+  consults the gate on every `@AiTool` dispatch. The canonical MS rule
+  `{field: tool_name, operator: eq, value: drop_database, action: deny}`
+  fires before the executor runs. OWASP A02 (Tool Misuse): COVERED.
+
+### Cross-provider contract
+
+- **`AbstractAgentRuntimeContractTest.policyDenyBlocksRuntimeExecute`**
+  is inherited by all seven runtime adapters (Built-in, Spring AI,
+  LangChain4j, ADK, Embabel, Koog, Semantic Kernel). The "deny before
+  runtime" guarantee is a build-time invariant for each provider; a
+  regression breaks the build, not production.
+
+### Commitment records
+
+- **Ed25519-signed commitment records** (`@Experimental`) — extend W3C
+  Verifiable Credentials + Google AP2 delegated-authority semantics to
+  cross-agent dispatch logs. Emitted from `JournalingAgentFleet` when a
+  signer is installed.
+- **Flag-off by default** — `atmosphere.ai.governance.commitment-records.enabled=false`.
+  Schema is subject to revision while the W3C CCG / AP2 / Visa TAP
+  standards-track convergence settles; opt-in operators acknowledge
+  potential migration.
+
+### Compliance evidence
+
+- **Self-assessment matrices** — OWASP Agentic Top 10 (Dec 2025) plus
+  EU AI Act / HIPAA / SOC2 mappings live in `OwaspAgenticMatrix` and
+  `ComplianceMatrix`. Each row carries evidence class, test class, and
+  a consumer-grep pattern.
+- **`EvidenceConsumerGrepPinTest`** — walks `src/main` under modules +
+  samples and fails the build if any row claims coverage with no
+  production consumer. No marketing-grade overclaim survives a CI run.
+- **`agt verify`-shaped JSON export** at
+  `GET /api/admin/governance/agt-verify` — wire-compatible with Microsoft
+  Agent Compliance so cross-vendor compliance pipelines round-trip both.
+
+### Audit trail + persistent sinks
+
+- **`GovernanceDecisionLog`** — thread-safe ring buffer (default 500
+  entries) with redaction-safe context snapshots (truncated message,
+  primitive-only metadata). Surfaced at
+  `GET /api/admin/governance/decisions`.
+- **`AuditSink` SPI + `AsyncAuditSink`** — bounded drop-on-full queue so
+  the admission thread never blocks on IO. Two reference modules ship:
+  `atmosphere-ai-audit-kafka` and `atmosphere-ai-audit-postgres` (JSONB
+  on Postgres, CLOB elsewhere; works against any `DataSource`). JSON
+  shape matches MS Agent Governance Toolkit's `audit_entry`.
+
+### Admin surfaces
+
+- **12 governance endpoints** under `/api/admin/governance/` — read
+  endpoints (`policies`, `summary`, `health`, `decisions`, `owasp`,
+  `compliance`, `agt-verify`, `commitments`) and write endpoints
+  (`check`, `reload`, `kill-switch/{arm,disarm}`).
+- **Triple-gate authorization** — feature flag → Principal →
+  `ControlAuthorizer`. Spring Boot and Quarkus ship symmetric
+  implementations; Quarkus adds a fourth principal source
+  (constant-time-compared `X-Atmosphere-Auth` token) for ops tooling
+  not yet on Jakarta Security.
+- **Admin Console tabs** — three Vue views (Policies, Decisions, OWASP)
+  poll the read endpoints on live intervals; tabs auto-hide when
+  governance is not installed.
+
+### Sample
+
+- **`spring-boot-ms-governance-chat`** — chat gated by Microsoft Agent
+  Governance Toolkit YAML, verbatim. Demonstrates 9 MS-schema rules
+  (destructive SQL, legal/media/exec escalation, PII shapes, password
+  disclosure, discount-limit enforcement) plus `@AgentScope` for
+  customer-support confinement.
+
 ## Runtime & Transport
 
 - **WebTransport over HTTP/3** — Atmosphere now ships an HTTP/3 + WebTransport
