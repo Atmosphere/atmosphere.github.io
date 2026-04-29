@@ -450,7 +450,6 @@ Each runtime has a corresponding sample application in the repo:
 | `spring-boot-ai-tools` | Built-in, `@AiTool` tool calling | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools) |
 | `spring-boot-rag-chat` | Spring AI + vector store | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-rag-chat) |
 | `spring-boot-koog-chat` | Koog | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-koog-chat) |
-| `spring-boot-semantic-kernel-chat` | Microsoft Semantic Kernel | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-semantic-kernel-chat) |
 | `spring-boot-dentist-agent` | Built-in + `@Agent`/`@Command` workflow | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-dentist-agent) |
 | `spring-boot-multi-agent-startup-team` | Coordinator + multi-agent | [github](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team) |
 

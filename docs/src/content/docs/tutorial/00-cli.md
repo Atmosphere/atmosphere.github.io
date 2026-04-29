@@ -125,7 +125,6 @@ plain `mvn compile`.
 | `rag` | `spring-boot-rag-chat` | RAG chat with Spring AI vector store + embeddings |
 | `agent` | `spring-boot-dentist-agent` | Single agent with `@Agent` / `@Command` + skill file |
 | `koog` | `spring-boot-koog-chat` | JetBrains Koog runtime (Kotlin) |
-| `semantic-kernel` | `spring-boot-semantic-kernel-chat` | Microsoft Semantic Kernel runtime |
 | `multi-agent` | `spring-boot-multi-agent-startup-team` | 5-agent `@Coordinator` fleet with A2A specialists |
 | `classroom` | `spring-boot-ai-classroom` | Multi-room shared AI (Spring Boot + Expo React Native client) |
 

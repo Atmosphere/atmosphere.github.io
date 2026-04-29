@@ -370,7 +370,6 @@ Highlights:
 | `spring-boot-durable-sessions` | Session persistence across restarts |
 | `spring-boot-channels-chat` | Multi-channel (Slack/Telegram/Discord) chat |
 | `spring-boot-koog-chat` | Koog runtime streaming chat |
-| `spring-boot-semantic-kernel-chat` | Microsoft Semantic Kernel runtime streaming chat |
 | `spring-boot-otel-chat` | OpenTelemetry tracing with Jaeger |
 | `quarkus-chat` | Quarkus extension chat |
 | `grpc-chat` | Standalone gRPC transport |
