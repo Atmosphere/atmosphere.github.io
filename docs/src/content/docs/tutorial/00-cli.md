@@ -132,6 +132,46 @@ plain `mvn compile`.
 Pass `--skill-file <path>` to auto-select the `agent` template with
 your skill file wired in.
 
+### Swap the AI Runtime (`--runtime`)
+
+Atmosphere's `AgentRuntime` SPI picks the highest-priority adapter on
+the classpath, so you can switch LLM providers by changing one
+dependency. The CLI does that for you:
+
+```bash
+atmosphere new my-ai-app --template ai-chat --runtime spring-ai
+atmosphere new my-ai-app --template ai-chat --runtime langchain4j
+atmosphere new my-ai-app --template ai-chat --runtime adk
+atmosphere new my-kotlin-ai --template ai-chat --runtime embabel
+```
+
+Available runtimes: `builtin` (default — no extra deps),
+`spring-ai`, `langchain4j`, `adk`, `koog`, `embabel`,
+`semantic-kernel`. The mapping lives in `cli/runtime-overlays.json`;
+each entry lists the dep set to inject (and any extra repository, e.g.
+Embabel's release repo).
+
+#### `--force`: Strip Pre-Pinned Adapters
+
+Some templates already pin a specific adapter for demo purposes
+(`ai-tools` ships with `atmosphere-langchain4j`). On those, plain
+`--runtime spring-ai` is *additive* — both adapters end up on the
+classpath and the resolver picks one based on `ServiceLoader`
+iteration order, which isn't stable.
+
+`--force` (only valid with `--runtime`) wipes every adapter dep
+declared in the overlay registry from the scaffolded `pom.xml` *before*
+injecting the chosen overlay, making the swap deterministic:
+
+```bash
+atmosphere new my-ai-app --template ai-tools --runtime spring-ai --force
+```
+
+Note: samples whose Java code imports a specific provider's API
+directly (e.g. `OpenAiStreamingChatModel` in `ai-tools`) will still
+need manual edits after force-swap. Transparent templates like
+`ai-chat` and `multi-agent` work end-to-end with no code changes.
+
 ### npx Alternative (Zero Install)
 
 No Java CLI needed — scaffold from npm:
