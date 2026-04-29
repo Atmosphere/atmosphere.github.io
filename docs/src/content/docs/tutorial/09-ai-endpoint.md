@@ -348,7 +348,7 @@ reply must carry the function `name`. `OpenAiCompatibleClient` now
 serializes both unconditionally — additive for OpenAI, required for the
 stricter crowd. The serialized wire shape is pinned by unit tests in
 `atmosphere-ai` so future refactors cannot silently regress either side.
-Applies from `atmosphere-ai` `4.0.40` onward.
+Applies from `atmosphere-ai` `4.0.41` onward.
 :::
 
 ### Atmosphere Init-Params
