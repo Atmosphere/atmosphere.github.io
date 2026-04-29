@@ -33,15 +33,28 @@ impl is zero-dep.
 
 ## 2. AgentWorkspace
 
-Adapter over an external workspace convention — OpenClaw, SWE-bench,
-or a plain file tree. Exposes `read`, `write`, `list`, `materialize`
-without exposing the underlying implementation.
+Agent-as-artifact SPI. Adapters parse a directory on disk into an
+`AgentDefinition` (identity / persona / user profile / operating rules
+/ skills / composed system prompt). In-tree today:
 
-- **Consumer** — `AgentProcessor.buildFoundationPrimitives` +
-  `CoordinatorProcessor.wireFoundationPrimitives`. Discovered via
-  `AgentWorkspaceLoader` (ServiceLoader).
+- `OpenClawWorkspaceAdapter` — canonical OpenClaw layout (`AGENTS.md`
+  + `SOUL.md` + `USER.md` + `IDENTITY.md` + `MEMORY.md` + `skills/`)
+  plus Atmosphere-only extension files (`CHANNELS.md`, `MCP.md`,
+  `RUNTIME.md`, `PERMISSIONS.md`, `SKILLS.md`) that OpenClaw ignores.
+- `AtmosphereNativeWorkspaceAdapter` — fallback that accepts any
+  directory, reading `README.md` as operating rules when present.
+
+Third-party adapters ship via `META-INF/services/`. The SPI surface
+is `supports(Path)` / `load(Path)` / `name()` / `priority()`; the
+adapter does not directly expose read/write APIs — writes go through
+`FileSystemAgentState`.
+
+- **Consumer** — `AgentProcessor.buildFoundationPrimitives` picks the
+  highest-priority adapter whose `supports()` accepts the workspace
+  root, via `AgentWorkspaceLoader` (ServiceLoader).
 - **Sample** — personal-assistant ships a classpath-rooted workspace
-  at `agent-workspace/` that the `@Prompt` body reads through.
+  at `src/main/resources/agent-workspace/` that the adapter loads at
+  startup.
 
 ## 3. ProtocolBridge
 
