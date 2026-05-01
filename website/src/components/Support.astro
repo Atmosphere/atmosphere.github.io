@@ -78,7 +78,7 @@ const plans = [
         </p>
       </li>
       <li class="coverage-item">
-        <span class="coverage-label">MS Agent Governance Toolkit</span>
+        <a class="coverage-label coverage-label-link" href="https://github.com/microsoft/agent-governance-toolkit" target="_blank" rel="noopener noreferrer">MS Agent Governance Toolkit ↗</a>
         <p class="coverage-text">
           Microsoft's YAML rule schema parsed verbatim, same
           <code>audit_entry</code> JSON shape, same <code>agt verify</code>
@@ -267,6 +267,15 @@ const plans = [
     letter-spacing: 0.08em;
     color: var(--color-accent);
     margin-bottom: var(--space-sm);
+  }
+
+  a.coverage-label-link {
+    text-decoration: none;
+    transition: color 0.2s var(--ease-out-quad);
+  }
+
+  a.coverage-label-link:hover {
+    color: var(--color-text-primary);
   }
 
   .coverage-text {

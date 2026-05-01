@@ -27,7 +27,7 @@ const atmosphereOnlyFeatures = [
   'atmosphere.js client SDK with React, Vue, Svelte, and React Native hooks',
   'Compliance evidence pinned in CI — OWASP Agentic Top 10, EU AI Act, HIPAA, SOC 2',
   'Plan-and-verify — refuse unsafe LLM-emitted workflows before any tool fires',
-  'MS Agent Governance Toolkit YAML interop — same schema, same audit_entry shape',
+  '<a href="https://github.com/microsoft/agent-governance-toolkit" target="_blank" rel="noopener noreferrer">MS Agent Governance Toolkit</a> YAML interop — same schema, same audit_entry shape',
   'Enterprise support since 2014',
 ];
 
@@ -242,7 +242,7 @@ const frameworks = [
           </p>
         </div>
         <ul class="featurelist-items">
-          {atmosphereOnlyFeatures.map((item) => <li>{item}</li>)}
+          {atmosphereOnlyFeatures.map((item) => <li set:html={item} />)}
         </ul>
       </div>
     </div>
