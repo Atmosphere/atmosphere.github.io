@@ -180,6 +180,43 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
   `{field: tool_name, operator: eq, value: drop_database, action: deny}`
   fires before the executor runs. OWASP A02 (Tool Misuse): COVERED.
 
+### Plan-and-verify (`atmosphere-verifier`)
+
+- **Static verification of LLM-emitted tool-call workflows** — the LLM
+  emits a JSON workflow describing the entire intended sequence; a
+  deterministic verifier chain runs over the AST against a declarative
+  `Policy`; only verified plans dispatch. Atmosphere's implementation
+  of [Erik Meijer's *Guardians of the Agents* pattern (CACM, January
+  2026)](https://cacm.acm.org/research/guardians-of-the-agents/),
+  modelled on the [metareflection/guardians](https://github.com/metareflection/guardians)
+  Python reference implementation.
+- **Six built-in verifiers** auto-discovered via `ServiceLoader`:
+  `AllowlistVerifier` (priority 10) catches deployment drift between
+  policy and registry; `WellFormednessVerifier` (20) blocks forward
+  binding references; `CapabilityVerifier` (25) enforces least-authority
+  via `@RequiresCapability` grants; `TaintVerifier` (30) refuses
+  dataflow into `@Sink`-marked parameters incl. transitive flow;
+  `AutomatonVerifier` (40) executes plans against `SecurityAutomaton`
+  sequences; `SmtVerifier` (200) wraps the `SmtChecker` SPI for Z3-style
+  proof checks (no-op default ships in-tree).
+- **Co-located policy** — `@Sink(forbidden = {"fetch_emails"})` on a
+  tool parameter is the entire dataflow declaration; `SinkScanner`
+  derives the `TaintRule` at startup. Renaming a tool or parameter
+  without updating both ends is impossible because the rule travels
+  with the code.
+- **`PlanAndVerify` orchestrator** runs the runtime in plan mode (empty
+  tool list, LLM emits JSON), parses via `WorkflowJsonParser`, runs the
+  verifier chain via `VerificationResult.merge`, and dispatches via
+  `WorkflowExecutor` only on green. Refusal throws
+  `PlanVerificationException` carrying the offending workflow plus the
+  full violation list — and crucially, no tool fires on that path.
+- **`verify` CLI** — offline plan inspection against any policy JSON,
+  exits 0/1/2 for shell pipelines and CI corpora.
+- **Sample**: `spring-boot-guarded-email-agent` runs the canonical
+  inbox-exfiltration scenario end-to-end; the malicious goal is refused
+  with a typed taint violation on `steps[1].arguments.body`. Spring
+  Boot test + 6 Playwright e2e tests pin the headline guarantee.
+
 ### Cross-provider contract
 
 - **`AbstractAgentRuntimeContractTest.policyDenyBlocksRuntimeExecute`**

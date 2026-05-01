@@ -44,6 +44,7 @@ Same framework, same transports, same clustering — you choose how much AI you 
 | Multi-agent orchestration | [@Coordinator](/docs/agents/coordinator/) |
 | AI/LLM streaming | [Chapter 9: @AiEndpoint](/docs/tutorial/09-ai-endpoint/) |
 | Tool calling | [Chapter 10: @AiTool](/docs/tutorial/10-ai-tools/) |
+| Plan-and-verify (refuse unsafe LLM plans before any tool fires) | [Chapter 33](/docs/tutorial/33-plan-and-verify/) |
 | Guardrails (PII, drift, cost ceiling) | [Chapter 12: AI Filters](/docs/tutorial/12-ai-filters/) |
 | MCP server | [Chapter 13](/docs/tutorial/13-mcp/) |
 | Trust phases (`PermissionMode`) | [Chapter 25](/docs/tutorial/25-trust-phases/) |
