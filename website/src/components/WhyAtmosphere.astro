@@ -19,13 +19,16 @@ const abstractedFeatures = [
 const atmosphereOnlyFeatures = [
   'Cross-framework @Agent portability — one codebase, seven runtimes',
   'Real-time streaming transport: WebSocket, SSE, WebTransport/HTTP3, gRPC, long-poll with automatic fallback',
-  '@Coordinator + @Fleet multi-agent orchestration with A2A protocol',
+  '@Coordinator + @Fleet multi-agent orchestration over A2A v1.0.0 (released spec)',
   'Durable HITL workflows — agent state survives JVM restart via CheckpointStore',
   '@Command routing to Slack, Telegram, Discord, WhatsApp, Messenger',
   'Rooms, presence, and broadcaster clustering over Kafka or Redis',
   'MCP server — expose @AiTool to Claude, Copilot, Cursor, any MCP client',
   'atmosphere.js client SDK with React, Vue, Svelte, and React Native hooks',
-  'Enterprise support every year since 2014 — eleven consecutive years',
+  'Compliance evidence pinned in CI — OWASP Agentic Top 10, EU AI Act, HIPAA, SOC 2',
+  'Plan-and-verify — refuse unsafe LLM-emitted workflows before any tool fires',
+  'MS Agent Governance Toolkit YAML interop — same schema, same audit_entry shape',
+  'Enterprise support since 2014',
 ];
 
 // The "buy Atmosphere support to escape lock-in" story, told as a before/after
@@ -46,7 +49,7 @@ const lockInStory = [
   },
   {
     without: 'Separate support contracts with each vendor. No one owns the integration.',
-    with: 'One support contract with Async IO. Eleven years of shipping Atmosphere and writing every bridge on this page.',
+    with: 'One support contract with Async IO. We have been shipping Atmosphere and writing every bridge on this page since 2014.',
   },
   {
     without: 'No escape hatch if the bet goes wrong.',
@@ -252,7 +255,7 @@ const frameworks = [
           already want an agent stack that does not lock you into one
           framework, one LLM provider, or one vendor. Atmosphere is that
           stack. Async IO has been selling the support contract that
-          covers the abstraction and the swap &mdash; every year, since 2014.
+          covers the abstraction and the swap since 2014.
         </p>
       </div>
 

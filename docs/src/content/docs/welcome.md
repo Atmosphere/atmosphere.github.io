@@ -61,6 +61,12 @@ Same framework, same transports, same clustering — you choose how much AI you 
 | Quarkus extension | [Quarkus Reference](/docs/integrations/quarkus/) |
 | Multi-channel (Slack, Telegram, ...) | [Chapter 23](/docs/tutorial/23-channels/) |
 
+## Production Support
+
+Atmosphere is Apache 2.0 and free to use. For teams running it in production, [Async-IO](https://async-io.live) — the team that wrote and maintains the framework — offers commercial support tiers, migration services, and a compliance evidence package built on the in-tree OWASP Agentic Top 10 / EU AI Act / HIPAA / SOC 2 matrices.
+
+[Support tiers & SLA](https://async-io.live/#support) · [Book a 30-min call](https://async-io.live/contact/) · <support@async-io.org>
+
 ## Version
 
 This documentation covers the **Atmosphere 4.0.x** release line with JDK 21+, Spring Boot 4.0.5 (Spring Framework 6.2.8), and Quarkus 3.31.3. See [What's New](/docs/whats-new/) for a highlights reel of changes since the 4.0.0 release.

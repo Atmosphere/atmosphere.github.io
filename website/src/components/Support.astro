@@ -60,6 +60,49 @@ const plans = [
       </p>
     </div>
 
+    <ul class="coverage-grid">
+      <li class="coverage-item">
+        <span class="coverage-label">Compliance, audited</span>
+        <p class="coverage-text">
+          OWASP Agentic Top 10, EU AI Act, HIPAA, and SOC 2 evidence
+          matrices ship in-tree and are CI-pinned. Your auditors get a
+          build artifact, not a slide deck.
+        </p>
+      </li>
+      <li class="coverage-item">
+        <span class="coverage-label">Plan-and-verify</span>
+        <p class="coverage-text">
+          <code>atmosphere-verifier</code> refuses unsafe LLM-emitted
+          workflows before any tool fires &mdash; Meijer
+          <em>Guardians of the Agents</em> (CACM, Jan 2026).
+        </p>
+      </li>
+      <li class="coverage-item">
+        <span class="coverage-label">MS Agent Governance Toolkit</span>
+        <p class="coverage-text">
+          Microsoft's YAML rule schema parsed verbatim, same
+          <code>audit_entry</code> JSON shape, same <code>agt verify</code>
+          semantics &mdash; drop-in for shops standardising on MS Agent OS.
+        </p>
+      </li>
+      <li class="coverage-item">
+        <span class="coverage-label">A2A v1.0.0</span>
+        <p class="coverage-text">
+          Atmosphere ships the released spec. Pre-1.0 method names are
+          aliased server-side so your existing A2A clients keep working
+          through the migration.
+        </p>
+      </li>
+      <li class="coverage-item">
+        <span class="coverage-label">One contract, seven runtimes</span>
+        <p class="coverage-text">
+          <code>policyDenyBlocksRuntimeExecute</code> is a build-time
+          invariant for every adapter &mdash; you can't add a runtime
+          without proving it honours your governance chain.
+        </p>
+      </li>
+    </ul>
+
     <div class="plans-grid">
       {plans.map((plan) => (
         <div class={`plan-card ${plan.highlight ? 'plan-highlight' : ''}`}>
@@ -192,6 +235,55 @@ const plans = [
     font-size: 1.0625rem;
     color: var(--color-text-secondary);
     line-height: 1.6;
+  }
+
+  .coverage-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-3xl);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .coverage-item {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    transition: border-color 0.2s var(--ease-out-quad);
+  }
+
+  .coverage-item:hover {
+    border-color: var(--color-border-accent);
+  }
+
+  .coverage-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+  }
+
+  .coverage-text {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  .coverage-text code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    padding: 0.1em 0.35em;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    color: var(--color-accent);
   }
 
   .plans-grid {
