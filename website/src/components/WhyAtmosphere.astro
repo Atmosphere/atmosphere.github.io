@@ -17,7 +17,7 @@ const abstractedFeatures = [
 ];
 
 const atmosphereOnlyFeatures = [
-  'Cross-framework @Agent portability — one codebase, seven runtimes',
+  'Cross-framework @Agent portability — one codebase, nine runtimes',
   'Real-time streaming transport: WebSocket, SSE, WebTransport/HTTP3, gRPC, long-poll with automatic fallback',
   '@Coordinator + @Fleet multi-agent orchestration over A2A v1.0.0 (released spec)',
   'Durable HITL workflows — agent state survives JVM restart via CheckpointStore',
@@ -37,11 +37,11 @@ const atmosphereOnlyFeatures = [
 const lockInStory = [
   {
     without: 'One framework, chosen up front.',
-    with: 'Seven frameworks, portable @Agent code. Swap the dependency when the winner changes.',
+    with: 'Nine runtimes — Built-in plus eight framework adapters. Swap the dependency when the winner changes.',
   },
   {
     without: 'One LLM provider, locked into its pricing and SLA.',
-    with: 'Any LLM provider supported by any of the seven frameworks. Move when pricing shifts, rate limits bite, or a new model lands.',
+    with: 'Any LLM provider supported by any of the nine runtimes. Move when pricing shifts, rate limits bite, or a new model lands.',
   },
   {
     without: 'Rewrite the agent when the framework changes direction, goes EOL, or gets acquired.',
@@ -83,19 +83,11 @@ const frameworks = [
     bridge: 'atmosphere-adk',
   },
   {
-    name: 'Embabel',
-    short: 'Embabel',
-    vendor: 'Embabel',
-    language: 'Kotlin',
-    summary: 'Goal-driven agent framework from the creator of Spring. Declarative goals, planned execution, native PromptRunner.',
-    bridge: 'atmosphere-embabel',
-  },
-  {
     name: 'JetBrains Koog',
     short: 'Koog',
     vendor: 'JetBrains',
     language: 'Kotlin',
-    summary: 'Kotlin-native AI framework. Structured concurrency, typed tools, and a composable agent DSL.',
+    summary: 'Kotlin-native AI framework. Structured concurrency, typed tools, multi-agent orchestration, Bedrock cache control.',
     bridge: 'atmosphere-koog',
   },
   {
@@ -105,6 +97,30 @@ const frameworks = [
     language: 'Java',
     summary: 'Microsoft\'s enterprise-grade AI orchestration SDK. ChatCompletionService, kernel plugins, memory, planners.',
     bridge: 'atmosphere-semantic-kernel',
+  },
+  {
+    name: 'Alibaba AgentScope',
+    short: 'AgentScope',
+    vendor: 'Alibaba',
+    language: 'Java',
+    summary: 'Multi-agent framework from Alibaba. Structured output, conversation memory, and token usage on top of explicit tool dispatch managed in your code.',
+    bridge: 'atmosphere-agentscope',
+  },
+  {
+    name: 'Embabel',
+    short: 'Embabel',
+    vendor: 'Embabel',
+    language: 'Kotlin',
+    summary: 'Goal-driven agent framework from the creator of Spring. Declarative goals, planned execution, native PromptRunner.',
+    bridge: 'atmosphere-embabel',
+  },
+  {
+    name: 'Spring AI Alibaba',
+    short: 'Spring AI Alibaba',
+    vendor: 'Alibaba',
+    language: 'Java',
+    summary: 'Spring AI Alibaba ReactAgent. Structured output and conversation memory through the Spring AI ChatClient surface.',
+    bridge: 'atmosphere-spring-ai-alibaba',
   },
   {
     name: 'Built-in',
@@ -123,11 +139,13 @@ const frameworks = [
       <span class="section-label">Framework Support</span>
       <h2 class="section-title">One support contract. Every Java AI framework.</h2>
       <p class="section-description">
-        The Java AI ecosystem has seven frameworks. Each one is moving fast, each
-        one has its own release cadence, and each one could change direction
-        tomorrow. Atmosphere is the <strong>runtime-abstraction layer</strong> that
-        makes your <code>@Agent</code>, <code>@AiEndpoint</code>, and
-        <code>@AiTool</code> code portable across all seven &mdash; swap the
+        The Java AI ecosystem has eight third-party agent frameworks. Each
+        one is moving fast, each one has its own release cadence, and each
+        one could change direction tomorrow. Atmosphere is the
+        <strong>runtime-abstraction layer</strong> that makes your
+        <code>@Agent</code>, <code>@AiEndpoint</code>, and <code>@AiTool</code>
+        code portable across all of them &mdash; nine total runtimes counting
+        Atmosphere's own Built-in OpenAI-compatible client. Swap the
         dependency, keep the code. Async IO maintains the abstraction and the
         bridges; our support contract is the insurance policy against vendor
         lock-in.
@@ -158,7 +176,7 @@ const frameworks = [
     <div class="matrix-wrapper">
       <table class="matrix">
         <caption class="matrix-caption">
-          At-a-glance: seven frameworks, one bridge layer, one support contract.
+          At-a-glance: nine runtimes, one bridge layer, one support contract.
         </caption>
         <thead>
           <tr>
@@ -201,13 +219,14 @@ const frameworks = [
       <h3 class="valueadd-title">Abstracted, portable, and then some</h3>
       <p class="valueadd-lead">
         Atmosphere runs <strong>on top of</strong> each framework and its
-        ecosystem &mdash; Spring for Spring AI, the LangChain4j chain
-        library, Google ADK, Microsoft Semantic Kernel, JetBrains Koog, and
-        Embabel's planning engine. The <strong>Built-in</strong> runtime is
-        a zero-dependency OpenAI-compatible client for tests and local dev.
-        Whichever you pick, you code against one surface &mdash;
-        <code>@Agent</code>, <code>@AiEndpoint</code>, <code>@AiTool</code>
-        &mdash; and you get <strong>more than any framework ships on its own</strong>.
+        ecosystem &mdash; Spring AI, LangChain4j, Google ADK, Microsoft
+        Semantic Kernel, JetBrains Koog, Alibaba AgentScope, Embabel's
+        planning engine, and Spring AI Alibaba's ReactAgent. The
+        <strong>Built-in</strong> runtime is a zero-dependency
+        OpenAI-compatible client for tests and local dev. Whichever you
+        pick, you code against one surface &mdash; <code>@Agent</code>,
+        <code>@AiEndpoint</code>, <code>@AiTool</code> &mdash; and you get
+        <strong>more than any framework ships on its own</strong>.
       </p>
     </div>
 
@@ -215,11 +234,13 @@ const frameworks = [
       <div class="featurelist featurelist-abstracted">
         <div class="featurelist-head">
           <span class="featurelist-label">Abstracted through the @Agent API</span>
-          <h4 class="featurelist-title">Portable across all 7 runtimes</h4>
+          <h4 class="featurelist-title">Portable across all 9 runtimes</h4>
           <p class="featurelist-sub">
             Every framework provides these. Atmosphere normalizes them
             behind one annotation surface, so your agent code is identical
-            whether you run on Spring AI, Koog, or anything in between.
+            whether you run on Spring AI, Koog, AgentScope, or anything in
+            between &mdash; and the capability matrix is CI-pinned so the
+            adapter rows can't drift from the running code.
           </p>
         </div>
         <ul class="featurelist-items">
