@@ -76,8 +76,82 @@ public interface AgentRuntime {
 | `atmosphere-embabel` | Embabel `AgentPlatform` | 100 |
 | `atmosphere-koog` | JetBrains Koog `AIAgent` | 100 |
 | `atmosphere-semantic-kernel` | Microsoft Semantic Kernel `ChatCompletionService` | 100 |
+| `atmosphere-agentscope` | Alibaba AgentScope `ReActAgent` | 100 |
+| `atmosphere-spring-ai-alibaba` | Spring AI Alibaba `ReactAgent` *(see runtime caveat below)* | 100 |
 
 To switch runtimes, change a single Maven dependency — no code changes needed.
+
+> **Spring AI Alibaba runtime — Spring Boot 3 only today.** Spring AI Alibaba `1.1.2.0` is compiled against Spring AI `1.1.2`, and `spring-ai-alibaba-graph-core-1.1.2.0` hardcodes Spring AI 1.1.2-only types like `DeepSeekAssistantMessage`, so the runtime requires Spring AI 1.1.2. Spring AI 1.1.2 itself requires Spring Boot 3 — it pins the SB3-era FQN of `RestClientAutoConfiguration`, which Spring Boot 4 ships at a renamed FQN. Drop `atmosphere-spring-ai-alibaba` into a Spring Boot 3 sample (e.g. `samples/spring-boot-ai-chat -Pspring-boot3`) and it round-trips end-to-end (verified via chrome-devtools against Ollama). A Spring Boot 4 path will become possible once Alibaba publishes a Spring AI 2.x-aligned `spring-ai-alibaba-agent-framework`. `atmosphere-agentscope` is unaffected and works on Spring Boot 4.
+
+### Per-Request Runtime Extensions
+
+Each `AgentRuntime` runs its framework's "happy path" by default. For requests
+that need framework-native composition (Spring AI advisor chain, LangChain4j
+`AiServices`, Koog graph DSL, ADK multi-agent topology), a small per-request
+helper attaches the framework-native object to `AgentExecutionContext.metadata()`
+and the runtime applies it for that one call — no `AgentRuntime` SPI growth, no
+mutation of shared beans. All five helpers follow the `CacheHint` pattern:
+`from(context)` and `attach(context, ...)` static methods.
+
+| Helper | Runtime | Slot it drives |
+|--------|---------|----------------|
+| `SpringAiAdvisors` | Spring AI | `ChatClient.prompt().advisors(...)` — RAG, memory, guardrails, observability |
+| `LangChain4jAiServices` | LangChain4j | Routes through caller's `AiServices`-backed interface (`TokenStream` callbacks bridged to session) |
+| `KoogStrategy` | Koog | Swaps default `chatAgentStrategy()` with a custom `AIAgentGraphStrategy<String, String>` from the `strategy {}` DSL |
+| `AdkRootAgent` | ADK | Replaces the runtime's default `LlmAgent` with `SequentialAgent` / `ParallelAgent` / `LoopAgent` / any `BaseAgent` subclass |
+| `ToolLoopPolicies` | Built-in | Per-request `ToolLoopPolicy(maxIterations, OnMaxIterations)` for the OpenAI-compatible tool loop |
+
+Example — Spring AI advisor scoped to one request:
+
+```java
+var safeGuard = SafeGuardAdvisor.builder()
+        .sensitiveWords(List.of("badword"))
+        .failureResponse("I cannot answer that.")
+        .build();
+
+var ctx = SpringAiAdvisors.attach(baseContext, safeGuard, new SimpleLoggerAdvisor());
+runtime.execute(ctx, session);
+```
+
+Each helper ships with a unit-level `*BridgeTest` that proves the runtime
+honors the sidecar (e.g. `SpringAiAgentRuntime.execute` calls
+`promptSpec.advisors(perRequestAdvisors)` only when `SpringAiAdvisors.from(context)`
+returns non-empty). See the per-module READMEs for full DSL examples:
+[`modules/spring-ai`](https://github.com/Atmosphere/atmosphere/blob/main/modules/spring-ai/README.md#per-request-advisors-springaiadvisors),
+[`modules/langchain4j`](https://github.com/Atmosphere/atmosphere/blob/main/modules/langchain4j/README.md#per-request-aiservices-langchain4jaiservices),
+[`modules/koog`](https://github.com/Atmosphere/atmosphere/blob/main/modules/koog/README.md#per-request-strategy-koogstrategy),
+[`modules/adk`](https://github.com/Atmosphere/atmosphere/blob/main/modules/adk/README.md#multi-agent-composition-adkrootagent),
+and the [`ToolLoopPolicy`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/README.md#tool-loop-policy) section.
+
+Other runtimes (`AgentScope`, `Embabel`, `SemanticKernel`, `SpringAiAlibaba`) do
+not yet ship a per-request bridge. `Embabel` did get **native streaming** in the
+same merge: when `StreamingPromptRunnerBuilder.streaming().generateStream()` is
+available the runtime emits `Flux<String>` chunks directly to the session, with
+graceful fallback to `runner.generateText(...)` when the streaming API is absent.
+
+### Model-Lifecycle Observability
+
+`AgentLifecycleListener` exposes three model-lifecycle hooks in addition to the
+tool hooks (`onToolCall`/`onToolResult`):
+
+```java
+default void onModelStart(String model, int messageCount, int toolCount) { }
+default void onModelEnd(String model, TokenUsage usage, long durationMillis) { }
+default void onModelError(String model, Throwable t) { }
+```
+
+Built-in `OpenAiCompatibleClient` fires these around every model dispatch
+(including each tool-loop round). `AiEventForwardingListener` is a built-in
+adapter that translates the hooks into `AiEvent.Progress` frames on the
+streaming session — opt in by attaching it via `context.withListeners(...)`:
+
+```java
+var listeners = List.of(new AiEventForwardingListener(session));
+runtime.execute(context.withListeners(listeners), session);
+// Browser receives wire frames like:
+//   {"type":"progress","message":"model:start (gpt-4o, msgs=3, tools=2)"}
+//   {"type":"progress","message":"model:end (gpt-4o, in=120, out=85, ms=842)"}
+```
 
 ## Conversation Memory
 
