@@ -87,18 +87,20 @@ aspiration.
 | `SYSTEM_PROMPT` | ✅ | Honored by the Koog prompt builder |
 | `CONVERSATION_MEMORY` | ✅ | Per-session memory threaded through `AgentExecutionContext` |
 | `AGENT_ORCHESTRATION` | ✅ | Works with `@Coordinator` and `@Fleet` |
-| `TOKEN_USAGE` | — | Not declared. Koog reports usage on its response objects but the bridge does not yet thread it into `StreamingSession.usage(TokenUsage)`. Tier 1 follow-up. |
-| `VISION` | — | Koog 0.7.x does not expose a stable multi-modal input API on the bridge path |
-| `MULTI_MODAL` | — | Same limitation |
-| `PROMPT_CACHING` | — | Koog 0.7.3 only ships Bedrock-specific cache variants; no OpenAI-compatible passthrough |
-| `PER_REQUEST_RETRY` | — | Inherits Koog's native retry layer (not per-request overridable from the bridge) |
+| `TOKEN_USAGE` | ✅ | The `StreamFrame.End` handler reads Koog's usage totals and emits a typed `TokenUsage` record via `session.usage()` after drain (`executeWithAgent` lines 223-232). |
+| `VISION` | ✅ | Koog 0.8.0 accepts `ContentPart.Image` natively via `buildPrompt`'s `user(String, List<ContentPart>)` overload (no-tools path) |
+| `AUDIO` | ✅ | Same path as `VISION` — `ContentPart.Audio` attached via `AttachmentContent.Binary.Base64` |
+| `MULTI_MODAL` | ✅ | Combined image + audio + text inputs work on the no-tools path; tools + multi-modal degrade gracefully (the tool path wins with a WARN — `AIAgent.run(String)` only accepts plain text) |
+| `PROMPT_CACHING` | ✅ | Koog 0.8.0 honors Bedrock-specific `CacheControl.Bedrock.{FiveMinutes, OneHour}` mapped from Atmosphere's portable `CacheHint`. Non-Bedrock providers silently drop the cache control — same shape Spring AI / LC4j take for OpenAI `prompt_cache_key`. |
+| `CANCELLATION` | ✅ | `executeWithHandle` returns an `ExecutionHandle` whose `cancel()` calls `Job.cancel()` + `Thread.interrupt()` + resolves the done-future with synthetic completion (terminal-path closure per Correctness Invariant #2) |
+| `PER_REQUEST_RETRY` | ✅ | Honored via `executeWithOuterRetry` which wraps `executeInternal` in a retry loop respecting `context.retryPolicy()`. Pre-stream transient failures retry on top of Koog's native HTTP retry. |
 
 Exclusions are **honest** — Koog declares them as absent in its `capabilities()` set so runtime-truth advertising is accurate (Correctness Invariant #5). When Koog upstream adds these surfaces in a future release, the bridge will honor them without a breaking change. No `KoogEmbeddingRuntime` ships today — if you need Koog-backed embeddings, wire a Spring AI or LangChain4j `EmbeddingModel` alongside the Koog agent runtime.
 
 ## Samples
 
-- [spring-boot-koog-chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-koog-chat) — `@AiEndpoint` chat sample routing through Koog's `executeStreaming`
-- [spring-boot-ai-classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) — swap the runtime to Koog by changing one dependency, same `@Agent` code
+- [spring-boot-ai-chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) — swap to Koog by adding `atmosphere-koog` to `pom.xml`; the same `@AiEndpoint` code routes through `KoogAgentRuntime` (Atmosphere's SPI promise)
+- [spring-boot-ai-classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) — multi-room shared AI; same one-Maven-dep swap to route through Koog
 
 ## See Also
 

@@ -80,7 +80,7 @@ The interactive picker shows every sample grouped by category. Pick one, then ch
     4) spring-boot-ai-chat             AI streaming with conversation memory and structured events
     5) spring-boot-ai-classroom        Multiple clients share streaming AI responses
     6) spring-boot-ai-tools            Framework-agnostic @AiTool tool calling
-    7) spring-boot-koog-chat           Kotlin-based Koog agent chat
+    7) spring-boot-rag-chat            RAG agent over Spring AI VectorStore
     ...
 
   Pick a sample:
@@ -124,9 +124,12 @@ plain `mvn compile`.
 | `mcp-server` | `spring-boot-mcp-server` | MCP tools, resources, and prompts |
 | `rag` | `spring-boot-rag-chat` | RAG chat with Spring AI vector store + embeddings |
 | `agent` | `spring-boot-dentist-agent` | Single agent with `@Agent` / `@Command` + skill file |
-| `koog` | `spring-boot-koog-chat` | JetBrains Koog runtime (Kotlin) |
 | `multi-agent` | `spring-boot-multi-agent-startup-team` | 5-agent `@Coordinator` fleet with A2A specialists |
 | `classroom` | `spring-boot-ai-classroom` | Multi-room shared AI (Spring Boot + Expo React Native client) |
+| `ms-governance` | `spring-boot-ms-governance-chat` | Microsoft Agent Governance Toolkit demo (`@AgentScope` policy chain) |
+| `coding-agent` | `spring-boot-coding-agent` | Sandboxed coding agent — clones a repo, reads files, proposes a patch |
+| `guarded-agent` | `spring-boot-guarded-email-agent` | Plan-and-Verify (`atmosphere-verifier`) inbox-exfiltration demo |
+| `assistant` | `spring-boot-personal-assistant` | Long-lived `@Coordinator` assistant with memory + delegation |
 
 Pass `--skill-file <path>` to auto-select the `agent` template with
 your skill file wired in.
@@ -146,9 +149,9 @@ atmosphere new my-kotlin-ai --template ai-chat --runtime embabel
 
 Available runtimes: `builtin` (default — no extra deps),
 `spring-ai`, `langchain4j`, `adk`, `koog`, `embabel`,
-`semantic-kernel`. The mapping lives in `cli/runtime-overlays.json`;
-each entry lists the dep set to inject (and any extra repository, e.g.
-Embabel's release repo).
+`semantic-kernel`, `agentscope`, `spring-ai-alibaba`. The mapping
+lives in `cli/runtime-overlays.json`; each entry lists the dep set to
+inject (and any extra repository, e.g. Embabel's release repo).
 
 #### `--force`: Strip Pre-Pinned Adapters
 
@@ -201,7 +204,8 @@ always in sync.
 | `spring-boot-ai-chat` | Conversation memory, structured events, capability validation | 8080 |
 | `spring-boot-ai-classroom` | Multiple clients share streaming AI responses | 8080 |
 | `spring-boot-ai-tools` | Framework-agnostic `@AiTool` tool calling | 8080 |
-| `spring-boot-koog-chat` | Kotlin-based Koog agent chat | 8080 |
+| `spring-boot-rag-chat` | RAG agent over Spring AI VectorStore | 8080 |
+| `quarkus-ai-chat` | Same `@AiEndpoint` shape as `spring-boot-ai-chat` on Quarkus + LangChain4j bridge | 18810 |
 | `spring-boot-rag-chat` | RAG with Spring AI vector store | 8080 |
 
 ### Agents & Coordination

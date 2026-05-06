@@ -64,8 +64,10 @@ Write your agent once. The execution engine is determined by what's on the class
 | Embabel | `atmosphere-embabel` — Goal-driven GOAP planning |
 | JetBrains Koog | `atmosphere-koog` — Graph-based orchestration, `AIAgent` |
 | Microsoft Semantic Kernel | `atmosphere-semantic-kernel` — `ChatCompletionService` with streaming + embeddings |
+| Alibaba AgentScope | `atmosphere-agentscope` — `ReActAgent` (no native tool dispatch in 1.0.12) |
+| Spring AI Alibaba | `atmosphere-spring-ai-alibaba` — `ReactAgent` (Spring Boot 3.5 only today) |
 
-Seven runtimes share one `AgentRuntime` SPI. Switching backends is
+Nine runtimes share one `AgentRuntime` SPI. Switching backends is
 one dependency change. Your `@Agent`, `@AiTool`, `@Command`, skill
 files, conversation memory, guardrails, and protocol exposure stay
 the same. See [AI Adapters](/docs/tutorial/11-ai-adapters/) for the
@@ -137,7 +139,7 @@ See [Real-Time Infrastructure](/docs/tutorial/03-managed-service/) for details.
 | Channels | `atmosphere-channels` | Slack, Telegram, Discord, WhatsApp, Messenger |
 | Core Runtime | `atmosphere-runtime` | Broadcaster, AtmosphereResource, transports |
 | Spring Boot | `atmosphere-spring-boot-starter` | Auto-configuration for Spring Boot 4.0+ |
-| Quarkus | `atmosphere-quarkus-extension` | Build-time extension for Quarkus 3.31.3 |
+| Quarkus | `atmosphere-quarkus-extension` | Build-time extension for Quarkus 3.35.2 |
 | LangChain4j | `atmosphere-langchain4j` | LangChain4j adapter |
 | Spring AI | `atmosphere-spring-ai` | Spring AI adapter |
 | ADK | `atmosphere-adk` | Google ADK adapter |

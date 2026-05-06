@@ -8,15 +8,41 @@ description: "Highlights from the Atmosphere 4.0.x release line"
 Atmosphere 4.0 is the JDK 21+ rewrite of the framework. The 4.0.0 release shipped the
 core platform migration (Jakarta EE 10, virtual threads, Jetty 12 / Tomcat 11, native
 image support, rooms, AI streaming SPI, MCP, TypeScript client). Since then the 4.0.x
-line has grown into a full multi-agent runtime — unified agent annotations, seven
+line has grown into a full multi-agent runtime — unified agent annotations, nine
 pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Native
 support, and major compatibility refreshes.
 
-The latest build tracks **Spring Boot 4.0.5 (Spring Framework 6.2.8)**, **Quarkus 3.31.3**,
+The latest build tracks **Spring Boot 4.0.5 (Spring Framework 6.2.8)**, **Quarkus 3.35.2**,
 **Jackson 3.1.1**, and **atmosphere.js 5.0.22**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
+
+## 4.0.43 — 2026-05-06
+
+- **Cross-tab `@AiEndpoint` isolation fix** — `AiEndpointHandler.onRequest`
+  now dispatches POST/frame prompts to the originating client only,
+  routing via `SUSPENDED_ATMOSPHERE_RESOURCE_UUID` (WebSocket) or
+  `X-Atmosphere-tracking-id` (SSE / long-polling). Pre-fix, the handler
+  called `broadcaster.broadcast(msg)` on the per-path broadcaster, so two
+  open Console tabs each received both prompts. Pinned by 15 Playwright
+  cases driving real Chromium with two browser contexts (every AI-shaped
+  sample with a Console UI), plus contract tests in
+  `AiEndpointHandlerCrossTabIsolationTest`.
+- **Bundled Atmosphere Console auto-detects `ai` vs. `broadcast` mode** —
+  `/api/console/info` adds a `mode` field and the Vue frontend swaps
+  empty-state copy + default subtitle. `@ManagedService` chats
+  (`spring-boot-mcp-server`, `spring-boot-otel-chat`) now read "Multi-client
+  broadcast chat" instead of borrowing the AI-assistant copy. Detection is
+  class-name based (`org.atmosphere.{ai,agent,coordinator}.*` → ai,
+  everything else → broadcast) so it stays compile-time independent of
+  `modules/ai` and `modules/agent`.
+- **Quarkus parity for `/api/console/info`** — new
+  `AtmosphereConsoleInfoServlet` (registered via `registerConsoleInfoServlet`
+  build step in `AtmosphereProcessor`) gives Quarkus apps the same
+  `subtitle / endpoint / runtime / mode` payload Spring Boot apps get.
+  Two new config keys — `quarkus.atmosphere.console-subtitle` and
+  `quarkus.atmosphere.console-endpoint` — mirror the Spring side.
 
 ## AI, Agents & Orchestration
 
@@ -43,12 +69,15 @@ This page is a highlights reel. For the per-patch history, see the
   agent loop — tool calling, memory, RAG, retries — to whichever AI framework is on
   the classpath. Write your `@Agent` once, run it on any runtime. Switch runtimes by
   changing a single Maven dependency.
-- **Seven runtimes** share a unified capability baseline (tool calling,
-  structured output, progress events, usage metadata): **Built-in**,
-  **LangChain4j**, **Spring AI**, **Google ADK**, **Embabel**,
-  **JetBrains Koog**, and **Microsoft Semantic Kernel**. The built-in runtime
-  gained full OpenAI-compatible tool calling (max 5 rounds), so `@AiTool`
-  works with zero framework dependencies.
+- **Nine runtimes** share a unified capability baseline (text streaming,
+  structured output, progress events, conversation memory, per-request retry):
+  **Built-in**, **LangChain4j**, **Spring AI**, **Google ADK**, **Embabel**,
+  **JetBrains Koog**, **Microsoft Semantic Kernel**, **Alibaba AgentScope**,
+  and **Spring AI Alibaba**. Tool calling reaches the seven runtimes whose
+  underlying SDK exposes a native dispatch loop (AgentScope and Spring AI
+  Alibaba lack one in the current SDK releases). The built-in runtime gained
+  full OpenAI-compatible tool calling (max 5 rounds), so `@AiTool` works
+  with zero framework dependencies.
 - **Auto-detection** via `ServiceLoader` — the highest-`priority()` runtime that
   reports `isAvailable()` wins. The AI Console subtitle and `/api/console/info`
   report the active runtime.
@@ -220,10 +249,11 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
 ### Cross-provider contract
 
 - **`AbstractAgentRuntimeContractTest.policyDenyBlocksRuntimeExecute`**
-  is inherited by all seven runtime adapters (Built-in, Spring AI,
-  LangChain4j, ADK, Embabel, Koog, Semantic Kernel). The "deny before
-  runtime" guarantee is a build-time invariant for each provider; a
-  regression breaks the build, not production.
+  is inherited by all nine runtime adapters (Built-in, Spring AI,
+  LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope,
+  Spring AI Alibaba). The "deny before runtime" guarantee is a
+  build-time invariant for each provider; a regression breaks the
+  build, not production.
 
 ### Commitment records
 
@@ -345,7 +375,7 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
   `spring-boot-health` where needed. The starter overrides the parent POM's old
   SLF4J 1.x/Logback 1.2.x pins in `<dependencies>` so upgrades don't regress.
   See [Spring Boot Reference](/docs/integrations/spring-boot/).
-- **Quarkus 3.31.3** — build-time Jandex annotation scanning, Arc CDI
+- **Quarkus 3.35.2** — build-time Jandex annotation scanning, Arc CDI
   integration, custom `QuarkusJSR356AsyncSupport`, and `@BuildStep`-driven native
   image registration via `quarkus.atmosphere.*` properties. See
   [Quarkus Reference](/docs/integrations/quarkus/).
@@ -405,10 +435,15 @@ Highlights:
 | `spring-boot-checkpoint-agent` | Durable HITL workflow with `CheckpointStore` |
 | `spring-boot-orchestration-demo` | Support desk with live handoff and `@RequiresApproval` |
 | `spring-boot-durable-sessions` | Session persistence across restarts |
-| `spring-boot-channels-chat` | Multi-channel (Slack/Telegram/Discord) chat |
-| `spring-boot-koog-chat` | Koog runtime streaming chat |
+| `spring-boot-channels-chat` | Multi-channel (Slack/Telegram/Discord/WhatsApp/Messenger) chat |
 | `spring-boot-otel-chat` | OpenTelemetry tracing with Jaeger |
+| `spring-boot-ms-governance-chat` | Microsoft Agent Governance Toolkit demo with `@AgentScope` policy chain |
+| `spring-boot-coding-agent` | Sandboxed coding agent — clones a repo, reads files, proposes a patch |
+| `spring-boot-guarded-email-agent` | Plan-and-Verify (`atmosphere-verifier`) inbox-exfiltration demo |
+| `spring-boot-personal-assistant` | Long-lived `@Coordinator` assistant with memory + delegation |
+| `spring-boot-reattach-harness` | Mid-stream reattach harness (`@AiEndpoint` reattach contract) |
 | `quarkus-chat` | Quarkus extension chat |
+| `quarkus-ai-chat` | Five `@AiEndpoint` demos on Quarkus + LangChain4j bridge (port 18810) |
 | `grpc-chat` | Standalone gRPC transport |
 
 ## Developer Experience
@@ -438,7 +473,7 @@ Heads up before you upgrade:
   `com.fasterxml.jackson.*` need to be updated.
 - **`AiSupport` → `AgentRuntime`.** Code that implemented the legacy `AiSupport`
   SPI should migrate to `AgentRuntime`. The capability baseline, tool calling,
-  and usage metadata contracts are now unified across all seven runtimes.
+  and usage metadata contracts are now unified across all nine runtimes.
 - **WebSocket HTML sanitization (4.0.11).** HTML sanitization was disabled for
   the WebSocket transport because encoding JSON in WebSocket frames broke the
   AI streaming wire protocol. HTTP transports continue to sanitize write

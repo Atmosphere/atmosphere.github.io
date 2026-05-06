@@ -19,7 +19,7 @@ Same framework, same transports, same clustering — you choose how much AI you 
 
 **Looking for a specific feature?** Use the Reference section for API details on the core runtime, rooms, AI, MCP, and more.
 
-**Integrating with a framework?** The Integrations section covers Spring Boot 4.0, Quarkus 3.31, and AI framework adapters.
+**Integrating with a framework?** The Integrations section covers Spring Boot 4.0, Quarkus 3.35, and AI framework adapters.
 
 ## Quick Links
 
@@ -69,4 +69,4 @@ Atmosphere is Apache 2.0 and free to use. For teams running it in production, [A
 
 ## Version
 
-This documentation covers the **Atmosphere 4.0.x** release line with JDK 21+, Spring Boot 4.0.5 (Spring Framework 6.2.8), and Quarkus 3.31.3. See [What's New](/docs/whats-new/) for a highlights reel of changes since the 4.0.0 release.
+This documentation covers the **Atmosphere 4.0.x** release line with JDK 21+, Spring Boot 4.0.5 (Spring Framework 6.2.8), and Quarkus 3.35.2. See [What's New](/docs/whats-new/) for a highlights reel of changes since the 4.0.0 release.

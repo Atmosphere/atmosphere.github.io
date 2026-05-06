@@ -1,11 +1,11 @@
 ---
 title: "Quarkus"
-description: "Build-time processing for Quarkus 3.31.3+"
+description: "Build-time processing for Quarkus 3.35.2+"
 ---
 
 # Quarkus Integration
 
-A Quarkus extension that integrates Atmosphere with Quarkus 3.31.3+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and GraalVM native image support.
+A Quarkus extension that integrates Atmosphere with Quarkus 3.35.2+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and GraalVM native image support.
 
 ## Maven Coordinates
 
@@ -113,11 +113,12 @@ See [Spring Boot → `@AiEndpoint` annotation surfaces](spring-boot/#aiendpoint-
 
 - **`load-on-startup`** must be > 0 for the endpoint to register at boot time (Quarkus's `UndertowDeploymentRecorder` skips on `<= 0`, unlike the Servlet spec).
 
-**Runtime coverage:** per-request retry is **Built-in only** in 4.0.36. Framework runtimes inherit their native retry layers. See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix).
+**Runtime coverage:** all eight framework adapters declare `PER_REQUEST_RETRY` honestly as of 4.0.43 (commit `374631e7`) — they all inherit `AbstractAgentRuntime.executeWithOuterRetry`. Each adapter stacks this on top of its own native retry layer (Spring Retry, LC4j `RetryUtils`, ADK `HttpClient`, Koog `CallRetryPolicy`, SK `OpenAIAsyncClient`). See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix).
 
 ## Samples
 
 - [Quarkus Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/quarkus-chat) -- real-time chat with WebSocket and long-polling fallback
+- [Quarkus AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/quarkus-ai-chat) -- five `@AiEndpoint` demos (basic streaming, retry, multi-modal, prompt caching, structured output) on Quarkus + Quarkus LangChain4j bridge, port `18810`
 
 ## See Also
 

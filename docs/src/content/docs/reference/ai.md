@@ -81,7 +81,7 @@ public interface AgentRuntime {
 
 To switch runtimes, change a single Maven dependency — no code changes needed.
 
-> **Spring AI Alibaba runtime — Spring Boot 3 only today.** Spring AI Alibaba `1.1.2.0` is compiled against Spring AI `1.1.2`, and `spring-ai-alibaba-graph-core-1.1.2.0` hardcodes Spring AI 1.1.2-only types like `DeepSeekAssistantMessage`, so the runtime requires Spring AI 1.1.2. Spring AI 1.1.2 itself requires Spring Boot 3 — it pins the SB3-era FQN of `RestClientAutoConfiguration`, which Spring Boot 4 ships at a renamed FQN. Drop `atmosphere-spring-ai-alibaba` into a Spring Boot 3 sample (e.g. `samples/spring-boot-ai-chat -Pspring-boot3`) and it round-trips end-to-end (verified via chrome-devtools against Ollama). A Spring Boot 4 path will become possible once Alibaba publishes a Spring AI 2.x-aligned `spring-ai-alibaba-agent-framework`. `atmosphere-agentscope` is unaffected and works on Spring Boot 4.
+> **Spring AI Alibaba runtime — Spring Boot 3 only today.** Spring AI Alibaba `1.1.2.2` is compiled against Spring AI `1.1.2`, and `spring-ai-alibaba-graph-core-1.1.2.x` hardcodes Spring AI 1.1.2-only types like `DeepSeekAssistantMessage`, so the runtime requires Spring AI 1.1.2. Spring AI 1.1.2 itself requires Spring Boot 3 — it pins the SB3-era FQN of `RestClientAutoConfiguration`, which Spring Boot 4 ships at a renamed FQN. Drop `atmosphere-spring-ai-alibaba` into a Spring Boot 3 sample (e.g. `samples/spring-boot-ai-chat -Pspring-boot3`) and it round-trips end-to-end (verified via chrome-devtools against Ollama). A Spring Boot 4 path will become possible once Alibaba publishes a Spring AI 2.x-aligned `spring-ai-alibaba-agent-framework`. `atmosphere-agentscope` is unaffected and works on Spring Boot 4.
 
 ### Per-Request Runtime Extensions
 
@@ -90,16 +90,22 @@ that need framework-native composition (Spring AI advisor chain, LangChain4j
 `AiServices`, Koog graph DSL, ADK multi-agent topology), a small per-request
 helper attaches the framework-native object to `AgentExecutionContext.metadata()`
 and the runtime applies it for that one call — no `AgentRuntime` SPI growth, no
-mutation of shared beans. All five helpers follow the `CacheHint` pattern:
-`from(context)` and `attach(context, ...)` static methods.
+mutation of shared beans. Every helper follows the `CacheHint` pattern:
+`from(context)` and `attach(context, ...)` static methods, with strict type
+checking that throws `IllegalArgumentException` on a wrong-type slot (silent
+drops would mask the override never firing).
 
 | Helper | Runtime | Slot it drives |
 |--------|---------|----------------|
-| `SpringAiAdvisors` | Spring AI | `ChatClient.prompt().advisors(...)` — RAG, memory, guardrails, observability |
-| `LangChain4jAiServices` | LangChain4j | Routes through caller's `AiServices`-backed interface (`TokenStream` callbacks bridged to session) |
+| `SpringAiAdvisors` | Spring AI | `ChatClient.prompt().advisors(...)` — RAG, memory, guardrails, observability (additive — multiple advisors compose into a chain) |
+| `LangChain4jAiServices` | LangChain4j | Routes through caller's `AiServices`-backed interface (`TokenStream` callbacks bridged to session) — gives access to `maxSequentialToolsInvocations`, custom system message providers, etc. |
 | `KoogStrategy` | Koog | Swaps default `chatAgentStrategy()` with a custom `AIAgentGraphStrategy<String, String>` from the `strategy {}` DSL |
 | `AdkRootAgent` | ADK | Replaces the runtime's default `LlmAgent` with `SequentialAgent` / `ParallelAgent` / `LoopAgent` / any `BaseAgent` subclass |
-| `ToolLoopPolicies` | Built-in | Per-request `ToolLoopPolicy(maxIterations, OnMaxIterations)` for the OpenAI-compatible tool loop |
+| `SemanticKernelInvocation` | Semantic Kernel | Per-request `InvocationContext` — unlocks `KernelHooks`, `withMaxAutoInvokeAttempts`, custom `PromptExecutionSettings` |
+| `EmbabelPromptRunner` | Embabel | `UnaryOperator<PromptRunner>` customizer applied AFTER the runtime's default wiring — stack `withTemperature` / `withModel` / `withGuardrails` on top. Atmosphere-native dispatch path only |
+| `AgentScopeAgent` | AgentScope | Per-request `ReActAgent` — useful when different prompts route through different agent topologies (planner vs. quick lookup) without re-installing the runtime client |
+| `SpringAiAlibabaRunnableConfig` | Spring AI Alibaba | Per-request `RunnableConfig` — Alibaba's natural per-invocation handle for `threadId` (memory thread continuation), `checkPointId` (resume), `streamMode`, metadata, store |
+| `ToolLoopPolicies` | Built-in, Koog | Per-request `ToolLoopPolicy(maxIterations, OnMaxIterations)` — Built-in honors via OpenAI-compatible tool loop, Koog via `AIAgent.maxIterations` |
 
 Example — Spring AI advisor scoped to one request:
 
@@ -123,11 +129,14 @@ returns non-empty). See the per-module READMEs for full DSL examples:
 [`modules/adk`](https://github.com/Atmosphere/atmosphere/blob/main/modules/adk/README.md#multi-agent-composition-adkrootagent),
 and the [`ToolLoopPolicy`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/README.md#tool-loop-policy) section.
 
-Other runtimes (`AgentScope`, `Embabel`, `SemanticKernel`, `SpringAiAlibaba`) do
-not yet ship a per-request bridge. `Embabel` did get **native streaming** in the
-same merge: when `StreamingPromptRunnerBuilder.streaming().generateStream()` is
-available the runtime emits `Flux<String>` chunks directly to the session, with
-graceful fallback to `runner.generateText(...)` when the streaming API is absent.
+All eight framework runtimes now ship a per-request sidecar (the four added
+most recently — `SemanticKernelInvocation`, `EmbabelPromptRunner`,
+`AgentScopeAgent`, `SpringAiAlibabaRunnableConfig` — close the matrix that
+previously left these adapters without a per-request escape hatch). `Embabel`
+also has **native streaming**: when
+`StreamingPromptRunnerBuilder.streaming().generateStream()` is available the
+runtime emits `Flux<String>` chunks directly to the session, with graceful
+fallback to `runner.generateText(...)` when the streaming API is absent.
 
 ### Model-Lifecycle Observability
 
@@ -682,7 +691,8 @@ The `RecordingSession` test double captures all events, text chunks, metadata, a
 - [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- built-in client with Gemini/OpenAI/Ollama
 - [Spring Boot AI Tools](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools) -- framework-agnostic `@AiTool` pipeline
 - [Spring Boot AI Classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) -- rooms-based multi-room AI with an Expo client
-- [Spring Boot Koog Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-koog-chat) -- JetBrains Koog adapter
+- [Spring Boot RAG Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-rag-chat) -- Spring AI VectorStore-backed RAG agent
+- [Quarkus AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/quarkus-ai-chat) -- five `@AiEndpoint` demos on Quarkus + LangChain4j bridge
 - [Spring Boot Dentist Agent](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-dentist-agent) -- `@Agent` with tools, memory, and approval gates
 
 ## See Also

@@ -244,7 +244,7 @@ public class BackgroundChat {
 - `maxDelayMs` — cap on exponential backoff (default `30000`)
 - `backoffMultiplier` — exponential factor (default `2.0`)
 
-**Runtime coverage:** per-request retry is **Built-in only** in 4.0.36. Framework runtimes (Spring AI, LangChain4j, ADK, Koog, Embabel, Semantic Kernel) inherit their native retry layers and ignore the per-request override. The Built-in runtime threads `context.retryPolicy()` into `OpenAiCompatibleClient.sendWithRetry` as a real override. See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix) for the full breakdown.
+**Runtime coverage:** all eight framework adapters declare `PER_REQUEST_RETRY` honestly as of 4.0.43 (commit `374631e7`) — `AbstractAgentRuntime.executeWithOuterRetry` wraps each adapter's dispatch in a retry loop respecting `context.retryPolicy(...)`, on top of each runtime's own native retry layer (Spring Retry, LC4j `RetryUtils`, ADK `HttpClient`, Koog `CallRetryPolicy`, SK `OpenAIAsyncClient`). The Built-in runtime additionally threads `context.retryPolicy()` into `OpenAiCompatibleClient.sendWithRetry` as a native override. See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix) for the full breakdown.
 
 ## Samples
 

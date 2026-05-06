@@ -110,7 +110,7 @@ broadcasters on reconnect but not in-flight agent runs.
 - **Shipped**: SPI + default implementation + unit tests + zero-warning
   compile. All eight primitives are shipped in the current branch.
 - **Complete**: shipped + wired into live paths + cross-runtime contract
-  tests green on all seven runtimes + security invariants verified.
+  tests green on all nine runtimes + security invariants verified.
 
 The completion bar is raised by three follow-up phases: gateway wire-in,
 cross-runtime contract test matrix, and security default hardening.
