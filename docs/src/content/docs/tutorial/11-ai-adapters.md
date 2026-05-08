@@ -1,6 +1,6 @@
 ---
 title: "AI Framework Adapters"
-description: "Plugging Spring AI, LangChain4j, Google ADK, and Embabel into Atmosphere's streaming infrastructure"
+description: "Plugging Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, and Spring AI Alibaba into Atmosphere's streaming infrastructure"
 sidebar:
   order: 11
 ---
@@ -46,7 +46,7 @@ var request = ChatCompletionRequest.builder(settings.model())
 settings.client().streamChatCompletion(request, session);
 ```
 
-The built-in client is what powers `session.stream(message)` inside `@AiEndpoint`. If you need framework-specific features (Spring AI advisors, LangChain4j tool loops, ADK agent orchestration, Embabel agent planning), use one of the adapter modules below.
+The built-in client is what powers `session.stream(message)` inside `@AiEndpoint`. If you need framework-specific features (Spring AI advisors, LangChain4j tool loops, ADK agent orchestration, Embabel agent planning, Koog graph strategies, Semantic Kernel kernel hooks, AgentScope ReAct agents, or Spring AI Alibaba runnable configs), use one of the adapter modules below.
 
 ## Runtimes
 
@@ -80,17 +80,24 @@ This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()`
 | `CONVERSATION_MEMORY` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `PER_REQUEST_RETRY`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `TOKEN_USAGE`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `BUDGET_ENFORCEMENT`  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `CONFIDENCE_SCORES`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `CANCELLATION`        |  — |  — |  — |  — |  — | ✅ |  — | ✅ |  — |
+| `PASSIVATION`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `VISION`              | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
 | `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
 | `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |
 | `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |
 | `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |  — |  — |
 | `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |  — |  — |
+| `MODEL_ENUMERATION`   |  — |  — |  — |  — |  — |  — |  — |  — |  — |
+| `MULTI_AGENT_HANDOFF` |  — |  — |  — |  — |  — |  — |  — |  — |  — |
 
 **Legend:**
 - ✅ Declared in `capabilities()` and honored at runtime
 - — Not declared. Either the framework's native API does not expose the feature, or the bridge has not threaded it through yet.
+
+The full `AiCapability` enum has 20 values. `MODEL_ENUMERATION` and `MULTI_AGENT_HANDOFF` are forward-looking SPI slots — the enum entries exist so callers can probe for them, but no runtime declares them today. `MULTI_AGENT_HANDOFF` is currently surfaced through the coordinator/handoff path (`session.handoff()`, `AiEvent.Handoff`) rather than a per-runtime capability flag.
 
 ### Why the baseline is so high
 

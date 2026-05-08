@@ -110,7 +110,7 @@ Key observations:
 
 1. **`@Ready` and `@Disconnect`** work the same as in `@ManagedService` -- they handle connection lifecycle.
 2. **`@Prompt`** receives the user's raw message and a `StreamingSession`.
-3. **`session.stream(message)`** sends the message to the resolved AI backend and streams the response back. This is the simplest way to invoke the LLM -- the framework resolves the correct adapter (Spring AI, LangChain4j, ADK, or built-in) automatically.
+3. **`session.stream(message)`** sends the message to the resolved AI backend and streams the response back. This is the simplest way to invoke the LLM -- the framework resolves the correct adapter (any of the nine `AgentRuntime` implementations: Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, or the built-in OpenAI-compatible client) automatically via `ServiceLoader`.
 4. **Demo fallback** -- if no API key is configured, the sample uses `DemoResponseProducer` to simulate streaming. This pattern is useful for local development without an API key.
 5. **System prompt** -- loaded once at startup from `prompts/system-prompt.md` on the classpath via `PromptLoader`.
 

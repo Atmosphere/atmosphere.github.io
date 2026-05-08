@@ -495,7 +495,7 @@ Default timeout: 5 minutes. Configurable via `@RequiresApproval(timeoutSeconds =
 
 When running on Google ADK, Atmosphere also calls `toolContext.requestConfirmation()` to give ADK native visibility into the approval pause. If ADK resolves a confirmation before Atmosphere (e.g., via its own UI), the ADK denial short-circuits without calling the executor. This creates a two-layer model: Atmosphere-level (cross-runtime) + ADK-native (runtime-specific).
 
-All runtimes with `TOOL_CALLING` also declare `AiCapability.TOOL_APPROVAL` (Built-in, Spring AI, LangChain4j, ADK, Koog). SK and Embabel are excluded: SK because its tool bridge is deferred; Embabel because it has no tool-calling path.
+All runtimes with `TOOL_CALLING` also declare `AiCapability.TOOL_APPROVAL` (Built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel). AgentScope and Spring AI Alibaba are excluded because their underlying SDKs lack a native tool-call dispatch loop.
 
 ## Context Compaction SPI
 
