@@ -130,7 +130,7 @@ const sub = await atmosphere.atmosphere.subscribe(request, handlers);
 
 1. **Update JDK** to 21+
 2. **Replace** `javax.*` imports with `jakarta.*`
-3. **Update** `atmosphere-runtime` dependency to the current `4.0.x` release (at time of writing, `4.0.43` on `main`; check Maven Central for the latest stable)
+3. **Update** `atmosphere-runtime` dependency to the current `4.0.x` release (at time of writing, `4.0.44` on `main`; check Maven Central for the latest stable)
 4. **Replace** Jersey/Meteor code with `@ManagedService` (if not already using it)
 5. **Replace** `atmosphere-javascript` with `atmosphere.js` 5.0
 6. **Optionally** adopt Rooms for group messaging patterns
