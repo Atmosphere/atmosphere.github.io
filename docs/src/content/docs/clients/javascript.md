@@ -120,6 +120,137 @@ await subscription.close();      // disconnect
 | `closed`       | Closed via `close()` |
 | `error`        | Connection error |
 
+## Resilience: `ConnectionStatus` + Badge components
+
+Wiring all eight lifecycle hooks (`open`, `reopen`, `reconnect`, `close`, `error`, `transportFailure`, `clientTimeout`, `failureToReconnect`) on every consumer is busywork, and most apps end up showing only `connected`/`disconnected` because of it. atmosphere.js ships a `ConnectionStatus` primitive that collapses those events into a small phase machine plus a transient event indicator, and per-framework `<ConnectionStatusBadge />` components that render the result as a single import.
+
+### The primitive (framework-agnostic)
+
+```typescript
+import { Atmosphere, ConnectionStatus } from 'atmosphere.js';
+
+const status = new ConnectionStatus();
+status.onChange((snap) => {
+  // snap.phase       — 'idle' | 'connecting' | 'open' | 'reconnecting' | 'closed' | 'lost'
+  // snap.lastEvent   — the most recent lifecycle hook that fired (or null)
+  // snap.transport   — currently active transport (updates after fallback)
+  // snap.attempt     — reconnect attempt counter; resets to 0 on every successful open
+  // snap.viaFallback — true once a transportFailure has been observed
+  // snap.lastError   — most recent error, or null
+  // snap.since       — epoch-ms when the current phase began
+  console.log(`[${snap.phase}] ${snap.transport}${snap.viaFallback ? ' (fallback)' : ''}`);
+});
+
+const atmosphere = new Atmosphere();
+const sub = await atmosphere.subscribe(request, status.wrap({
+  message: (m) => console.log(m),  // your own handlers are preserved
+}));
+```
+
+`status.wrap(handlers)` returns a fresh `SubscriptionHandlers` object that calls **both** the status tracker and your own callbacks for each event — no double-subscription, no duplicated wiring.
+
+### Phase state machine
+
+```
+idle ──subscribe()──▶ connecting ──open──▶ open ──close/reconnect──▶ reconnecting
+                            │                                            │
+                            │                                            ├──reopen──▶ open
+                            │                                            │
+                            └──fail (no fallback)──▶ lost ◀──failureToReconnect
+                            │
+                            └──close (clean)──▶ closed
+```
+
+`closed` and `lost` are terminal until the next `subscribe()` call. The `lastEvent` field always carries the most recent transition trigger so UIs can show transient affordances (toasts, badges) that the steady-state phase alone cannot express — for example, distinguishing a first `open` from a `reopen` after a disconnect.
+
+### React: `useConnectionStatus` + `<ConnectionStatusBadge />`
+
+Every React hook (`useAtmosphere`, `useStreaming`) now exposes `connectionStatus` reactively. Pass it straight to the Badge:
+
+```tsx
+import { useStreaming, ConnectionStatusBadge } from 'atmosphere.js/react';
+
+function AiChat() {
+  const { fullText, connectionStatus, send } = useStreaming({
+    request: { url: '/ai/chat', transport: 'websocket', fallbackTransport: 'long-polling' },
+    onTransportFailure: (reason) => console.warn('Falling back:', reason),
+    onFailureToReconnect: () => alert('Connection lost — refresh to retry'),
+  });
+
+  return (
+    <>
+      <ConnectionStatusBadge status={connectionStatus} />
+      <p>{fullText}</p>
+    </>
+  );
+}
+```
+
+The Badge renders a colored dot + label inside a rounded pill — for example, `● Connected · websocket` while open, `● Reconnecting… · websocket` mid-reconnect, `● Connected · long-polling (fallback)` after a transport fallback, `● Connection lost · websocket` after `failureToReconnect`. Override colors and labels via the `colors` and `labels` props.
+
+For consumers that manage their own subscription, use `useConnectionStatus` directly:
+
+```tsx
+import { useConnectionStatus, ConnectionStatusBadge } from 'atmosphere.js/react';
+
+const { status, wrap } = useConnectionStatus();
+useEffect(() => {
+  let sub;
+  (async () => { sub = await atmosphere.subscribe(req, wrap({ message: handle })); })();
+  return () => sub?.close();
+}, []);
+
+return <ConnectionStatusBadge status={status} />;
+```
+
+### Vue: `useConnectionStatus` + `<ConnectionStatusBadge />`
+
+```vue
+<script setup lang="ts">
+import { useStreaming, ConnectionStatusBadge } from 'atmosphere.js/vue';
+
+const { fullText, connectionStatus, send } = useStreaming(
+  { url: '/ai/chat', transport: 'websocket' },
+  undefined,
+  { onTransportFailure: (reason) => console.warn(reason) },
+);
+</script>
+
+<template>
+  <ConnectionStatusBadge :status="connectionStatus" />
+</template>
+```
+
+### React Native: `<ConnectionStatusBadgeRN />`
+
+`useStreamingRN` and `useAtmosphereRN` both expose `connectionStatus`, and the RN-native Badge uses `View`/`Text` (no DOM):
+
+```tsx
+import { useStreamingRN, ConnectionStatusBadgeRN } from 'atmosphere.js/react-native';
+
+const { connectionStatus, send } = useStreamingRN({
+  request,
+  onTransportFailure: (reason) => console.warn(reason),
+});
+
+return <ConnectionStatusBadgeRN status={connectionStatus} />;
+```
+
+### Configuring fallback + reconnect
+
+Resilience behavior is driven by the request options — the Badge just visualizes whatever the client decides:
+
+| Option | Effect |
+|--------|--------|
+| `transport` | Primary transport (`websocket`, `sse`, `streaming`, `long-polling`, `webtransport`) |
+| `fallbackTransport` | Used when the primary fails — fires `transportFailure` and continues with the fallback |
+| `reconnect` | Enable auto-reconnect on close (default `true`) |
+| `reconnectInterval` | Milliseconds between reconnect attempts |
+| `maxReconnectOnClose` | Quota — when exhausted, `failureToReconnect` fires once and the phase moves to `lost` |
+| `heartbeat.client` | Client-side watchdog interval (ms) — expiry triggers `clientTimeout` |
+
+The classic fallback chain — WebSocket → SSE → streaming → long-polling — is implemented end-to-end. The `viaFallback` flag stays `true` until the next `subscribe()` call, so the Badge can keep showing the degraded-mode indicator even after the fallback transport reaches steady-state `open`.
+
 ## `AtmosphereRooms` — low-level rooms API
 
 `AtmosphereRooms` is the vanilla-TypeScript counterpart of the `useRoom` / `createRoomStore` hooks. Use it when you don't want a framework integration or when you need a single rooms instance shared across parts of your app. It pairs with the server-side `RoomManager` and `RoomInterceptor`.
