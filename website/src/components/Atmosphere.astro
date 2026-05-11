@@ -7,7 +7,7 @@ const pillars = [
     items: [
       { name: 'WebSocket', detail: 'Full-duplex communication over a single TCP connection. The standard for real-time web applications since 2011.', url: 'https://datatracker.ietf.org/doc/html/rfc6455', urlLabel: 'RFC 6455' },
       { name: 'SSE', detail: 'Server-Sent Events. A simple HTTP-based protocol for server-to-client streaming with automatic reconnection built into the browser.', url: 'https://html.spec.whatwg.org/multipage/server-sent-events.html', urlLabel: 'WHATWG Spec' },
-      { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC. Atmosphere is the first Java framework with native WebTransport support &mdash; auto-detected via AsyncSupport with zero-config Jetty 12 QUIC or Reactor Netty sidecar.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
+      { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC with native WebTransport support &mdash; auto-detected via AsyncSupport with zero-config Jetty 12 QUIC or Reactor Netty sidecar.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
       { name: 'Long-Polling', detail: 'HTTP long-polling with automatic reconnection. Works everywhere, even behind the most restrictive corporate firewalls and proxies.', url: 'https://datatracker.ietf.org/doc/html/rfc6202', urlLabel: 'RFC 6202' },
       { name: 'gRPC', detail: 'High-performance RPC framework with bidirectional streaming over HTTP/2. Atmosphere exposes your agents as gRPC services alongside HTTP transports.', url: 'https://grpc.io', urlLabel: 'grpc.io' },
     ],
@@ -19,7 +19,7 @@ const pillars = [
     description: 'Add the dependency to your classpath and your agent speaks the protocol. No manual endpoint wiring, no boilerplate.',
     items: [
       { name: 'MCP', detail: 'Model Context Protocol. An open standard by Anthropic for connecting AI assistants to tools, resources, and data sources. Expose your @AiTool methods to Claude, Copilot, Cursor, and any MCP-compatible client.', url: 'https://modelcontextprotocol.io', urlLabel: 'modelcontextprotocol.io' },
-      { name: 'A2A', detail: 'Agent-to-Agent protocol by Google. Enables agents to discover each other via Agent Cards and communicate through JSON-RPC. Your @Agent is automatically discoverable by any A2A-compliant agent.', url: 'https://google.github.io/A2A/', urlLabel: 'Google A2A Spec' },
+      { name: 'A2A', detail: 'Agent-to-Agent protocol, originally launched by Google and now stewarded by the Linux Foundation. Enables agents to discover each other via Agent Cards and communicate through JSON-RPC. Your @Agent is automatically discoverable by any A2A-compliant agent.', url: 'https://a2a-protocol.org/', urlLabel: 'A2A Spec' },
       { name: 'AG-UI', detail: 'Agent-User Interaction protocol. Streams agent state (text deltas, tool calls, state transitions) to frontends in real time. Compatible with CopilotKit and other AG-UI clients.', url: 'https://docs.ag-ui.com', urlLabel: 'AG-UI Docs' },
     ],
     extras: ['Auto-registered from classpath', 'Multi-channel: Slack, Telegram, Discord, WhatsApp, Messenger'],
