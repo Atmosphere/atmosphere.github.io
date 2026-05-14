@@ -12,7 +12,7 @@ line has grown into a full multi-agent runtime — unified agent annotations, ni
 pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Native
 support, and major compatibility refreshes.
 
-The latest build tracks **Spring Boot 4.0.5 (Spring Framework 6.2.8)**, **Quarkus 3.35.2**,
+The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.35.2**,
 **Jackson 3.1.1**, and **atmosphere.js 5.0.22**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
@@ -246,13 +246,13 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
   with a typed taint violation on `steps[1].arguments.body`. Spring
   Boot test + 6 Playwright e2e tests pin the headline guarantee.
 
-### Cross-provider contract
+### Cross-runtime-adapter contract
 
 - **`AbstractAgentRuntimeContractTest.policyDenyBlocksRuntimeExecute`**
   is inherited by all nine runtime adapters (Built-in, Spring AI,
   LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope,
   Spring AI Alibaba). The "deny before runtime" guarantee is a
-  build-time invariant for each provider; a regression breaks the
+  build-time invariant for each runtime adapter; a regression breaks the
   build, not production.
 
 ### Commitment records
@@ -368,7 +368,7 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
 
 ## Integrations
 
-- **Spring Boot 4.0.5 (Spring Framework 6.2.8)** — auto-configuration, Actuator
+- **Spring Boot 4.0.6** — auto-configuration, Actuator
   health indicator (`AtmosphereHealthIndicator`), and GraalVM AOT runtime hints
   (`AtmosphereRuntimeHints`). Spring Boot 4.0 is modularized, so the starter now
   depends explicitly on `spring-boot-servlet`, `spring-boot-web-server`, and
@@ -392,7 +392,7 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
   with `@McpTool` / `@McpResource` / `@McpPrompt` annotations on any class
   marked `@Agent` (there is no dedicated `@McpServer` annotation — the MCP
   module reuses `@Agent` from `atmosphere-agent`). Supports Streamable HTTP
-  (MCP 2025-03-26 spec), WebSocket, or SSE, with a stdio bridge for Claude
+  (MCP 2025-11-25 spec), WebSocket, or SSE, with a stdio bridge for Claude
   Desktop and a programmatic `McpRegistry` API. See
   [MCP Reference](/docs/reference/mcp/).
 - **OpenTelemetry tracing** — `McpTracing` auto-instruments tool, resource, and
@@ -415,7 +415,7 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
 ## Samples
 
 Atmosphere 4.0 ships with a wide set of runnable samples covering every
-major feature area — real-time chat, AI streaming with multiple providers,
+major feature area — real-time chat, AI streaming with multiple runtime adapters,
 tool calling, multi-agent orchestration, MCP, RAG, clustering, durable
 sessions, and channel integrations. The full catalogue lives at
 [`samples/` on GitHub](https://github.com/Atmosphere/atmosphere/tree/main/samples).
@@ -423,7 +423,7 @@ Highlights:
 
 | Sample | Feature area |
 |--------|--------------|
-| `spring-boot-ai-chat` | Streaming AI chat via the `AgentRuntime` SPI (auto-selects provider) |
+| `spring-boot-ai-chat` | Streaming AI chat via the `AgentRuntime` SPI (auto-selects runtime adapter) |
 | `spring-boot-ai-tools` | Portable `@AiTool` tool calling across all runtimes |
 | `spring-boot-ai-classroom` | Multi-room AI with a React Native / Expo client |
 | `spring-boot-rag-chat` | Retrieval-augmented generation with `ContextProvider` |

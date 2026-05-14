@@ -92,6 +92,8 @@ public class ObservabilityConfig {
 ```
 
 The `@EventListener(ApplicationReadyEvent.class)` ensures the framework is fully initialized before metrics are installed.
+For the full room/presence REST surface and tabbed UI shown with this metrics wiring,
+see [`samples/spring-boot-chat/README.md`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-chat).
 
 ### Viewing Metrics
 
@@ -159,6 +161,8 @@ framework.interceptor(new AtmosphereTracing(tracer));
 ## Spring Boot OTel Chat Sample
 
 The `samples/spring-boot-otel-chat/` sample demonstrates OpenTelemetry integration with Jaeger.
+This sample runs on port `8084` and exposes its `@ManagedService` endpoint at
+`/atmosphere/ai-chat`.
 
 ### OtelConfig.java
 
@@ -189,7 +193,7 @@ The SDK auto-configures from environment variables:
 The `@ManagedService` class has no tracing-specific code. The `AtmosphereTracing` interceptor is auto-configured:
 
 ```java
-@ManagedService(path = "/atmosphere/chat", atmosphereConfig = MAX_INACTIVE + "=120000")
+@ManagedService(path = "/atmosphere/ai-chat", atmosphereConfig = MAX_INACTIVE + "=120000")
 public class Chat {
 
     private static final Logger logger = LoggerFactory.getLogger(Chat.class);
@@ -234,12 +238,12 @@ docker run -d --name jaeger \
   jaegertracing/all-in-one:latest
 
 # Run the sample
-OTEL_SERVICE_NAME=atmosphere-chat \
+OTEL_SERVICE_NAME=atmosphere-otel-chat \
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
 ./mvnw spring-boot:run -pl samples/spring-boot-otel-chat
 ```
 
-Open Jaeger at `http://localhost:16686` and select the `atmosphere-chat` service to see spans for connect, message, and disconnect events.
+Open Jaeger at `http://localhost:16686` and select the `atmosphere-otel-chat` service to see spans for connect, message, and disconnect events.
 
 ## AtmosphereHealth -- Health Checks
 
@@ -274,7 +278,7 @@ The `atmosphere-spring-boot-starter` includes an `AtmosphereHealthIndicator` tha
     "atmosphere": {
       "status": "UP",
       "details": {
-        "version": "LATEST",
+        "version": "<resolved-at-runtime>",
         "connections": 42,
         "broadcasters": 3,
         "handlers": 2,

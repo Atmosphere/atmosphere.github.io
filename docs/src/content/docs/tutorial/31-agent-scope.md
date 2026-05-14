@@ -62,7 +62,7 @@ Keyword / regex matching over `forbiddenTopics` plus bundled hijacking probes �
 
 ### Embedding-similarity tier (default)
 
-Compares the cosine similarity between the incoming message's embedding and the embedding of `purpose` (plus negative bias toward any `forbiddenTopics`). Requires an `EmbeddingRuntime` on the classpath — Spring AI, LangChain4j, ADK, Koog, and the built-in OpenAI runtime all ship one.
+Compares the cosine similarity between the incoming message's embedding and the embedding of `purpose` (plus negative bias toward any `forbiddenTopics`). Requires an `EmbeddingRuntime` on the classpath — Built-in, Spring AI, LangChain4j, Semantic Kernel, and Embabel ship one.
 
 ```java
 @AgentScope(

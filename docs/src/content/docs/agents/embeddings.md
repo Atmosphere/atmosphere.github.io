@@ -108,10 +108,10 @@ priority order if you need to fan out or pick a specific backend manually.
 
 ## Wiring a framework-native embedding model
 
-The adapter runtimes (Spring AI, LangChain4j, Semantic Kernel, Embabel)
-wrap a framework-managed `EmbeddingModel` / `EmbeddingService` /
-`TextEmbeddingGenerationService` instance. Wire it via the adapter's
-static setter during startup:
+The embedding-capable runtimes are Built-in, Spring AI, LangChain4j,
+Semantic Kernel, and Embabel. The adapter runtimes wrap a framework-managed
+`EmbeddingModel` / `EmbeddingService` / `TextEmbeddingGenerationService`
+instance. Wire it via the adapter's static setter during startup:
 
 ### Spring AI
 

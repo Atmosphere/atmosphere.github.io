@@ -338,30 +338,39 @@ If your goal is to stream LLM texts to a browser, you can get there in under 20 
 </dependency>
 ```
 
-Set your LLM credentials in `application.properties`:
+Set LLM configuration with environment variables (same contract used by `samples/spring-boot-ai-chat/`):
 
-```properties
-atmosphere.ai.llm.provider=openai
-atmosphere.ai.llm.api-key=${OPENAI_API_KEY}
-atmosphere.ai.llm.model=gpt-4o
+```bash
+# Gemini (default)
+export LLM_API_KEY=AIza...
+
+# OpenAI
+export LLM_MODEL=gpt-4o
+export LLM_BASE_URL=https://api.openai.com/v1
+export LLM_API_KEY=sk-...
+
+# Ollama (local)
+export LLM_MODE=local
+export LLM_MODEL=llama3.2
 ```
 
 Then write the endpoint:
 
 ```java
 @AiEndpoint(path = "/atmosphere/ai-chat",
-        systemPrompt = "You are a helpful assistant",
+        systemPromptResource = "prompts/system-prompt.md",
+        requires = {AiCapability.TEXT_STREAMING, AiCapability.SYSTEM_PROMPT},
         conversationMemory = true)
 public class AiChat {
 
     @Prompt
     public void onPrompt(String message, StreamingSession session) {
-        session.stream(message);  // sends to the LLM, streams streaming texts back to the client
+        session.stream(message);
     }
 }
 ```
 
-That's it. `@AiEndpoint` handles connection lifecycle, transport negotiation, and virtual thread dispatch automatically. `session.stream(message)` auto-detects the AI framework on the classpath — swap `atmosphere-ai` for `atmosphere-spring-ai` or `atmosphere-langchain4j` and the same code works with a different backend.
+That's it. `@AiEndpoint` handles connection lifecycle, transport negotiation, and virtual thread dispatch automatically. `session.stream(message)` auto-detects the selected `AgentRuntime` on the classpath — Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, or Spring AI Alibaba — and the same code works with a different backend. Without `LLM_API_KEY`, the sample runs in demo mode with simulated streaming. Embabel and Spring AI Alibaba currently use the Spring Boot 3.5 profile.
 
 On the client side, connect with `atmosphere.js`:
 

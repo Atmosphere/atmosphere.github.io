@@ -5,7 +5,7 @@ description: "@McpTool, @McpResource, @McpPrompt, @McpParam — annotation-drive
 
 # MCP Server
 
-The `atmosphere-mcp` module is a **self-contained MCP (Model Context Protocol) server implementation** that rides on Atmosphere's transport layer. It speaks the MCP 2025-03-26 JSON-RPC wire protocol directly -- there is no external MCP SDK dependency -- and exposes annotation-driven tools, resources, and prompt templates to AI agents over Streamable HTTP, WebSocket, or SSE.
+The `atmosphere-mcp` module is a **self-contained MCP (Model Context Protocol) server implementation** that rides on Atmosphere's transport layer. It speaks the MCP 2025-11-25 JSON-RPC wire protocol directly -- there is no external MCP SDK dependency -- and exposes annotation-driven tools, resources, and prompt templates to AI agents over Streamable HTTP, WebSocket, or SSE.
 
 MCP endpoints are auto-registered when `atmosphere-mcp` is on the classpath together with a class annotated with `@Agent` (from `atmosphere-agent`). **There is no `@McpServer` annotation.** Class-level wiring is handled by `@Agent`; method- and parameter-level MCP metadata uses the four annotations in this module.
 
@@ -155,7 +155,7 @@ There is no MCP-specific Spring Boot auto-configuration class and no `McpPropert
 
 | Transport | How to connect |
 |-----------|---------------|
-| Streamable HTTP (recommended, MCP 2025-03-26) | `POST http://host:port/atmosphere/mcp` |
+| Streamable HTTP (recommended, MCP 2025-11-25) | `POST http://host:port/atmosphere/mcp` |
 | WebSocket | `ws://host:port/atmosphere/mcp` |
 | SSE | `GET http://host:port/atmosphere/mcp` |
 

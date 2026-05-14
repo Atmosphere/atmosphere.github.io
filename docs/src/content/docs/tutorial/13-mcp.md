@@ -7,7 +7,7 @@ sidebar:
 
 The Model Context Protocol (MCP) is an open standard that lets AI agents (Claude Desktop, VS Code Copilot, Cursor, etc.) discover and call tools, read resources, and use prompt templates from external servers. Atmosphere's `atmosphere-mcp` module lets you build an MCP server by adding four annotations to any Spring bean -- no servlet wiring, no protocol code, no external SDK.
 
-`atmosphere-mcp` is a **self-contained MCP protocol implementation**. It speaks the MCP 2025-03-26 JSON-RPC wire protocol directly on top of Atmosphere's transport layer, so your server is automatically reachable over Streamable HTTP, WebSocket, and SSE with no additional dependencies.
+`atmosphere-mcp` is a **self-contained MCP protocol implementation**. It speaks the MCP 2025-11-25 JSON-RPC wire protocol directly on top of Atmosphere's transport layer, so your server is automatically reachable over Streamable HTTP, WebSocket, and SSE with no additional dependencies.
 
 **Module:** `atmosphere-mcp`
 **Package:** `org.atmosphere.mcp`
@@ -246,7 +246,7 @@ The MCP endpoint is now live at `http://localhost:8083/atmosphere/mcp`. Three tr
 
 | Transport | How to connect |
 |-----------|---------------|
-| Streamable HTTP (MCP 2025-03-26) | `POST http://localhost:8083/atmosphere/mcp` |
+| Streamable HTTP (MCP 2025-11-25) | `POST http://localhost:8083/atmosphere/mcp` |
 | WebSocket | `ws://localhost:8083/atmosphere/mcp` |
 | SSE | `GET http://localhost:8083/atmosphere/mcp` |
 
@@ -262,7 +262,7 @@ curl -s -X POST http://localhost:8083/atmosphere/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize",
-       "params":{"protocolVersion":"2025-03-26",
+       "params":{"protocolVersion":"2025-11-25",
                  "clientInfo":{"name":"curl","version":"1.0"}}}'
 
 # List the tools the server advertises

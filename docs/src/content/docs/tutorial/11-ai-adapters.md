@@ -25,7 +25,8 @@ Add the Atmosphere Spring Boot starter and the adapter module for the framework 
     <version>${project.version}</version>
 </dependency>
 <!-- or atmosphere-langchain4j, atmosphere-adk,
-     atmosphere-embabel, atmosphere-koog, atmosphere-semantic-kernel -->
+     atmosphere-embabel, atmosphere-koog, atmosphere-semantic-kernel,
+     atmosphere-agentscope, atmosphere-spring-ai-alibaba -->
 ```
 
 Zero-extra-dep option: drop the adapter line and let the built-in OpenAI-compatible client in `atmosphere-ai` serve the requests. See the next section for when that's the right choice. Native framework versions Atmosphere is tested against are pinned in the [Runtimes table](#runtimes) two sections below.

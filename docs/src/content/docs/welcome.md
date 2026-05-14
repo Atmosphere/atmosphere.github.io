@@ -69,4 +69,4 @@ Atmosphere is Apache 2.0 and free to use. For teams running it in production, [A
 
 ## Version
 
-This documentation covers the **Atmosphere 4.0.x** release line with JDK 21+, Spring Boot 4.0.5 (Spring Framework 6.2.8), and Quarkus 3.35.2. See [What's New](/docs/whats-new/) for a highlights reel of changes since the 4.0.0 release.
+This documentation covers the **Atmosphere 4.0.x** release line with JDK 21+, Spring Boot 4.0.6, and Quarkus 3.35.2. See [What's New](/docs/whats-new/) for a highlights reel of changes since the 4.0.0 release.

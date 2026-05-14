@@ -109,7 +109,7 @@ The runtime calls `embeddingService.generateEmbeddingAsync(...).block()` inside 
 
 ### VT pinning note
 
-If you run Atmosphere on virtual threads (the default since 4.0) and are pinned to an older `reactor-core` (< 3.7), `Mono.block()` can pin the carrier thread. Spring Boot 4.0.5 ships reactor-core 3.7 which is VT-friendly. Standalone deployments should verify their reactor-core version:
+If you run Atmosphere on virtual threads (the default since 4.0) and are pinned to an older `reactor-core` (< 3.7), `Mono.block()` can pin the carrier thread. Spring Boot 4.0.6 ships reactor-core 3.7 which is VT-friendly. Standalone deployments should verify their reactor-core version:
 
 ```bash
 ./mvnw dependency:tree -pl modules/semantic-kernel | grep reactor-core
