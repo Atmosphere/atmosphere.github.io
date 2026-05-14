@@ -5,7 +5,7 @@ description: "Auto-configuration for Spring Boot 4.0+"
 
 # Spring Boot Integration
 
-Auto-configuration for running Atmosphere on Spring Boot 4.0.5 (Spring Framework 6.2.8). Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
+Auto-configuration for running Atmosphere on Spring Boot 4.0.6. Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
 
 ## Maven Coordinates
 
@@ -91,12 +91,12 @@ All properties are under the `atmosphere.*` prefix:
 - `AtmosphereFramework` -- the framework for programmatic configuration
 - `RoomManager` -- the room API for presence and message history
 - `AtmosphereHealthIndicator` -- Actuator health check (when `spring-boot-health` is on the classpath)
-- `AtmosphereAiAutoConfiguration` -- scans for `@AiEndpoint` / `@Agent` beans and wires the resolved `AgentRuntime` (built-in, Spring AI, LangChain4j, ADK, Embabel, or Koog)
+- `AtmosphereAiAutoConfiguration` -- scans for `@AiEndpoint` / `@Agent` beans and wires the resolved `AgentRuntime` across all nine adapters (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba)
 - `AtmosphereAdminAutoConfiguration` / `AtmosphereActuatorAutoConfiguration` / `AtmosphereAuthAutoConfiguration` -- admin console, actuator metrics, and basic auth (opt-in via `atmosphere.admin.*`, `atmosphere.actuator.*`, `atmosphere.auth.*`)
 
 ## AI Auto-Configuration
 
-When `atmosphere-ai` is on the classpath, the starter auto-discovers the best available `AgentRuntime` via `ServiceLoader` (LangChain4j, Spring AI, ADK, Embabel, Koog, or the built-in OpenAI-compatible client) and scans for `@AiEndpoint`/`@Agent` beans.
+When `atmosphere-ai` is on the classpath, the starter auto-discovers the best available `AgentRuntime` via `ServiceLoader` (any of the nine adapters) and scans for `@AiEndpoint`/`@Agent` beans.
 
 ```yaml
 atmosphere:
@@ -175,7 +175,7 @@ cd samples/spring-boot-chat && ../../mvnw -Pnative package
 ./target/atmosphere-spring-boot-chat-*
 ```
 
-Requires GraalVM JDK 21+ (Spring Boot 4.0.5 / Spring Framework 6.2.8 baseline).
+Requires GraalVM JDK 21+ (Spring Boot 4.0.6 baseline).
 
 ## `@AiEndpoint` annotation surfaces (new in 4.0.36)
 

@@ -167,7 +167,7 @@ atmosphere.admin.mcp-write-tools=true
 
 ## Security
 
-The `ControlAuthorizer` SPI gates write operations. The default implementation allows all operations. In production, bind a concrete authorizer:
+The `ControlAuthorizer` SPI gates write operations. The core admin default is fail-closed (`DENY_ALL`), and Spring Boot / Quarkus auto-configuration use `REQUIRE_PRINCIPAL` as the default baseline when no custom authorizer is supplied. In production, bind a concrete authorizer for role- or scope-aware checks:
 
 ```java
 @Bean

@@ -137,7 +137,11 @@ No frontend code needed — the console is bundled in `atmosphere-spring-boot-st
 
 ## Tools
 
-`@AiTool` methods are callable by the LLM during inference. They work identically across all backends (built-in, Spring AI, LangChain4j, Google ADK, Embabel).
+`@AiTool` methods are callable by the LLM during inference. They work
+identically across the seven tool-capable runtimes (built-in, Spring AI,
+LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel). AgentScope and
+Spring AI Alibaba also ship as `AgentRuntime` adapters, but their current
+SDKs do not expose a native tool-dispatch loop.
 
 ```java
 @AiTool(description = "Query the order database")

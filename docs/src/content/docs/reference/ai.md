@@ -19,19 +19,19 @@ AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `Stre
 
 ## Architecture
 
-Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers — Jetty, Tomcat, Undertow. `AgentRuntime` adapts AI frameworks — Spring AI, LangChain4j, Google ADK, Embabel, and Koog. Same design pattern, same discovery mechanism:
+Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers — Jetty, Tomcat, Undertow. `AgentRuntime` adapts AI frameworks across all nine runtimes (Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba). Same design pattern, same discovery mechanism:
 
 | Concern | Transport layer | AI layer |
 |---------|----------------|----------|
 | SPI interface | `AsyncSupport` | `AgentRuntime` |
-| What it adapts | Web containers (Jetty, Tomcat, Undertow) | AI frameworks (Spring AI, LangChain4j, ADK, Embabel, Koog) |
+| What it adapts | Web containers (Jetty, Tomcat, Undertow) | AI frameworks (all nine `AgentRuntime` adapters) |
 | Discovery | Classpath scanning | `ServiceLoader` |
 | Resolution | Best available container | Highest `priority()` among `isAvailable()` |
 | Initialization | `init(ServletConfig)` | `configure(LlmSettings)` |
 | Core method | `service(req, res)` | `execute(AgentExecutionContext, StreamingSession)` |
 | Fallback | `BlockingIOCometSupport` | Built-in `AgentRuntime` (OpenAI-compatible) |
 
-This is the **Servlet model for AI agents**: write your `@Agent` once, run it on LangChain4j, Google ADK, Spring AI, or standalone — determined by classpath.
+This is the **Servlet model for AI agents**: write your `@Agent` once, run it on any supported `AgentRuntime` — determined by classpath.
 
 ## Quick Start -- @AiEndpoint
 
@@ -43,7 +43,7 @@ public class MyChatBot {
 
     @Prompt
     public void onPrompt(String message, StreamingSession session) {
-        session.stream(message);  // auto-detects Spring AI, LangChain4j, ADK, Embabel, or built-in
+        session.stream(message);  // auto-detects the best available AgentRuntime from classpath
     }
 }
 ```
@@ -200,7 +200,11 @@ public interface AiConversationMemory {
 
 ## @AiTool -- Framework-Agnostic Tool Calling
 
-Declare tools with `@AiTool` and they work with any AI backend -- Spring AI, LangChain4j, Google ADK. No framework-specific annotations needed.
+Declare tools with `@AiTool` and they work with every tool-capable runtime:
+Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, and Semantic
+Kernel. No framework-specific annotations are needed. AgentScope and Spring
+AI Alibaba are still `AgentRuntime` adapters, but their current SDKs do not
+expose a native tool-dispatch loop for Atmosphere to wrap.
 
 ### Defining Tools
 

@@ -88,6 +88,8 @@ var store = SqliteSessionStore.inMemory();                     // for testing
 ```
 
 Parent directories are created automatically if they do not exist.
+The `spring-boot-durable-sessions` sample uses the custom-path form with
+`Path.of("data/sessions.db")`.
 
 ### RedisSessionStore
 

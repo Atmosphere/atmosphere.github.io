@@ -5,7 +5,7 @@ sidebar:
   order: 14
 ---
 
-The `atmosphere-spring-boot-starter` module provides auto-configuration for Spring Boot 4.0.5 (Spring Framework 6.2.8). Add it as a dependency and your `@ManagedService` classes work out of the box.
+The `atmosphere-spring-boot-starter` module provides auto-configuration for Spring Boot 4.0.6. Add it as a dependency and your `@ManagedService` classes work out of the box.
 
 ## Dependency
 
@@ -145,8 +145,8 @@ Configure Atmosphere via `application.properties` or `application.yml` under the
 | `atmosphere.init-params.*` | (none) | Additional Atmosphere init parameters |
 | `atmosphere.enabled` | `true` | Enable/disable the auto-configuration |
 | `atmosphere.durable-sessions.enabled` | `false` | Enable durable sessions |
-| `atmosphere.durable-sessions.session-ttl-minutes` | `1440` | Durable session TTL |
-| `atmosphere.durable-sessions.cleanup-interval-seconds` | `60` | Cleanup interval |
+| `atmosphere.durable-sessions.session-ttl` | `1440m` | Durable session TTL |
+| `atmosphere.durable-sessions.cleanup-interval` | `60s` | Cleanup interval |
 | `atmosphere.grpc.enabled` | `false` | Enable gRPC transport |
 | `atmosphere.grpc.port` | `9090` | gRPC server port |
 | `atmosphere.grpc.enable-reflection` | `true` | Enable gRPC reflection |
@@ -284,7 +284,7 @@ This pattern works because `RoomManager` is exposed as a Spring bean by the auto
 
 **Object factory order**: The starter sets the `SpringAtmosphereObjectFactory` on the `AtmosphereFramework` **before** calling `init()`. This is critical -- if the object factory is set after init, Atmosphere's annotation processors will not be able to inject Spring beans into `@ManagedService` instances.
 
-**Spring Boot 4.0 target**: The starter is built for Spring Boot 4.0.5 and Spring Framework 6.2.8 (as managed by the Spring Boot 4.0.5 BOM). It overrides the parent POM's SLF4J/Logback versions for compatibility.
+**Spring Boot 4.0 target**: The starter is built for Spring Boot 4.0.6 and uses the dependency versions managed by the Spring Boot 4.0.6 BOM. It overrides the parent POM's SLF4J/Logback versions for compatibility.
 
 **BroadcasterFactory is not a Spring bean**: The starter deliberately does not expose `BroadcasterFactory` as a Spring bean. It is available via Atmosphere's `@Inject` inside `@ManagedService` classes, or programmatically via `framework.getAtmosphereConfig().getBroadcasterFactory()`.
 

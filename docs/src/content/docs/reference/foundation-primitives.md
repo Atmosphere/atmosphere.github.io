@@ -1,16 +1,16 @@
 ---
 title: Foundation Primitives
-description: The eight runtime-agnostic primitives every Java AI agent needs, introduced in Atmosphere 2.x
+description: The eight runtime-agnostic primitives every Java AI agent needs, introduced in Atmosphere 4.x
 ---
 
-Atmosphere 2.x ships eight foundation primitives — named nouns every Java
+Atmosphere 4.x ships eight foundation primitives — named nouns every Java
 AI agent needs, regardless of what the agent does, working across all
-seven hosted runtimes (Built-in · Spring AI · LangChain4j · Google ADK ·
-Koog · Semantic Kernel · Embabel).
+nine runtimes (Built-in · Spring AI · LangChain4j · Google ADK · Koog ·
+Semantic Kernel · Embabel · AgentScope · Spring AI Alibaba).
 
 The governing analogy is Atmosphere 1.0. 1.0 didn't build a chat app; it
 built `AtmosphereResource`, `Broadcaster`, `CometSupport`, and the rest —
-nouns every real-time Java app needed. Atmosphere 2.x does the same for AI
+nouns every real-time Java app needed. Atmosphere 4.x does the same for AI
 agents.
 
 ## The eight primitives

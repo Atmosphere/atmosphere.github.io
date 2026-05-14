@@ -137,7 +137,7 @@ your skill file wired in.
 ### Swap the AI Runtime (`--runtime`)
 
 Atmosphere's `AgentRuntime` SPI picks the highest-priority adapter on
-the classpath, so you can switch LLM providers by changing one
+the classpath, so you can switch AI runtime adapters by changing one
 dependency. The CLI does that for you:
 
 ```bash
@@ -206,7 +206,6 @@ always in sync.
 | `spring-boot-ai-tools` | Framework-agnostic `@AiTool` tool calling | 8080 |
 | `spring-boot-rag-chat` | RAG agent over Spring AI VectorStore | 8080 |
 | `quarkus-ai-chat` | Same `@AiEndpoint` shape as `spring-boot-ai-chat` on Quarkus + LangChain4j bridge | 18810 |
-| `spring-boot-rag-chat` | RAG with Spring AI vector store | 8080 |
 
 ### Agents & Coordination
 
