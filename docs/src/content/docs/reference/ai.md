@@ -641,24 +641,36 @@ BE=BUDGET_ENFORCEMENT, CS=CONFIDENCE_SCORES, PSV=PASSIVATION.
 | Google ADK | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
 | Embabel | 100 | Y | Y | Y | Y | Y | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
 | JetBrains Koog | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
-| Alibaba AgentScope | 100 | Y |  | Y | Y |  | Y |  |  |  |  |  | Y | Y |  | Y | Y | Y |
-| Spring AI Alibaba | 100 | Y¹ |  | Y | Y |  | Y |  |  |  |  |  |  | Y |  | Y² | Y | Y |
+| Alibaba AgentScope | 100 | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
+| Spring AI Alibaba | 100 | Y¹ | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
 | Microsoft Semantic Kernel | 100 | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
 
 ¹ Spring AI Alibaba emits its final reply as one Atmosphere stream chunk, but
 the upstream `ReactAgent.call()` path is buffered rather than token-by-token.
 
-² Spring AI Alibaba participates in wall-clock budget enforcement. Token and
-step budget breaches require token-usage metadata, which that SDK path does not
-surface today.
-
 **How structured output works:** `AiPipeline` wraps the streaming session with `StructuredOutputCapturingSession` and augments the system prompt with JSON-schema instructions before the runtime runs. Any runtime that honors `SYSTEM_PROMPT` therefore gets `STRUCTURED_OUTPUT` automatically via the pipeline — no per-runtime adapter code required. `BuiltInAgentRuntime` additionally enables native `jsonMode` on the OpenAI-compatible client for provider-level JSON enforcement on top of the pipeline wrap. Source: `modules/ai/src/main/java/org/atmosphere/ai/pipeline/AiPipeline.java:128-135`, `modules/ai/src/main/java/org/atmosphere/ai/llm/BuiltInAgentRuntime.java:72-74`.
 
-**Capability gaps:** AgentScope and Spring AI Alibaba do not declare
-`TOOL_CALLING` or `TOOL_APPROVAL` because their current SDK surfaces do not
-provide a native tool-dispatch loop that maps cleanly to Atmosphere's
-`@AiTool` protocol. Spring AI Alibaba also omits `TOKEN_USAGE` because
-`ReactAgent.call()` returns an `AssistantMessage` without usage metadata.
+**Tool-dispatch bridges:** every runtime that declares `TOOL_CALLING` routes
+every Atmosphere `@AiTool` invocation through a runtime-native bridge that
+calls `ToolExecutionHelper.executeWithApproval`, so `@RequiresApproval` gates
+fire uniformly. AgentScope ships `AgentScopeToolBridge`, Spring AI Alibaba
+ships `SpringAiAlibabaToolBridge`, Semantic Kernel ships
+`SemanticKernelToolBridge`, Embabel ships `EmbabelToolBridge`, Koog ships
+`AtmosphereToolBridge`, and the JDK runtimes (Built-in, Spring AI,
+LangChain4j, ADK) wire their tool callbacks through the shared helper
+directly.
+
+**Spring AI Alibaba token usage:** `ReactAgent.call()` returns an
+`AssistantMessage` without usage metadata, so Atmosphere wraps the configured
+Spring AI `ChatModel` bean in a `UsageCapturingChatModel` decorator at
+auto-configuration time. Every underlying `ChatModel.call(Prompt)` performed
+by the ReAct graph during a single dispatch accumulates
+`ChatResponseMetadata.getUsage()` into a per-thread collector; the runtime
+emits one typed `TokenUsage` record via `session.usage(...)` after the agent
+returns. Token-based `AiBudget` breaches therefore trip uniformly alongside
+wall-clock breaches. Custom `ReactAgent` beans that bypass the auto-config
+also bypass the wrapper — see `AtmosphereSpringAiAlibabaAutoConfiguration`
+for the wrapping point.
 
 ## Cross-Runtime Contract Tests (TCK)
 

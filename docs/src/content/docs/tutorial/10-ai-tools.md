@@ -1,6 +1,6 @@
 ---
 title: "@AiTool -- Framework-Agnostic Tool Calling"
-description: "Declare tools once with @AiTool and @Param, and they work across Atmosphere's seven tool-capable runtimes"
+description: "Declare tools once with @AiTool and @Param, and they work across Atmosphere's nine AgentRuntime adapters"
 sidebar:
   order: 10
 ---
@@ -503,7 +503,7 @@ The canonical tool-calling sample is:
 
 - **[`samples/spring-boot-ai-tools/`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools)** — uses the built-in LLM client with `@AiTool` methods (`AssistantTools`), conversation memory, and the `CostMeteringInterceptor`. Run with: `./mvnw spring-boot:run -pl samples/spring-boot-ai-tools`
 
-Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` class works with any of the seven tool-capable runtimes (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel) by swapping the adapter dependency. AgentScope and Spring AI Alibaba also ship as `AgentRuntime` adapters but do not currently declare `TOOL_CALLING` — their SDKs lack a native tool-dispatch loop in the current releases.
+Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` class works with any of the nine tool-capable runtimes (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba) by swapping the adapter dependency. Every runtime ships a dedicated tool bridge (`AgentScopeToolBridge` and `SpringAiAlibabaToolBridge` close the matrix) that routes every invocation through `ToolExecutionHelper.executeWithApproval`, so `@RequiresApproval` gates fire uniformly across all nine.
 
 ## Summary
 
