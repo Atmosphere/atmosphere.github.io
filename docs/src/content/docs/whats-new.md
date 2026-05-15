@@ -18,6 +18,51 @@ The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.35.2**,
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
 
+## 4.0.46-SNAPSHOT — Enterprise console + capability parity
+
+The current development line closes the seven gist gaps that the
+`feat/ai-gap-fixes` review flagged. Highlights:
+
+- **Spring AI Alibaba: unconditional `TOOL_CALLING` / `TOOL_APPROVAL` /
+  `TOKEN_USAGE`.** `UsageCapturingChatModel` wraps the configured Spring
+  AI `ChatModel` bean at auto-configuration time; the per-thread
+  accumulator captures `ChatResponseMetadata.getUsage()` across every
+  step of the ReAct graph and emits one `TokenUsage` record per
+  dispatch. Tool calling is no longer gated on `staticChatModel != null`
+  — `SpringAiAlibabaToolBridge` runs on every tool-bearing request.
+  Token-based `AiBudget` breaches now trip uniformly alongside
+  wall-clock budgets.
+- **RAG vector-store matrix.** Three new direct connectors —
+  `PgVectorContextProvider` (JDBC + pgvector), `QdrantContextProvider`
+  (REST), `PineconeContextProvider` (REST) — ship as zero-dep
+  alternatives to the Spring AI / LangChain4j SPI bridges. See
+  [RAG reference](/docs/reference/rag/) for the full matrix
+  including Weaviate, Milvus, Chroma, Elasticsearch, Redis Stack,
+  MongoDB Atlas, OpenSearch, and Cassandra reachable via the bridges.
+- **Workflow authoring inside the admin control plane.** New
+  `WorkflowManifest` + `WorkflowStore` SPI + `WorkflowController` plus
+  a vanilla-JS authoring UI at `/atmosphere/admin/workflow.html`.
+  Saves through `ControlAuthorizer` + audit log; optimistic
+  concurrency via `version` field rejects stale writes with `409`.
+- **Eval dashboard inside the admin control plane.** New `EvalRun` +
+  `EvalRunStore` SPI + `EvalController` plus dashboard UI at
+  `/atmosphere/admin/evals.html` that aggregates pass-rate per
+  `GoldenEvalBaseline` and tabulates recent runs submitted by CI.
+- **`atmosphere-admin-bundle` single-dep aggregator.** One Maven
+  dependency pulls in `spring-boot-starter` + `admin` + `ai` +
+  `coordinator` + `agent` + `rag` + `checkpoint` + `durable-sessions`,
+  giving operators the dashboard, journal flow viewer, workflow
+  authoring, eval dashboard, and governance decision viewer in a
+  single drop-in artifact.
+- **Five flagship templates promoted** (`rag`, `ai-tools`,
+  `guarded-agent`, `coding-agent`, `ms-governance`) in
+  `samples/README.md` and `cli/README.md` — the canonical enterprise
+  agent shapes most teams reach for first.
+- **`docs/runtime-selection.md` decision tree.** Question-by-question
+  walkthrough for picking among the nine `AgentRuntime` adapters,
+  mirrored on the website at
+  [Runtime Selection](/docs/reference/runtime-selection/).
+
 ## 4.0.43 — 2026-05-06
 
 - **Cross-tab `@AiEndpoint` isolation fix** — `AiEndpointHandler.onRequest`
@@ -73,11 +118,12 @@ This page is a highlights reel. For the per-patch history, see the
   structured output, progress events, conversation memory, per-request retry):
   **Built-in**, **LangChain4j**, **Spring AI**, **Google ADK**, **Embabel**,
   **JetBrains Koog**, **Microsoft Semantic Kernel**, **Alibaba AgentScope**,
-  and **Spring AI Alibaba**. Tool calling reaches the seven runtimes whose
-  underlying SDK exposes a native dispatch loop (AgentScope and Spring AI
-  Alibaba lack one in the current SDK releases). The built-in runtime gained
-  full OpenAI-compatible tool calling (max 5 rounds), so `@AiTool` works
-  with zero framework dependencies.
+  and **Spring AI Alibaba**. Tool calling now reaches all nine runtimes —
+  each ships a dedicated tool bridge (`AgentScopeToolBridge` and
+  `SpringAiAlibabaToolBridge` close the matrix) that routes every
+  invocation through `ToolExecutionHelper.executeWithApproval`. The
+  built-in runtime gained full OpenAI-compatible tool calling
+  (max 5 rounds), so `@AiTool` works with zero framework dependencies.
 - **Auto-detection** via `ServiceLoader` — the highest-`priority()` runtime that
   reports `isAvailable()` wins. The AI Console subtitle and `/api/console/info`
   report the active runtime.

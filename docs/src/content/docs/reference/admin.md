@@ -53,6 +53,24 @@ Operational actions behind the dashboard:
 - **Cancel** an in-flight A2A task
 - All write operations appear in the **Audit Log** with timestamp, action, target, principal, and success/failure status.
 
+### Workflow Tab — `/atmosphere/admin/workflow.html`
+Visual JSON editor for `WorkflowManifest` records: list / create / edit / delete
+workflows the runtime executes through `@Coordinator` + `AgentFleet`. The form
+saves to `/api/admin/workflow` via `WorkflowController`, which routes through
+`ControlAuthorizer` and writes an entry to the control audit log on every save
+or delete. The default `InMemoryWorkflowStore` persists for the lifetime of the
+JVM; production deployments supply a JDBC- or Redis-backed `WorkflowStore` bean
+that the auto-config picks up automatically.
+
+### Evals Tab — `/atmosphere/admin/evals.html`
+Eval dashboard: aggregates pass-rate per `GoldenEvalBaseline` and tabulates
+recent runs submitted by CI. A pipeline `POST`s an `EvalRun` JSON after each
+LLM-as-judge run; the dashboard surfaces verdict, judge model, agent version,
+and the raw judge response without leaving the control plane. Same
+`ControlAuthorizer` + audit-log integration as the workflow surface;
+`InMemoryEvalRunStore` is a bounded ring buffer (500 runs per baseline, oldest
+evicted) and the SPI is `EvalRunStore`.
+
 ## REST API
 
 All endpoints are under `/api/admin/`.
@@ -128,6 +146,46 @@ curl -X DELETE http://localhost:8080/api/admin/resources/{uuid}
 curl -X POST http://localhost:8080/api/admin/tasks/{taskId}/cancel
 ```
 
+### Workflow Authoring
+
+```bash
+# List workflows
+curl http://localhost:8080/api/admin/workflow
+
+# Fetch one
+curl http://localhost:8080/api/admin/workflow/{id}
+
+# Create / update (requires atmosphere.admin.http-write-enabled=true + workflow.write grant)
+curl -X POST http://localhost:8080/api/admin/workflow \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"support","name":"Support Bot","version":1,"createdAt":"…","updatedAt":"…","nodes":[…],"edges":[…]}'
+
+# Delete (requires workflow.delete grant)
+curl -X DELETE http://localhost:8080/api/admin/workflow/{id}
+```
+
+Saves use optimistic concurrency — the caller's `version` must equal
+`existing.version + 1` or the server returns `409 Conflict` with the stored
+version in the response.
+
+### Eval Dashboard
+
+```bash
+# Recent runs (most recent first)
+curl http://localhost:8080/api/admin/evals/runs
+
+# Filter to a baseline
+curl 'http://localhost:8080/api/admin/evals/runs?baseline=intent-support'
+
+# Pass-rate summary across all baselines
+curl http://localhost:8080/api/admin/evals/baselines
+
+# Record a CI run (requires evals.write grant)
+curl -X POST http://localhost:8080/api/admin/evals/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"ci-2026-05-15-1734","baseline":"intent-support","timestamp":"…","agentVersion":"4.0.46","prompt":"…","judgeResponse":"…","verdict":true,"passed":true,"judgeModel":"gpt-4o-mini","scores":{"relevance":0.9}}'
+```
+
 ## WebSocket Event Stream
 
 Connect to `/atmosphere/admin/events` to receive real-time events via WebSocket. The dashboard uses this endpoint internally — it eats its own dog food.
@@ -186,3 +244,26 @@ public ControlAuthorizer controlAuthorizer() {
 | `atmosphere.admin.enabled` | `true` | Master kill switch |
 | `atmosphere.admin.mcp-tools` | `true` | Register read MCP tools |
 | `atmosphere.admin.mcp-write-tools` | `false` | Register write MCP tools (dangerous) |
+| `atmosphere.admin.http-write-enabled` | `false` | Gate for mutating REST endpoints (workflow, evals, governance kill switch, broadcast, disconnect, cancel) |
+
+## Single-dep Enterprise Console Bundle
+
+Prefer adding `atmosphere-admin-bundle` instead of cherry-picking
+modules — one Maven dependency pulls in `spring-boot-starter` + `admin` +
+`ai` + `coordinator` + `agent` + `rag` + `checkpoint` +
+`durable-sessions` so an operator gets the dashboard, journal flow viewer,
+workflow authoring, eval dashboard, and governance decision viewer with
+no further wiring.
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-admin-bundle</artifactId>
+    <version>${atmosphere.version}</version>
+</dependency>
+```
+
+The bundle deliberately does not pin an `AgentRuntime` adapter or a
+vector-store driver — operators pick those independently. See
+[Runtime Selection](/docs/reference/runtime-selection/) for the
+decision tree.

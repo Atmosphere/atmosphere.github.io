@@ -609,13 +609,20 @@ Enable auto-discovery to pick up all `ContextProvider` implementations on the cl
     autoDiscoverContextProviders = true)
 ```
 
-Three built-in providers are available:
+Six built-in providers are available — three direct connectors that
+talk to the backend natively, plus the in-memory provider for tests and
+two SPI bridges that reach every store Spring AI or LangChain4j supports
+(see [RAG reference](/docs/reference/rag/) for the full reachability
+matrix):
 
 | Provider | Module | Description |
 |----------|--------|-------------|
 | `InMemoryContextProvider` | `atmosphere-rag` | Zero-dependency, word-overlap scoring |
-| `SpringAiVectorStoreContextProvider` | `atmosphere-rag` | Bridges Spring AI vector stores |
-| `LangChain4jEmbeddingStoreContextProvider` | `atmosphere-rag` | Bridges LangChain4j retrievers |
+| `SpringAiVectorStoreContextProvider` | `atmosphere-rag` | Bridges Spring AI `VectorStore` (Pinecone, pgvector, Weaviate, Milvus, …) |
+| `LangChain4jEmbeddingStoreContextProvider` | `atmosphere-rag` | Bridges LangChain4j `EmbeddingStore` |
+| `PgVectorContextProvider` | `atmosphere-rag` | Direct Postgres + pgvector via JDBC (no vendor SDK) |
+| `QdrantContextProvider` | `atmosphere-rag` | Direct Qdrant REST API (no vendor SDK) |
+| `PineconeContextProvider` | `atmosphere-rag` | Direct Pinecone REST API (no vendor SDK) |
 
 The `ContextProvider` SPI supports the full RAG shaping pipeline:
 

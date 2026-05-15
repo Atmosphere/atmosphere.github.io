@@ -98,6 +98,8 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'AI / LLM', slug: 'reference/ai' },
+            { label: 'Runtime Selection', slug: 'reference/runtime-selection' },
+            { label: 'RAG', slug: 'reference/rag' },
             { label: 'Embeddings', slug: 'agents/embeddings' },
             { label: 'AgentLifecycleListener', slug: 'reference/lifecycle-listener' },
             { label: 'ExecutionHandle', slug: 'reference/execution-handle' },
