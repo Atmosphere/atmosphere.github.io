@@ -5,7 +5,7 @@ description: "React Native hooks with EventSource polyfill"
 
 # React Native / Expo Guide
 
-atmosphere.js `5.0.22` supports React Native and Expo via the `atmosphere.js/react-native` subpath export. Tested baseline: Expo SDK 55, React Native 0.83, React 19.2 (see `samples/spring-boot-ai-classroom/expo-client/package.json`).
+atmosphere.js `5.0.24` supports React Native and Expo via the `atmosphere.js/react-native` subpath export. Tested baseline: Expo SDK 55, React Native 0.83, React 19.2 (see `samples/spring-boot-ai-classroom/expo-client/package.json`).
 
 ## Installation
 
@@ -131,6 +131,19 @@ const { fullText, isStreaming, isConnected, send, reset, close } = useStreamingR
 ```
 
 Sends are suppressed when the device is offline.
+
+### `useChatRN`
+
+AI-SDK-style message/input state layered on `useStreamingRN`.
+
+```typescript
+const { messages, input, setInput, handleSubmit, isLoading } = useChatRN({
+  request: { url: 'https://example.com/ai/chat', transport: 'websocket' },
+});
+```
+
+`append()`, `reload()`, `stop()`, and `reset()` are also available for custom
+chat UIs.
 
 ### `useAtmosphereCore`
 

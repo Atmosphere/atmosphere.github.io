@@ -621,41 +621,44 @@ The `AiEvent` sealed interface provides 15 structured event types emitted via `s
 
 ## Capability Matrix
 
-Each runtime declares capabilities via `AiCapability`. The framework uses these for model routing, tool negotiation, and feature discovery.
+Each runtime declares capabilities via `AiCapability`. The framework uses
+these flags for model routing, tool negotiation, and feature discovery. The
+table below mirrors the nine-runtime snapshot pinned by each runtime's
+`expectedCapabilities()` contract test; `Y` means the runtime declares the
+capability and the contract tests assert it.
 
-### Guaranteed by Core
+Legend: TS=TEXT_STREAMING, TC=TOOL_CALLING, SO=STRUCTURED_OUTPUT,
+SP=SYSTEM_PROMPT, AO=AGENT_ORCHESTRATION, CM=CONVERSATION_MEMORY,
+TA=TOOL_APPROVAL, V=VISION, A=AUDIO, MM=MULTI_MODAL, PC=PROMPT_CACHING,
+TU=TOKEN_USAGE, PRR=PER_REQUEST_RETRY, TCD=TOOL_CALL_DELTA,
+BE=BUDGET_ENFORCEMENT, CS=CONFIDENCE_SCORES, PSV=PASSIVATION.
 
-Available on **all** runtimes:
+| Runtime | Priority | TS | TC | SO | SP | AO | CM | TA | V | A | MM | PC | TU | PRR | TCD | BE | CS | PSV |
+|---------|---------:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:-:|:-:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Built-in | 0 | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
+| Spring AI | 100 | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| LangChain4j | 100 | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| Google ADK | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| Embabel | 100 | Y | Y | Y | Y | Y | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| JetBrains Koog | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| Alibaba AgentScope | 100 | Y |  | Y | Y |  | Y |  |  |  |  |  | Y | Y |  | Y | Y | Y |
+| Spring AI Alibaba | 100 | Y¹ |  | Y | Y |  | Y |  |  |  |  |  |  | Y |  | Y² | Y | Y |
+| Microsoft Semantic Kernel | 100 | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
 
-| Capability | Description |
-|-----------|-------------|
-| `TEXT_STREAMING` | Basic text streaming |
-| `SYSTEM_PROMPT` | System prompt support |
+¹ Spring AI Alibaba emits its final reply as one Atmosphere stream chunk, but
+the upstream `ReactAgent.call()` path is buffered rather than token-by-token.
 
-### Runtime-Dependent
-
-| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog | SK |
-|-----------|----------|-------------|-----------|-----|---------|------|----|
-| `TOOL_CALLING` | Y | Y | Y | Y | | Y | |
-| `STRUCTURED_OUTPUT` | Y | Y | Y | Y | Y | Y | Y |
-| `CONVERSATION_MEMORY` | | | | Y | | Y | Y |
-| `TOOL_APPROVAL` | Y | Y | Y | Y | | Y | |
-| `VISION` | Y | Y | Y | Y | | | |
-| `AUDIO` | | Y | Y | Y | | | |
-| `MULTI_MODAL` | Y | Y | Y | Y | | | |
-| `PROMPT_CACHING` | Y | Y | Y | | | | |
-| `TOKEN_USAGE` | Y | Y | Y | Y | Y | Y | Y |
+² Spring AI Alibaba participates in wall-clock budget enforcement. Token and
+step budget breaches require token-usage metadata, which that SDK path does not
+surface today.
 
 **How structured output works:** `AiPipeline` wraps the streaming session with `StructuredOutputCapturingSession` and augments the system prompt with JSON-schema instructions before the runtime runs. Any runtime that honors `SYSTEM_PROMPT` therefore gets `STRUCTURED_OUTPUT` automatically via the pipeline — no per-runtime adapter code required. `BuiltInAgentRuntime` additionally enables native `jsonMode` on the OpenAI-compatible client for provider-level JSON enforcement on top of the pipeline wrap. Source: `modules/ai/src/main/java/org/atmosphere/ai/pipeline/AiPipeline.java:128-135`, `modules/ai/src/main/java/org/atmosphere/ai/llm/BuiltInAgentRuntime.java:72-74`.
 
-**Capability gaps:**
-- `EmbabelAgentRuntime` does not advertise `TOOL_CALLING`: Embabel agents expose skills via their own `@Agent` API, not free-form tool calling. Source: `modules/embabel/src/main/kotlin/org/atmosphere/embabel/EmbabelAgentRuntime.kt`.
-
-### Experimental
-
-| Capability | Built-in | LangChain4j | Spring AI | ADK | Embabel | Koog | SK |
-|-----------|----------|-------------|-----------|-----|---------|------|----|
-| `AGENT_ORCHESTRATION` | | | | Y | Y | Y | |
+**Capability gaps:** AgentScope and Spring AI Alibaba do not declare
+`TOOL_CALLING` or `TOOL_APPROVAL` because their current SDK surfaces do not
+provide a native tool-dispatch loop that maps cleanly to Atmosphere's
+`@AiTool` protocol. Spring AI Alibaba also omits `TOKEN_USAGE` because
+`ReactAgent.call()` returns an `AssistantMessage` without usage metadata.
 
 ## Cross-Runtime Contract Tests (TCK)
 
@@ -688,7 +691,7 @@ Add `atmosphere-ai-test` as a test dependency and extend the base class:
 </dependency>
 ```
 
-The `RecordingSession` test double captures all events, text chunks, metadata, and errors for assertion. Currently enforced on: ADK, LangChain4j, Spring AI.
+The `RecordingSession` test double captures all events, text chunks, metadata, and errors for assertion. The contract suite is implemented for all nine runtime adapters.
 
 ## Samples
 

@@ -13,7 +13,7 @@ pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Nativ
 support, and major compatibility refreshes.
 
 The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.35.2**,
-**Jackson 3.1.1**, and **atmosphere.js 5.0.22**, and requires **JDK 21** as a minimum.
+**Jackson 3.1.1**, and **atmosphere.js 5.0.24**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
@@ -133,9 +133,13 @@ This page is a highlights reel. For the per-patch history, see the
 - **`StructuredOutputParser` SPI** — generate JSON Schema instructions from Java
   classes, parse LLM output into typed objects. `JacksonStructuredOutputParser`
   works with any model.
-- **Enhanced RAG** — `ContextProvider.transformQuery()` and `rerank()` enable
-  query rewriting and result re-ranking without a custom pipeline;
-  `InMemoryContextProvider` gives a zero-dependency provider for development.
+- **Enhanced RAG** — `ContextProvider.transformQuery()`, `filter()`,
+  `rerank()`, and `postProcess()` cover query rewriting, metadata/tenant
+  filtering, result re-ranking, and final context shaping without a custom
+  pipeline. Prompt injection uses `ContextProvider.formatCitation()` so chunk
+  metadata (`source_document`, `chunk_index`, `chunk_start`, `chunk_end`) is
+  visible to the model; `InMemoryContextProvider` gives a zero-dependency
+  provider for development.
 - **First-class identity fields** — `AiRequest` carries `userId`, `sessionId`,
   `agentId`, and `conversationId` as explicit fields instead of an untyped
   `hints()` map.
@@ -400,15 +404,15 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
 
 ## Client Libraries
 
-- **atmosphere.js 5.0.22** — TypeScript client with no runtime dependencies.
+- **atmosphere.js 5.0.24** — TypeScript client with no runtime dependencies.
   ESM + CJS + IIFE bundles, WebSocket with configurable fallback to SSE, HTTP
   streaming, or long-polling. See [atmosphere.js](/docs/clients/javascript/).
 - **React, Vue, Svelte hooks** — `useAtmosphere`, `useRoom`, `usePresence`,
-  `useStreaming` via `atmosphere.js/react`, `/vue`, and `/svelte`. Shared chat
-  components via `atmosphere.js/chat`.
-- **React Native / Expo** — `useAtmosphere` React Native hook with an
-  `EventSource` polyfill, NetInfo injection, and markdown rendering for mobile
-  AI chat. See [React Native](/docs/clients/react-native/).
+  `useStreaming`, and AI-SDK-style chat state via `useChat` /
+  `createChatStore`. Shared chat components ship through `atmosphere.js/chat`.
+- **React Native / Expo** — `useAtmosphereRN`, `useStreamingRN`, and
+  `useChatRN` with an `EventSource` polyfill, NetInfo injection, and markdown
+  rendering for mobile AI chat. See [React Native](/docs/clients/react-native/).
 - **wAsync 4.0** — the Java client rewritten on `java.net.http` with gRPC
   support. See [Java Client](/docs/clients/java/).
 

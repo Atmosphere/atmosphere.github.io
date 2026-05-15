@@ -204,7 +204,7 @@ The client attaches the following headers (or query parameters) to every request
 
 | Header / Query Param | Description |
 |----------------------|-------------|
-| `X-Atmosphere-Framework` | The Atmosphere client version (e.g., `5.0.22`) |
+| `X-Atmosphere-Framework` | The Atmosphere client version (e.g., `5.0.24`) |
 | `X-Atmosphere-Transport` | The transport in use: `webtransport`, `websocket`, `sse`, `long-polling`, `streaming`, or `close` |
 | `X-Atmosphere-tracking-id` | A UUID that uniquely identifies this client. Initially `0`; the server assigns the real value on first response |
 | `X-Cache-Date` | Timestamp for cache coordination |
@@ -220,7 +220,7 @@ The client attaches the following headers (or query parameters) to every request
 A typical first request on the wire looks like:
 
 ```
-GET /chat?X-Atmosphere-tracking-id=0&X-Atmosphere-Framework=5.0.22
+GET /chat?X-Atmosphere-tracking-id=0&X-Atmosphere-Framework=5.0.24
     &X-Atmosphere-Transport=websocket&X-atmo-protocol=true HTTP/1.1
 Host: localhost:8080
 ```

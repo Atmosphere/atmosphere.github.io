@@ -5,7 +5,7 @@ description: "TypeScript client with React, Vue, and Svelte hooks"
 
 # atmosphere.js -- TypeScript Client
 
-TypeScript client for the Atmosphere Framework (currently `5.0.22`). Supports WebTransport/HTTP3, WebSocket, SSE, HTTP Streaming, and Long-Polling transports with first-class React, Vue, and Svelte hooks.
+TypeScript client for the Atmosphere Framework (currently `5.0.24`). Supports WebTransport/HTTP3, WebSocket, SSE, HTTP Streaming, and Long-Polling transports with first-class React, Vue, and Svelte hooks.
 
 ## npm Coordinates
 
@@ -35,10 +35,10 @@ The package ships ESM, CommonJS, and TypeScript declarations. Framework integrat
 
 ```typescript
 import { Atmosphere } from 'atmosphere.js';
-import { useAtmosphere, useStreaming, useRoom, usePresence } from 'atmosphere.js/react';
-import { useAtmosphere, useStreaming, useRoom } from 'atmosphere.js/vue';
-import { createAtmosphereStore, createStreamingStore, createRoomStore } from 'atmosphere.js/svelte';
-import { useAtmosphereRN, useStreamingRN, setupReactNative } from 'atmosphere.js/react-native';
+import { useAtmosphere, useStreaming, useChat, useRoom, usePresence } from 'atmosphere.js/react';
+import { useAtmosphere, useStreaming, useChat, useRoom } from 'atmosphere.js/vue';
+import { createAtmosphereStore, createStreamingStore, createChatStore, createRoomStore } from 'atmosphere.js/svelte';
+import { useAtmosphereRN, useStreamingRN, useChatRN, setupReactNative } from 'atmosphere.js/react-native';
 ```
 
 ## Core API
@@ -56,7 +56,7 @@ const atm = new Atmosphere({
   fallbackTransport: 'long-polling',
 });
 
-atm.version;       // '5.0.22'
+atm.version;       // '5.0.24'
 atm.closeAll();    // Close every active subscription
 atm.getSubscriptions();  // Map<string, Subscription>
 ```
@@ -384,6 +384,28 @@ function AiChat() {
 }
 ```
 
+### useChat
+
+AI-SDK-style message/input state layered on `useStreaming`:
+
+```tsx
+import { useChat } from 'atmosphere.js/react';
+
+function AiChatForm() {
+  const { messages, input, setInput, handleSubmit, isLoading } = useChat({
+    request: { url: '/ai/chat', transport: 'websocket' },
+  });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {messages.map((message) => <p key={message.id}>{message.content}</p>)}
+      <input value={input} onChange={(event) => setInput(event.target.value)} />
+      <button disabled={isLoading}>Send</button>
+    </form>
+  );
+}
+```
+
 ## Vue Composables
 
 Vue composables do not require a provider -- they create or accept an Atmosphere instance directly.
@@ -450,6 +472,26 @@ const { fullText, isStreaming, send, reset } = useStreaming({
   <button @click="send('What is Atmosphere?')">Ask</button>
   <p>{{ fullText }}</p>
   <span v-if="isStreaming">Generating...</span>
+</template>
+```
+
+### useChat
+
+```vue
+<script setup lang="ts">
+import { useChat } from 'atmosphere.js/vue';
+
+const { messages, input, handleSubmit, isLoading } = useChat({
+  request: { url: '/ai/chat', transport: 'websocket' },
+});
+</script>
+
+<template>
+  <form @submit="handleSubmit">
+    <p v-for="message in messages" :key="message.id">{{ message.content }}</p>
+    <input v-model="input" />
+    <button :disabled="isLoading">Send</button>
+  </form>
 </template>
 ```
 
@@ -520,6 +562,24 @@ Svelte integrations use the store pattern -- each factory returns a Svelte-compa
 {#if $store.isStreaming}<span>Generating...</span>{/if}
 ```
 
+### createChatStore
+
+```svelte
+<script>
+  import { createChatStore } from 'atmosphere.js/svelte';
+
+  const { store: chat, append, reset } = createChatStore({
+    request: { url: '/ai/chat', transport: 'websocket' },
+  });
+</script>
+
+{#each $chat.messages as message}
+  <p>{message.content}</p>
+{/each}
+<button on:click={() => append('What is Atmosphere?')}>Ask</button>
+<button on:click={reset}>Reset</button>
+```
+
 ## AI Streaming Wire Protocol
 
 The server sends JSON messages using the Atmosphere AI streaming protocol:
@@ -532,7 +592,9 @@ The server sends JSON messages using the Atmosphere AI streaming protocol:
 {"type": "error",    "data": "Rate limited","sessionId": "abc-123", "seq": 11}
 ```
 
-Use `subscribeStreaming` for framework-agnostic streaming, or the hooks above for React/Vue/Svelte.
+Use `subscribeStreaming` for framework-agnostic streaming, `useStreaming` /
+`createStreamingStore` for raw text accumulation, or `useChat` /
+`createChatStore` for message/input state.
 
 ## Request Options
 
@@ -647,7 +709,7 @@ Complete TypeScript type reference for the public surface.
 
 ```typescript
 class Atmosphere {
-  readonly version: string;  // '5.0.22'
+  readonly version: string;  // '5.0.24'
 
   constructor(config?: {
     logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent';

@@ -617,17 +617,30 @@ Three built-in providers are available:
 | `SpringAiVectorStoreContextProvider` | `atmosphere-rag` | Bridges Spring AI vector stores |
 | `LangChain4jEmbeddingStoreContextProvider` | `atmosphere-rag` | Bridges LangChain4j retrievers |
 
-The `ContextProvider` SPI supports query transformation and reranking:
+The `ContextProvider` SPI supports the full RAG shaping pipeline:
 
 ```java
 public interface ContextProvider {
     List<Document> retrieve(String query, int maxResults);
+
     default String transformQuery(String originalQuery) { return originalQuery; }
+    default List<Document> filter(String query, List<Document> documents) { return documents; }
     default List<Document> rerank(String query, List<Document> documents) { return documents; }
+    default List<Document> postProcess(String query, List<Document> documents) { return documents; }
+
+    static String formatCitation(Document document) { ... }
 }
 ```
 
-Execution order: `transformQuery()` -> `retrieve()` -> `rerank()` -> inject into `AiRequest.message`.
+Execution order: `transformQuery()` -> normalize/blank-query guard ->
+`retrieve()` -> `filter()` -> `rerank()` -> `postProcess()` ->
+`formatCitation()` -> inject into `AiRequest.message`.
+
+`formatCitation()` includes source and chunk metadata when present:
+`source_document`, `chunk_index`, `chunk_count`, `chunk_start`, and
+`chunk_end`. The Spring Boot RAG Chat sample preserves that metadata when it
+chunks its Markdown knowledge base, so citations point to a source passage
+instead of only naming the whole file.
 
 ## Client Integration
 

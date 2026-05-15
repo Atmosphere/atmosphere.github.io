@@ -163,5 +163,5 @@ HTTP request ─► AiEndpointHandler ─► AiStreamingSession ─► AgentRunt
   autonomous ramp.
 - [Durable HITL Workflows](./24-durable-hitl) — @RequiresApproval that
   survives a process restart.
-- [AI Adapters](./11-ai-adapters) — the seven `AgentRuntime`
+- [AI Adapters](./11-ai-adapters) — the nine `AgentRuntime`
   implementations and their capability matrix.
