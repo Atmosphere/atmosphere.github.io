@@ -454,7 +454,13 @@ MemoryExtractionStrategy.perMessage()       // real-time, expensive
 MemoryExtractionStrategy.periodic(5)        // every 5 messages
 ```
 
-Backed by `InMemoryLongTermMemory` (dev) or any `SessionStore` implementation (Redis, SQLite). The `onDisconnect` lifecycle hook ensures facts are extracted before conversation history is cleared.
+The `LongTermMemory` SPI stores text facts per user and returns them in recency order. Three implementations ship in-tree:
+
+- `InMemoryLongTermMemory` (`atmosphere-ai`) — lost on restart, suitable for development.
+- `SqliteLongTermMemory` (`atmosphere-durable-sessions-sqlite`) — embedded SQLite file, can share a connection with `SqliteSessionStore` / `SqliteConversationPersistence`.
+- `RedisLongTermMemory` (`atmosphere-durable-sessions-redis`) — Lettuce-backed Redis LIST per user, can share a connection with `RedisSessionStore` / `RedisConversationPersistence`.
+
+For relevance-ranked recall over past conversation content rather than recency-ordered facts, compose `LongTermMemoryInterceptor` with `SemanticRecallInterceptor` plus a user-supplied `ContextProvider` (vector store, hybrid retriever, etc.). The `onDisconnect` lifecycle hook ensures facts are extracted before conversation history is cleared.
 
 ## Testing
 
