@@ -462,6 +462,30 @@ The `LongTermMemory` SPI stores text facts per user and returns them in recency 
 
 For relevance-ranked recall over past conversation content rather than recency-ordered facts, compose `LongTermMemoryInterceptor` with `SemanticRecallInterceptor` plus a user-supplied `ContextProvider` (vector store, hybrid retriever, etc.). The `onDisconnect` lifecycle hook ensures facts are extracted before conversation history is cleared.
 
+## Durable Hibernating Workflows
+
+The `org.atmosphere.checkpoint.workflow` package in `atmosphere-checkpoint` composes the `CheckpointStore` SPI into a multi-step workflow runner with first-class hibernation. A workflow is an ordered `List<WorkflowStep<S>>` over an application-owned state type `S`; each step returns a sealed `StepOutcome<S>` (`Advance`, `Hibernate`, `Done`, or `Fail`) that drives the runner.
+
+```java
+var store = new SqliteCheckpointStore(Path.of("./workflow.db"));
+store.start();
+
+var workflow = new Workflow<>(
+        "doc-pipeline", "coord-" + UUID.randomUUID(),
+        List.of(
+                step("ingest",  s -> StepOutcome.advance(s + ":ingested")),
+                step("review",  s -> StepOutcome.hibernate(s)),    // wait for human
+                step("publish", s -> StepOutcome.done(s + ":published"))),
+        store);
+
+var result = workflow.run("doc-42");
+// → WorkflowResult.Hibernated; no platform thread held while we wait.
+```
+
+Hibernation is a return-not-park primitive: a step that returns `StepOutcome.hibernate(state)` causes the call to write a snapshot and return `WorkflowResult.Hibernated` to the caller — no thread is held while the workflow is dormant. A later `workflow.run(null)` against the same `coordinationId` and `CheckpointStore` resumes at the step *after* the last completed one, including across JVM restarts when the store is persistent (`SqliteCheckpointStore`, `InMemoryCheckpointStore`, or any custom backend). Per-step `maxRetries()` and `retryDelay()` cover transient failures; an exhausted retry budget surfaces as `WorkflowResult.Failed` with the underlying exception in the `reason`.
+
+Step names are the resume key — they MUST be stable and unique within the workflow. Steps MUST be idempotent: both retries on transient exceptions and resumes after a restart re-execute the last step.
+
 ## Testing
 
 The coordinator module includes test stubs for exercising `@Prompt` methods without infrastructure or LLM calls:
