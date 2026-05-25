@@ -87,6 +87,24 @@ Walk these questions in order; stop at the first match.
    **Pin Spring Boot 3 today** — Alibaba `1.1.2.0` hardcodes Spring AI
    1.1.2 types.
 
+10. **Anthropic Messages API directly, without going through Spring AI
+    / LangChain4j?** →
+    **Anthropic** (`atmosphere-anthropic`). Native HTTP+SSE client
+    against the Anthropic Messages API — no third-party SDK on the
+    classpath. Tool loop capped at five rounds, cancellation-aware.
+    Configure via `anthropic.api.key` system property or
+    `ANTHROPIC_API_KEY` environment variable; custom headers
+    (`Helicone-Auth`, tenant IDs, tracing) passthrough with
+    reserved-header filtering.
+
+11. **Cohere v2 chat API directly, without going through Spring AI
+    / LangChain4j?** →
+    **Cohere** (`atmosphere-cohere`). Native HTTP+SSE client against
+    `POST /v2/chat` — no third-party SDK on the classpath. Tool dispatch
+    routes through `ToolExecutionHelper.executeWithApproval`. Configure
+    via `cohere.api.key` system property or `COHERE_API_KEY` environment
+    variable; declares `VISION` + `MULTI_MODAL` natively.
+
 If multiple options match, pick the lowest-numbered one — the runtimes
 are ordered from "most-general / most-portable" at the top to
 "most-specialized" at the bottom.
@@ -104,6 +122,8 @@ are ordered from "most-general / most-portable" at the top to
 | Semantic Kernel | Microsoft / .NET ecosystem parity on JVM | Token-by-token | ✅ | ✅ |
 | AgentScope | Qwen-native ReAct, Alibaba Cloud AI Studio | Token-by-token | ✅ + `CANCELLATION` | — |
 | Spring AI Alibaba | DashScope / `ReactAgent` graph on Spring Boot 3 | **Buffered** (one chunk + complete) | ✅ | ✅ |
+| Anthropic | Direct Anthropic Messages API, no third-party SDK | Token-by-token | ✅ + `PER_REQUEST_RETRY` (five-round tool loop, cancellation-aware) | — |
+| Cohere | Direct Cohere v2 chat API, no third-party SDK | Token-by-token | ✅ + `VISION` + `MULTI_MODAL` | — |
 
 ## What's the same on every runtime
 
