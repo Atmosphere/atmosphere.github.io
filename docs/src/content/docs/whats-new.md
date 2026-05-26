@@ -18,6 +18,44 @@ The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.35.2**,
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
 
+## 4.0.49-SNAPSHOT — Event-sourced coordination journal
+
+The coordinator gains a full event-sourced runtime contract — every
+`CoordinationJournal` event now carries causal lineage in an
+`EventEnvelope(eventId, parentEventId, event)`, and four additive primitives
+let consumers project, persist, and branch coordinations without breaking
+the existing journal surface.
+
+- **Causal lineage.** `JournalingAgentFleet` threads parent IDs through
+  every `parallel()` / `pipeline()` / `route()` / `proxy.call()` dispatch
+  path: `CoordinationStarted` → `AgentDispatched` →
+  `AgentCompleted`/`AgentFailed` → `AgentEvaluated`. Legacy
+  `journal.record(event)` callers continue to work unchanged — events get
+  wrapped as root envelopes with no parent.
+- **`CoordinationProjection.from(journal, coordinationId)`.** Pure
+  read-only causal DAG built from the stored envelopes. Exposes
+  `roots()`, `children(eventId)`, `walk(visitor)`, `agents()`,
+  `failedDispatches()`, `evaluations()`. No execution, no LLM, no side
+  effects — useful for debugging tools and post-hoc analysis.
+- **`FileCoordinationJournal(Path)`.** Append-only NDJSON file backend.
+  One JSON object per line; replays on `start()` into an in-memory index
+  for queries; tolerates a truncated final line from a JVM kill mid-append;
+  single-writer locked appends. Polymorphic ser/deser of the sealed
+  `CoordinationEvent` hierarchy via a Jackson 3 mix-in so the event
+  records themselves stay annotation-free.
+- **`CoordinationFork` + `ForkCreated` event.** What-if branching:
+  `fork.from(coordId, eventId).reason(...).with(altCall).execute(fleet)`
+  creates a new coordination, records a `ForkCreated` envelope linking back
+  to the parent event, and runs the alternate via
+  `JournalingAgentFleet.withCoordinationId(...)`. The parent coordination
+  is immutable; the fork is a peer with its own future.
+
+Backed by 38 tests including a three-process integration test that runs a
+parallel coordination, replays from disk on restart, projects the DAG,
+forks an alternate, replays again, and verifies both branches survive.
+See the [Coordinator reference](/docs/reference/coordinator/) for the full
+surface.
+
 ## 4.0.46-SNAPSHOT — Enterprise console + capability parity
 
 The current development line closes the seven gist gaps that the

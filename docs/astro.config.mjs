@@ -113,6 +113,7 @@ export default defineConfig({
             { label: 'Kotlin DSL', slug: 'reference/kotlin' },
             { label: 'Observability', slug: 'reference/observability' },
             { label: 'Admin Control Plane', slug: 'reference/admin' },
+            { label: 'Coordinator', slug: 'reference/coordinator' },
             { label: 'Governance Policy Plane', slug: 'reference/governance' },
             { label: 'Durable Sessions', slug: 'reference/durable-sessions' },
             { label: 'Durable Checkpoints', slug: 'reference/checkpoint' },

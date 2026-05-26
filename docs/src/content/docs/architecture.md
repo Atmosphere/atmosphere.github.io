@@ -124,6 +124,8 @@ Broadcaster             broadcast() -> filters -> resources
 
 The `AgentFleet` dispatches work to agents and collects results. It uses the `StreamingSession` to stream progress and results back to the client. The fleet's `CoordinationJournal` records every dispatch and completion for observability.
 
+The journal is event-sourced: every emitted event is wrapped in an `EventEnvelope(eventId, parentEventId, event)` that records causal lineage across `parallel()` / `pipeline()` / `route()` / `proxy.call()` paths. `CoordinationProjection.from(journal, coordinationId)` rebuilds the execution DAG as pure data — `roots()`, `children(eventId)`, `walk(visitor)`, `agents()`, `failedDispatches()`. `FileCoordinationJournal(Path)` persists the envelope stream as append-only NDJSON that replays on restart, and `CoordinationFork` branches a what-if coordination off any event so eval / debugging tools can rerun decision points without mutating the original. See the [coordinator reference](/docs/reference/coordinator/) for the full surface.
+
 ```java
 @Coordinator(name = "ceo",
         journalFormat = JournalFormat.Markdown.class)
