@@ -17,7 +17,7 @@ const abstractedFeatures = [
 ];
 
 const atmosphereOnlyFeatures = [
-  'Cross-framework @Agent portability — one codebase, nine runtimes',
+  'Cross-framework @Agent portability — one codebase, twelve runtimes',
   'Real-time streaming transport: WebSocket, SSE, WebTransport/HTTP3, gRPC, long-poll with automatic fallback',
   '@Coordinator + @Fleet multi-agent orchestration over A2A v1.0.0 (released spec)',
   'Durable HITL workflows — agent state survives JVM restart via CheckpointStore',
@@ -37,11 +37,11 @@ const atmosphereOnlyFeatures = [
 const lockInStory = [
   {
     without: 'One framework, chosen up front.',
-    with: 'Nine runtimes — Built-in plus eight framework adapters. Swap the dependency when the winner changes.',
+    with: 'Twelve runtimes — Built-in plus eleven framework adapters (Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, CrewAI). Swap the dependency when the winner changes.',
   },
   {
     without: 'One LLM provider, locked into its pricing and SLA.',
-    with: 'Any LLM provider supported by any of the nine runtimes. Move when pricing shifts, rate limits bite, or a new model lands.',
+    with: 'Any LLM provider supported by any of the twelve runtimes. Move when pricing shifts, rate limits bite, or a new model lands.',
   },
   {
     without: 'Rewrite the agent when the framework changes direction, goes EOL, or gets acquired.',
@@ -123,6 +123,30 @@ const frameworks = [
     bridge: 'atmosphere-spring-ai-alibaba',
   },
   {
+    name: 'Anthropic',
+    short: 'Anthropic',
+    vendor: 'Anthropic',
+    language: 'Java',
+    summary: 'Native Anthropic Messages API client. No third-party SDK — direct HTTP+SSE with prompt-caching hints, tool loop, and Helicone-style header passthrough.',
+    bridge: 'atmosphere-anthropic',
+  },
+  {
+    name: 'Cohere',
+    short: 'Cohere',
+    vendor: 'Cohere',
+    language: 'Java',
+    summary: 'Native Cohere v2 Chat API client. HTTP+SSE against POST /v2/chat with `content-delta`, `tool-call-*`, and `citation-start` events surfaced verbatim. Sovereign-endpoint override via `cohere.base.url`.',
+    bridge: 'atmosphere-cohere',
+  },
+  {
+    name: 'CrewAI',
+    short: 'CrewAI',
+    vendor: 'CrewAI Inc.',
+    language: 'Python (sidecar)',
+    summary: 'The first non-Java runtime — Java owns transport and `@AiTool` execution, an out-of-process Python sidecar (FastAPI + crewai 1.14) owns the multi-agent crew graph. HTTP+SSE in, tool-RPC callback out.',
+    bridge: 'atmosphere-crewai',
+  },
+  {
     name: 'Built-in',
     short: 'Built-in',
     vendor: 'Async IO',
@@ -176,7 +200,7 @@ const frameworks = [
     <div class="matrix-wrapper">
       <table class="matrix">
         <caption class="matrix-caption">
-          At-a-glance: nine runtimes, one bridge layer, one support contract.
+          At-a-glance: twelve runtimes, one bridge layer, one support contract.
         </caption>
         <thead>
           <tr>
@@ -234,7 +258,7 @@ const frameworks = [
       <div class="featurelist featurelist-abstracted">
         <div class="featurelist-head">
           <span class="featurelist-label">Abstracted through the @Agent API</span>
-          <h4 class="featurelist-title">Portable across all 9 runtimes</h4>
+          <h4 class="featurelist-title">Portable across all 12 runtimes</h4>
           <p class="featurelist-sub">
             Every framework provides these. Atmosphere normalizes them
             behind one annotation surface, so your agent code is identical

@@ -503,7 +503,7 @@ The canonical tool-calling sample is:
 
 - **[`samples/spring-boot-ai-tools/`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-tools)** — uses the built-in LLM client with `@AiTool` methods (`AssistantTools`), conversation memory, and the `CostMeteringInterceptor`. Run with: `./mvnw spring-boot:run -pl samples/spring-boot-ai-tools`
 
-Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` class works with any of the nine tool-capable runtimes (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba) by swapping the adapter dependency. Every runtime ships a dedicated tool bridge (`AgentScopeToolBridge` and `SpringAiAlibabaToolBridge` close the matrix) that routes every invocation through `ToolExecutionHelper.executeWithApproval`, so `@RequiresApproval` gates fire uniformly across all nine.
+Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` class works with any of the twelve tool-capable runtimes (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, CrewAI) by swapping the adapter dependency. Every runtime ships a dedicated tool bridge (`AgentScopeToolBridge`, `SpringAiAlibabaToolBridge`, and the CrewAI `ToolCallbackServer` close the matrix) that routes every invocation through `ToolExecutionHelper.executeWithApproval`, so `@RequiresApproval` gates fire uniformly across all twelve. CrewAI is the only one whose bridge crosses a process boundary — a loopback HTTP listener inside the JVM, called by the Python sidecar.
 
 ## Summary
 

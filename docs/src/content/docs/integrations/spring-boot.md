@@ -91,12 +91,12 @@ All properties are under the `atmosphere.*` prefix:
 - `AtmosphereFramework` -- the framework for programmatic configuration
 - `RoomManager` -- the room API for presence and message history
 - `AtmosphereHealthIndicator` -- Actuator health check (when `spring-boot-health` is on the classpath)
-- `AtmosphereAiAutoConfiguration` -- scans for `@AiEndpoint` / `@Agent` beans and wires the resolved `AgentRuntime` across all nine adapters (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba)
+- `AtmosphereAiAutoConfiguration` -- scans for `@AiEndpoint` / `@Agent` beans and wires the resolved `AgentRuntime` across all twelve adapters (built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, CrewAI)
 - `AtmosphereAdminAutoConfiguration` / `AtmosphereActuatorAutoConfiguration` / `AtmosphereAuthAutoConfiguration` -- admin console, actuator metrics, and basic auth (opt-in via `atmosphere.admin.*`, `atmosphere.actuator.*`, `atmosphere.auth.*`)
 
 ## AI Auto-Configuration
 
-When `atmosphere-ai` is on the classpath, the starter auto-discovers the best available `AgentRuntime` via `ServiceLoader` (any of the nine adapters) and scans for `@AiEndpoint`/`@Agent` beans.
+When `atmosphere-ai` is on the classpath, the starter auto-discovers the best available `AgentRuntime` via `ServiceLoader` (any of the twelve adapters) and scans for `@AiEndpoint`/`@Agent` beans.
 
 ```yaml
 atmosphere:

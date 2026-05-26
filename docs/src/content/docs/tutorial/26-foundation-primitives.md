@@ -77,13 +77,15 @@ installed via `AiGatewayHolder.install(...)`; every
 `*AgentRuntime.doExecute` / `doExecuteWithHandle` calls
 `admitThroughGateway(context)` before native dispatch.
 
-- **Consumer** — all nine runtimes consume the gateway. Each of
+- **Consumer** — all twelve runtimes consume the gateway. Each of
   `BuiltInAgentRuntime`, `SpringAiAgentRuntime`,
   `LangChain4jAgentRuntime`, `AdkAgentRuntime`,
   `SemanticKernelAgentRuntime`, `EmbabelAgentRuntime`,
-  `KoogAgentRuntime`, `AgentScopeAgentRuntime`, and
-  `SpringAiAlibabaAgentRuntime` calls `admitThroughGateway(context)`
-  on its dispatch path before reaching the native SDK.
+  `KoogAgentRuntime`, `AgentScopeAgentRuntime`,
+  `SpringAiAlibabaAgentRuntime`, `AnthropicAgentRuntime`,
+  `CohereAgentRuntime`, and `CrewAiAgentRuntime` calls
+  `admitThroughGateway(context)` on its dispatch path before reaching
+  the native SDK (or, for CrewAI, the out-of-process Python sidecar).
 - **Sample** — every sample implicitly exercises it; nothing dispatches
   an LLM without admission.
 

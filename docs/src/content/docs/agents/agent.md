@@ -138,10 +138,13 @@ No frontend code needed — the console is bundled in `atmosphere-spring-boot-st
 ## Tools
 
 `@AiTool` methods are callable by the LLM during inference. They work
-identically across all nine `AgentRuntime` adapters (built-in, Spring AI,
+identically across all twelve `AgentRuntime` adapters (built-in, Spring AI,
 LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope,
-Spring AI Alibaba) — every adapter ships a tool bridge that routes each
-invocation through `ToolExecutionHelper.executeWithApproval`.
+Spring AI Alibaba, Anthropic, Cohere, CrewAI) — every adapter ships a
+tool bridge that routes each invocation through
+`ToolExecutionHelper.executeWithApproval`. CrewAI is the only one whose
+bridge crosses a process boundary (Java `ToolCallbackServer` over
+loopback HTTP to the Python sidecar); the others route in-JVM.
 
 ```java
 @AiTool(description = "Query the order database")

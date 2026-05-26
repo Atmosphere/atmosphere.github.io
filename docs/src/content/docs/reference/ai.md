@@ -19,12 +19,12 @@ AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `Stre
 
 ## Architecture
 
-Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers — Jetty, Tomcat, Undertow. `AgentRuntime` adapts AI frameworks across all nine runtimes (Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba). Same design pattern, same discovery mechanism:
+Atmosphere has two pluggable SPI layers. `AsyncSupport` adapts web containers — Jetty, Tomcat, Undertow. `AgentRuntime` adapts AI frameworks across all twelve runtimes (Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, CrewAI). Same design pattern, same discovery mechanism:
 
 | Concern | Transport layer | AI layer |
 |---------|----------------|----------|
 | SPI interface | `AsyncSupport` | `AgentRuntime` |
-| What it adapts | Web containers (Jetty, Tomcat, Undertow) | AI frameworks (all nine `AgentRuntime` adapters) |
+| What it adapts | Web containers (Jetty, Tomcat, Undertow) | AI frameworks (all twelve `AgentRuntime` adapters) |
 | Discovery | Classpath scanning | `ServiceLoader` |
 | Resolution | Best available container | Highest `priority()` among `isAvailable()` |
 | Initialization | `init(ServletConfig)` | `configure(LlmSettings)` |
@@ -201,10 +201,11 @@ public interface AiConversationMemory {
 ## @AiTool -- Framework-Agnostic Tool Calling
 
 Declare tools with `@AiTool` and they work with every tool-capable runtime:
-Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, and Semantic
-Kernel. No framework-specific annotations are needed. AgentScope and Spring
-AI Alibaba are still `AgentRuntime` adapters, but their current SDKs do not
-expose a native tool-dispatch loop for Atmosphere to wrap.
+Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic
+Kernel, Anthropic, Cohere, and CrewAI. No framework-specific annotations
+are needed. AgentScope and Spring AI Alibaba are still `AgentRuntime`
+adapters, but their current SDKs do not expose a native tool-dispatch
+loop for Atmosphere to wrap.
 
 ### Defining Tools
 
@@ -499,7 +500,7 @@ Default timeout: 5 minutes. Configurable via `@RequiresApproval(timeoutSeconds =
 
 When running on Google ADK, Atmosphere also calls `toolContext.requestConfirmation()` to give ADK native visibility into the approval pause. If ADK resolves a confirmation before Atmosphere (e.g., via its own UI), the ADK denial short-circuits without calling the executor. This creates a two-layer model: Atmosphere-level (cross-runtime) + ADK-native (runtime-specific).
 
-All runtimes with `TOOL_CALLING` also declare `AiCapability.TOOL_APPROVAL` (Built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel). AgentScope and Spring AI Alibaba are excluded because their underlying SDKs lack a native tool-call dispatch loop.
+All runtimes with `TOOL_CALLING` also declare `AiCapability.TOOL_APPROVAL` (Built-in, Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, Anthropic, Cohere, CrewAI). AgentScope and Spring AI Alibaba are excluded because their underlying SDKs lack a native tool-call dispatch loop.
 
 ## Context Compaction SPI
 
@@ -623,7 +624,7 @@ The `AiEvent` sealed interface provides 15 structured event types emitted via `s
 
 Each runtime declares capabilities via `AiCapability`. The framework uses
 these flags for model routing, tool negotiation, and feature discovery. The
-table below mirrors the nine-runtime snapshot pinned by each runtime's
+table below mirrors the twelve-runtime snapshot pinned by each runtime's
 `expectedCapabilities()` contract test; `Y` means the runtime declares the
 capability and the contract tests assert it.
 
@@ -644,9 +645,21 @@ BE=BUDGET_ENFORCEMENT, CS=CONFIDENCE_SCORES, PSV=PASSIVATION.
 | Alibaba AgentScope | 100 | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
 | Spring AI Alibaba | 100 | Y¹ | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
 | Microsoft Semantic Kernel | 100 | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
+| Anthropic | 100 | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| Cohere | 100 | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| CrewAI² | 50 | Y | Y | Y | Y | Y |  | Y |  |  |  |  | Y | Y |  |  |  |  |
 
 ¹ Spring AI Alibaba emits its final reply as one Atmosphere stream chunk, but
 the upstream `ReactAgent.call()` path is buffered rather than token-by-token.
+
+² CrewAI is the only out-of-process runtime: the Java side talks
+`HTTP + SSE` to a Python sidecar (`atmosphere-crewai-bridge`,
+FastAPI + crewai 1.14). `isAvailable()` is config-gated on
+`ATMOSPHERE_CREWAI_SIDECAR_URL` pointing at a running sidecar whose
+`/health` responds OK — Runtime Truth gate, no classpath-only
+advertisement. The runtime does not own a Java-side conversation-memory
+store; per-task memory lives inside the sidecar's crew rather than
+being declared at the Atmosphere layer.
 
 **How structured output works:** `AiPipeline` wraps the streaming session with `StructuredOutputCapturingSession` and augments the system prompt with JSON-schema instructions before the runtime runs. Any runtime that honors `SYSTEM_PROMPT` therefore gets `STRUCTURED_OUTPUT` automatically via the pipeline — no per-runtime adapter code required. `BuiltInAgentRuntime` additionally enables native `jsonMode` on the OpenAI-compatible client for provider-level JSON enforcement on top of the pipeline wrap. Source: `modules/ai/src/main/java/org/atmosphere/ai/pipeline/AiPipeline.java:128-135`, `modules/ai/src/main/java/org/atmosphere/ai/llm/BuiltInAgentRuntime.java:72-74`.
 
@@ -703,7 +716,7 @@ Add `atmosphere-ai-test` as a test dependency and extend the base class:
 </dependency>
 ```
 
-The `RecordingSession` test double captures all events, text chunks, metadata, and errors for assertion. The contract suite is implemented for all nine runtime adapters.
+The `RecordingSession` test double captures all events, text chunks, metadata, and errors for assertion. The contract suite is implemented for all twelve runtime adapters.
 
 ## Samples
 

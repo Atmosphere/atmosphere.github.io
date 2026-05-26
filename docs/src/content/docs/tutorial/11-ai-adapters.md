@@ -1,6 +1,6 @@
 ---
 title: "AI Framework Adapters"
-description: "Plugging Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, and Spring AI Alibaba into Atmosphere's streaming infrastructure"
+description: "Plugging Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, and CrewAI into Atmosphere's streaming infrastructure"
 sidebar:
   order: 11
 ---
@@ -47,7 +47,7 @@ var request = ChatCompletionRequest.builder(settings.model())
 settings.client().streamChatCompletion(request, session);
 ```
 
-The built-in client is what powers `session.stream(message)` inside `@AiEndpoint`. If you need framework-specific features (Spring AI advisors, LangChain4j tool loops, ADK agent orchestration, Embabel agent planning, Koog graph strategies, Semantic Kernel kernel hooks, AgentScope ReAct agents, or Spring AI Alibaba runnable configs), use one of the adapter modules below.
+The built-in client is what powers `session.stream(message)` inside `@AiEndpoint`. If you need framework-specific features (Spring AI advisors, LangChain4j tool loops, ADK agent orchestration, Embabel agent planning, Koog graph strategies, Semantic Kernel kernel hooks, AgentScope ReAct agents, Spring AI Alibaba runnable configs, Anthropic prompt caching, Cohere sovereign endpoints, or CrewAI multi-agent crews via Python sidecar), use one of the adapter modules below.
 
 ## Runtimes
 
@@ -64,6 +64,9 @@ Atmosphere ships **nine** `AgentRuntime` implementations — one built-in and ei
 | Semantic Kernel | `atmosphere-semantic-kernel` | Microsoft Semantic Kernel (`ChatCompletionService`) | 1.5.0 |
 | AgentScope | `atmosphere-agentscope` | Alibaba AgentScope (`ReActAgent`) | 1.0.12 |
 | Spring AI Alibaba | `atmosphere-spring-ai-alibaba` | Spring AI Alibaba (`ReactAgent`, **Spring Boot 3.5 only** today) | 1.1.2.2 |
+| Anthropic | `atmosphere-anthropic` | Native Anthropic Messages API (HTTP+SSE, no third-party SDK) | shipped |
+| Cohere | `atmosphere-cohere` | Native Cohere v2 Chat API (HTTP+SSE, no third-party SDK) | shipped |
+| CrewAI | `atmosphere-crewai` | CrewAI (Python sidecar `atmosphere-crewai-bridge`, FastAPI + crewai 1.14) | shipped |
 
 All runtimes depend on `atmosphere-ai`, which provides the framework-agnostic interfaces: `AgentRuntime`, `AiStreamingAdapter<T>`, `StreamingSession`, `AiRequest`, and the `@AiTool`/`@AiEndpoint` annotations.
 
@@ -71,28 +74,28 @@ All runtimes depend on `atmosphere-ai`, which provides the framework-agnostic in
 
 This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()` method returns — runtime truth, not wishful thinking (Correctness Invariant #5). Each row is pinned in the runtime's contract test via `expectedCapabilities()` in `AbstractAgentRuntimeContractTest`, so adding or removing a capability from the code without updating this table (or vice versa) breaks the build.
 
-| Capability | Built-in | Spring AI | LC4j | ADK | Embabel | Koog | SK | AgentScope | Alibaba |
-|------------|:--------:|:---------:|:----:|:---:|:-------:|:----:|:--:|:----------:|:-------:|
-| `TEXT_STREAMING`      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (buffered) |
-| `SYSTEM_PROMPT`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `STRUCTURED_OUTPUT`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `TOOL_CALLING`        | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `TOOL_APPROVAL`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `CONVERSATION_MEMORY` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `PER_REQUEST_RETRY`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `TOKEN_USAGE`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `BUDGET_ENFORCEMENT`  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `CONFIDENCE_SCORES`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `CANCELLATION`        |  — |  — |  — |  — |  — | ✅ |  — | ✅ |  — |
-| `PASSIVATION`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `VISION`              | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
-| `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — |
-| `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |
-| `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |
-| `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |  — |  — |
-| `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |  — |  — |
-| `MODEL_ENUMERATION`   |  — |  — |  — |  — |  — |  — |  — |  — |  — |
-| `MULTI_AGENT_HANDOFF` |  — |  — |  — |  — |  — |  — |  — |  — |  — |
+| Capability | Built-in | Spring AI | LC4j | ADK | Embabel | Koog | SK | AgentScope | Alibaba | Anthropic | Cohere | CrewAI |
+|------------|:--------:|:---------:|:----:|:---:|:-------:|:----:|:--:|:----------:|:-------:|:---------:|:------:|:------:|
+| `TEXT_STREAMING`      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (buffered) | ✅ | ✅ | ✅ |
+| `SYSTEM_PROMPT`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `STRUCTURED_OUTPUT`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `TOOL_CALLING`        | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `TOOL_APPROVAL`       | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `CONVERSATION_MEMORY` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `PER_REQUEST_RETRY`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `TOKEN_USAGE`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `BUDGET_ENFORCEMENT`  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `CONFIDENCE_SCORES`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `CANCELLATION`        |  — |  — |  — |  — |  — | ✅ |  — | ✅ |  — |  — |  — | ✅ |
+| `PASSIVATION`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `VISION`              | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — | ✅ | ✅ |  — |
+| `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — | ✅ | ✅ |  — |
+| `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |  — |  — |  — |
+| `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |  — |  — |  — |
+| `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |  — |  — |  — |  — | ✅ |
+| `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
+| `MODEL_ENUMERATION`   |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
+| `MULTI_AGENT_HANDOFF` |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
 
 **Legend:**
 - ✅ Declared in `capabilities()` and honored at runtime
@@ -102,12 +105,12 @@ The full `AiCapability` enum has 20 values. `MODEL_ENUMERATION` and `MULTI_AGENT
 
 ### Why the baseline is so high
 
-The first three rows plus `CONVERSATION_MEMORY` and `PER_REQUEST_RETRY` are universal across all nine runtimes because `AbstractAgentRuntime` and the pipeline layer implement them once and every runtime that extends or delegates to them inherits the behavior. The framework builds the default, the adapter only plugs in where it differs. `TOOL_CALLING` / `TOOL_APPROVAL` now reach all nine adapters — AgentScope ships via `AgentScopeToolBridge` and Spring AI Alibaba ships via `SpringAiAlibabaToolBridge`, both routing every invocation through `ToolExecutionHelper.executeWithApproval`. `TOKEN_USAGE` also reaches all nine — `Spring AI Alibaba` had no usage surface on `ReactAgent.call()` in `1.1.2.2`, so Atmosphere wraps the configured Spring AI `ChatModel` bean in `UsageCapturingChatModel` at auto-configuration time and accumulates per-step `ChatResponseMetadata.getUsage()` into a per-thread collector that the runtime emits once via `session.usage(...)` after each dispatch.
+The first three rows plus `CONVERSATION_MEMORY` and `PER_REQUEST_RETRY` are universal across the twelve runtimes because `AbstractAgentRuntime` and the pipeline layer implement them once and every runtime that extends or delegates to them inherits the behavior. The framework builds the default, the adapter only plugs in where it differs. (CrewAI is the lone exception on `CONVERSATION_MEMORY`: history is forwarded to the sidecar on every start, but no sidecar-side checkpoint contract exists yet, so the runtime declares it off until that lands.) `TOOL_CALLING` / `TOOL_APPROVAL` reach all twelve adapters — AgentScope ships via `AgentScopeToolBridge`, Spring AI Alibaba via `SpringAiAlibabaToolBridge`, and CrewAI via the loopback `ToolCallbackServer`, all routing every invocation through `ToolExecutionHelper.executeWithApproval`. `TOKEN_USAGE` also reaches all twelve — `Spring AI Alibaba` had no usage surface on `ReactAgent.call()` in `1.1.2.2`, so Atmosphere wraps the configured Spring AI `ChatModel` bean in `UsageCapturingChatModel` at auto-configuration time and accumulates per-step `ChatResponseMetadata.getUsage()` into a per-thread collector that the runtime emits once via `session.usage(...)` after each dispatch.
 
 - **`STRUCTURED_OUTPUT`** is implemented at the pipeline layer — `AiPipeline.StructuredOutputCapturingSession` plus system-prompt schema injection — so any runtime that honors `SYSTEM_PROMPT` gets it for free (`BuiltInAgentRuntime` additionally enables native JSON mode).
 - **`CONVERSATION_MEMORY`** is implemented by `AbstractAgentRuntime.assembleMessages`, which threads `context.history()` into the outgoing message list on every dispatch. Runtimes with a native conversation-id path (ADK `Runner`, Koog `AIAgent`, SK `ChatHistory`) use that; the rest honor the pipeline-managed history via the base class.
 - **`PER_REQUEST_RETRY`** is implemented by `AbstractAgentRuntime.executeWithOuterRetry`, which wraps each runtime's dispatch in a retry loop respecting `context.retryPolicy(...)`. Each adapter stacks this on top of its own native retry layer (Spring Retry, LC4j `RetryUtils`, ADK `HttpClient`, Koog `CallRetryPolicy`, SK `OpenAIAsyncClient`), giving an "at least N retries" guarantee that is uniform across every runtime.
-- **`TOOL_CALLING` / `TOOL_APPROVAL`** are implemented per-adapter (`SpringAiToolBridge`, `LangChain4jToolBridge`, `AdkFunctionToolBridge`, `EmbabelToolBridge`, `AtmosphereToolBridge` for Koog, `SemanticKernelToolBridge`, `AgentScopeToolBridge`, `SpringAiAlibabaToolBridge`) — each routes every invocation through `ToolExecutionHelper.executeWithApproval` so `@RequiresApproval` gates fire uniformly regardless of which runtime handles the call.
+- **`TOOL_CALLING` / `TOOL_APPROVAL`** are implemented per-adapter — eight Java-framework runtimes ship dedicated `*ToolBridge` classes (`SpringAiToolBridge`, `LangChain4jToolBridge`, `AdkToolBridge`, `EmbabelToolBridge`, `AtmosphereToolBridge` for Koog, `SemanticKernelToolBridge`, `AgentScopeToolBridge`, `SpringAiAlibabaToolBridge`); Anthropic and Cohere route tool dispatch inline through their native HTTP+SSE clients (`AnthropicChatClient`, `CohereChatClient`); CrewAI is the only one whose bridge crosses a process boundary (`ToolCallbackServer`, a loopback HTTP listener that the Python sidecar POSTs to). All twelve paths converge on `ToolExecutionHelper.executeWithApproval` so `@RequiresApproval` gates fire uniformly regardless of which runtime handles the call.
 - **`TOKEN_USAGE`** is honest wherever each bridge threads a typed `TokenUsage` record through `session.usage(...)` — done per-runtime but declared universally, because the pipeline surfaces the record on every adapter today.
 
 ### Notes on the remaining gaps
@@ -146,7 +149,7 @@ public interface AgentRuntime {
 }
 ```
 
-When multiple `AgentRuntime` implementations are on the classpath, the one with the highest `priority()` that reports `isAvailable() == true` wins. All five shipped adapters use priority `100`. The built-in runtime uses priority `0` as a fallback.
+When multiple `AgentRuntime` implementations are on the classpath, the one with the highest `priority()` that reports `isAvailable() == true` wins. Ten of the eleven framework adapters use priority `100`; CrewAI uses priority `50` because the Python sidecar is opt-in (env-var-gated `isAvailable()`) and we want any same-classpath Java adapter to win by default. The built-in runtime uses priority `0` as a fallback.
 
 ## Spring AI adapter
 

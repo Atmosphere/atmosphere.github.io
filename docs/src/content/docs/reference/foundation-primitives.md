@@ -5,8 +5,9 @@ description: The eight runtime-agnostic primitives every Java AI agent needs, in
 
 Atmosphere 4.x ships eight foundation primitives — named nouns every Java
 AI agent needs, regardless of what the agent does, working across all
-nine runtimes (Built-in · Spring AI · LangChain4j · Google ADK · Koog ·
-Semantic Kernel · Embabel · AgentScope · Spring AI Alibaba).
+twelve runtimes (Built-in · Spring AI · LangChain4j · Google ADK · Koog ·
+Semantic Kernel · Embabel · AgentScope · Spring AI Alibaba · Anthropic ·
+Cohere · CrewAI).
 
 The governing analogy is Atmosphere 1.0. 1.0 didn't build a chat app; it
 built `AtmosphereResource`, `Broadcaster`, `CometSupport`, and the rest —
@@ -110,7 +111,7 @@ broadcasters on reconnect but not in-flight agent runs.
 - **Shipped**: SPI + default implementation + unit tests + zero-warning
   compile. All eight primitives are shipped in the current branch.
 - **Complete**: shipped + wired into live paths + cross-runtime contract
-  tests green on all nine runtimes + security invariants verified.
+  tests green on all twelve runtimes + security invariants verified.
 
 The completion bar is raised by three follow-up phases: gateway wire-in,
 cross-runtime contract test matrix, and security default hardening.

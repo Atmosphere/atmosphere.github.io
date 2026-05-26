@@ -114,16 +114,19 @@ The current development line closes the seven gist gaps that the
   agent loop — tool calling, memory, RAG, retries — to whichever AI framework is on
   the classpath. Write your `@Agent` once, run it on any runtime. Switch runtimes by
   changing a single Maven dependency.
-- **Nine runtimes** share a unified capability baseline (text streaming,
+- **Twelve runtimes** share a unified capability baseline (text streaming,
   structured output, progress events, conversation memory, per-request retry):
   **Built-in**, **LangChain4j**, **Spring AI**, **Google ADK**, **Embabel**,
   **JetBrains Koog**, **Microsoft Semantic Kernel**, **Alibaba AgentScope**,
-  and **Spring AI Alibaba**. Tool calling now reaches all nine runtimes —
-  each ships a dedicated tool bridge (`AgentScopeToolBridge` and
-  `SpringAiAlibabaToolBridge` close the matrix) that routes every
-  invocation through `ToolExecutionHelper.executeWithApproval`. The
-  built-in runtime gained full OpenAI-compatible tool calling
-  (max 5 rounds), so `@AiTool` works with zero framework dependencies.
+  **Spring AI Alibaba**, **Anthropic**, **Cohere**, and **CrewAI**
+  (CrewAI via an out-of-process Python sidecar, the first non-Java
+  adapter in the project). Tool calling now reaches all twelve runtimes —
+  each ships a dedicated tool bridge (`AgentScopeToolBridge`,
+  `SpringAiAlibabaToolBridge`, and the CrewAI `ToolCallbackServer`
+  close the matrix) that routes every invocation through
+  `ToolExecutionHelper.executeWithApproval`. The built-in runtime
+  gained full OpenAI-compatible tool calling (max 5 rounds), so
+  `@AiTool` works with zero framework dependencies.
 - **Auto-detection** via `ServiceLoader` — the highest-`priority()` runtime that
   reports `isAvailable()` wins. The AI Console subtitle and `/api/console/info`
   report the active runtime.
@@ -299,9 +302,9 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
 ### Cross-runtime-adapter contract
 
 - **`AbstractAgentRuntimeContractTest.policyDenyBlocksRuntimeExecute`**
-  is inherited by all nine runtime adapters (Built-in, Spring AI,
+  is inherited by all twelve runtime adapters (Built-in, Spring AI,
   LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope,
-  Spring AI Alibaba). The "deny before runtime" guarantee is a
+  Spring AI Alibaba, Anthropic, Cohere, CrewAI). The "deny before runtime" guarantee is a
   build-time invariant for each runtime adapter; a regression breaks the
   build, not production.
 
@@ -523,7 +526,7 @@ Heads up before you upgrade:
   `com.fasterxml.jackson.*` need to be updated.
 - **`AiSupport` → `AgentRuntime`.** Code that implemented the legacy `AiSupport`
   SPI should migrate to `AgentRuntime`. The capability baseline, tool calling,
-  and usage metadata contracts are now unified across all nine runtimes.
+  and usage metadata contracts are now unified across all twelve runtimes.
 - **WebSocket HTML sanitization (4.0.11).** HTML sanitization was disabled for
   the WebSocket transport because encoding JSON in WebSocket frames broke the
   AI streaming wire protocol. HTTP transports continue to sanitize write
