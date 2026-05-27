@@ -143,19 +143,30 @@ Two of three tools ran without a prompt; one — the money-moving one —
 still pauses. Friction dropped by 66% without loosening the gate on
 the dangerous operation.
 
-### For edit-shaped workloads, use `ACCEPT_EDITS`
+### `ACCEPT_EDITS` is reserved (today identical to `DEFAULT`)
 
-If your agent is a coding agent — lots of file writes, occasional
-shell calls — use `ACCEPT_EDITS` instead of `DEFAULT`:
+`PermissionMode.ACCEPT_EDITS` is in the enum and accepted by the
+identity APIs, but its runtime behaviour currently matches `DEFAULT`
+— per-tool `@RequiresApproval` routing, no widening of the outer
+gate. `ToolExecutionHelper.executeAll` collapses `ACCEPT_EDITS` and
+`DEFAULT` into the same switch arm intentionally: until tools carry
+structured tool-kind tags (`edit`, `read`, `shell`, `network`), the
+outer mode cannot honestly tell which calls are edit-shaped, and
+the runtime refuses to silently widen the attack surface.
+
+When tool-kind tags ship, this mode will gain its Claude-Code
+`acceptEdits` semantics (auto-approve write-shaped tools, still
+gate shell / network / `@RequiresApproval`). Until then, treat
+setting it as a forward-compatible no-op:
 
 ```java
 identity.setModeForUser("alice@example.com", PermissionMode.ACCEPT_EDITS);
 ```
 
-`ACCEPT_EDITS` auto-approves write-shaped tools (edits, patches)
-but still gates shell, network, and anything marked
-`@RequiresApproval`. This matches Claude Code's `acceptEdits` mode
-and is the right setting for IDE-style assistants.
+If you need looser-than-`DEFAULT` posture for an automated lane
+today, the only mode that delivers that is `BYPASS` — which
+auto-approves *every* tool and is explicitly opt-in for trusted,
+automated contexts only.
 
 ### Harden the pipeline with guardrails
 
