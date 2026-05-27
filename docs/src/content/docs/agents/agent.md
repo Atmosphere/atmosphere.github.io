@@ -190,7 +190,7 @@ Memory is stored in-memory by default. For durable persistence across restarts, 
 
 ## Relationship to `@ManagedService`
 
-`@Agent` builds on top of `@ManagedService`. An `@Agent` is a `@ManagedService` with AI-specific wiring added. You can still use `@ManagedService` directly for non-AI real-time endpoints (chat rooms, presence, pub/sub). Protocol annotations (`@McpTool`, `@AgentSkill`, `@AgUiEndpoint`) work on both.
+`@Agent` builds on top of `@ManagedService`. An `@Agent` is a `@ManagedService` with AI-specific wiring added. You can still use `@ManagedService` directly for non-AI real-time endpoints (chat rooms, presence, pub/sub). Protocol annotations (`@McpTool`, `@AgentSkill` + `@AgentSkillHandler`) work on both; AG-UI registers automatically when the class has a `@Prompt` method.
 
 ## Relationship to `@Coordinator`
 
