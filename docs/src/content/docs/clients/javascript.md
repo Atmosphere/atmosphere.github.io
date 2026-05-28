@@ -249,7 +249,7 @@ Resilience behavior is driven by the request options — the Badge just visualiz
 | `maxReconnectOnClose` | Quota — when exhausted, `failureToReconnect` fires once and the phase moves to `lost` |
 | `heartbeat.client` | Client-side watchdog interval (ms) — expiry triggers `clientTimeout` |
 
-The classic fallback chain — WebSocket → SSE → streaming → long-polling — is implemented end-to-end. The `viaFallback` flag stays `true` until the next `subscribe()` call, so the Badge can keep showing the degraded-mode indicator even after the fallback transport reaches steady-state `open`.
+Fallback is **single-level and client-driven**: when the primary transport fails, the client switches to `fallbackTransport` (one hop), fires `transportFailure`, and continues. The realized + tested cascade today is **WebTransport → WebSocket**; longer historical chains (WebSocket → SSE → streaming → long-polling) work for one step at a time if you configure them and the server supports the target, but the framework does not chain through all four automatically without per-attempt opt-in. The `viaFallback` flag stays `true` until the next `subscribe()` call, so the Badge can keep showing the degraded-mode indicator even after the fallback transport reaches steady-state `open`.
 
 ## `AtmosphereRooms` — low-level rooms API
 

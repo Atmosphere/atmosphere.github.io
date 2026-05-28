@@ -25,7 +25,7 @@ Maven 3.5+ no longer resolves `<version>LATEST</version>` for regular dependenci
 
 **AtmosphereResource** -- a single connection. It wraps the underlying transport (WebSocket frame, SSE event stream, HTTP response, gRPC stream) behind a uniform API. Resources subscribe to Broadcasters.
 
-**Transport** -- the wire protocol. Atmosphere ships with 5 transports: WebTransport/HTTP3, WebSocket, SSE, Long-Polling, and gRPC. The transport is selected per-connection and can fall back automatically (WebSocket -> SSE -> Long-Polling). MCP is a protocol that rides on top of these transports (typically WebSocket, SSE, or Streamable HTTP), not a transport itself.
+**Transport** -- the wire protocol. Atmosphere ships with 5 transports: WebTransport/HTTP3, WebSocket, SSE, Long-Polling, and gRPC. The transport is selected per-connection. Fallback is single-level and client-driven: when the primary fails, the client switches to its configured `fallbackTransport` (one hop), not an automatic WebSocket → SSE → Long-Polling cascade. The realized + tested fallback today is **WebTransport → WebSocket**; other one-hop pairs work if both ends support them. MCP is a protocol that rides on top of these transports (typically WebSocket, SSE, or Streamable HTTP), not a transport itself.
 
 ## Quick Start
 

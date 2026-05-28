@@ -33,6 +33,15 @@ Both `RedisBroadcaster` and `KafkaBroadcaster` extend `DefaultBroadcaster` and o
 2. Deliver locally via `super.broadcast()`
 3. On the receiving side, consume messages from other nodes and deliver locally
 
+## Clustering ≠ `BroadcasterCache`
+
+Two mechanisms get conflated in real-time docs and they solve different problems:
+
+- **Clustering** (this chapter) — a pub/sub relay so a broadcast on Node A reaches subscribers on Node B. `RedisBroadcaster` / `KafkaBroadcaster` extend `DefaultBroadcaster` and add cross-node delivery on top of the existing per-node fan-out.
+- **`BroadcasterCache`** — a **per-node**, in-process buffer that lets a single client reconnect after a brief disconnect and replay messages it missed while away. There is no shared `BroadcasterCache` across cluster nodes; each node maintains its own buffer.
+
+Use clustering when broadcasts must reach connections that landed on a different node. Use a `BroadcasterCache` to make a single connection's reconnect-and-resume flow seamless on the same node. The two compose — pick clustering and a per-node cache independently.
+
 ## Echo Prevention
 
 A naive implementation would cause message echo: Node A broadcasts a message, publishes it to Redis, then receives its own message back from Redis and broadcasts it again. Both `RedisBroadcaster` and `KafkaBroadcaster` prevent this with a **node ID**:
