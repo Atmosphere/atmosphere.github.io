@@ -57,10 +57,10 @@ Atmosphere ships **nine** `AgentRuntime` implementations — one built-in and ei
 |---------|------------------|-------------|---------|
 | Built-in | `atmosphere-ai` (OpenAI-compatible client) | OpenAI, Gemini, Ollama, Azure OpenAI | shipped |
 | Spring AI | `atmosphere-spring-ai` | Spring AI (`ChatClient`) | 2.0.0-M2 |
-| LangChain4j | `atmosphere-langchain4j` | LangChain4j (`StreamingChatLanguageModel`) | 1.14.0 |
+| LangChain4j | `atmosphere-langchain4j` | LangChain4j (`StreamingChatLanguageModel`) | 1.15.0 |
 | Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) | 1.2.0 |
 | Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) | 0.3.5 |
-| Koog | `atmosphere-koog` | Koog (Kotlin agent framework) | 0.8.0 |
+| Koog | `atmosphere-koog` | Koog (Kotlin agent framework) | 1.0.0 |
 | Semantic Kernel | `atmosphere-semantic-kernel` | Microsoft Semantic Kernel (`ChatCompletionService`) | 1.5.0 |
 | AgentScope | `atmosphere-agentscope` | Alibaba AgentScope (`ReActAgent`) | 1.0.12 |
 | Spring AI Alibaba | `atmosphere-spring-ai-alibaba` | Spring AI Alibaba (`ReactAgent`, **Spring Boot 3.5 only** today) | 1.1.2.2 |
@@ -115,7 +115,7 @@ The first three rows plus `CONVERSATION_MEMORY` and `PER_REQUEST_RETRY` are univ
 
 ### Notes on the remaining gaps
 
-- **`VISION` / `AUDIO` / `MULTI_MODAL`** — Semantic Kernel has no multi-modal surface yet. Embabel's Atmosphere-native dispatch path translates `Content.Image` into Embabel `AgentImage` (no audio); the deployed-agent path ignores multi-modal parts, matching Embabel's own semantics where a deployed `@Agent` owns its own handling. Koog 0.8.0 accepts vision, audio, and multi-modal natively via `ContentPart.Image` / `ContentPart.Audio`, but its tool-calling surface (`AIAgent.run(String)`) only accepts a plain text message — multi-modal + tools together degrade gracefully (the tool path wins with a WARN). AgentScope and Spring AI Alibaba have no multi-modal surface in their current SDK releases.
+- **`VISION` / `AUDIO` / `MULTI_MODAL`** — Semantic Kernel has no multi-modal surface yet. Embabel's Atmosphere-native dispatch path translates `Content.Image` into Embabel `AgentImage` (no audio); the deployed-agent path ignores multi-modal parts, matching Embabel's own semantics where a deployed `@Agent` owns its own handling. Koog 1.0.0 accepts vision, audio, and multi-modal natively via `ContentPart.Image` / `ContentPart.Audio`, but its tool-calling surface (`AIAgent.run(String)`) only accepts a plain text message — multi-modal + tools together degrade gracefully (the tool path wins with a WARN). AgentScope and Spring AI Alibaba have no multi-modal surface in their current SDK releases.
 - **`PROMPT_CACHING`** — Built-in / Spring AI / LC4j / ADK / Koog all honor the portable `CacheHint` attached to `AgentExecutionContext`. Mechanism varies per provider (OpenAI `prompt_cache_key`, Anthropic / Bedrock `CacheControl.Bedrock.{FiveMinutes, OneHour}`, ADK's per-request `ContextCacheConfig` wired via `buildRequestRunner`). Embabel, Semantic Kernel, AgentScope, and Spring AI Alibaba do not expose a caching hook that maps to `CacheHint` today.
 - **`CANCELLATION`** is honored natively by Koog (`AIAgent.cancel()` propagated from `StreamingSession.isCancelled()`) and AgentScope (Reactor subscription cancellation on every event tick). The other seven runtimes inherit `AbstractAgentRuntime.executeWithOuterRetry`'s baseline cancellation handling but do not declare it because the underlying SDK does not expose a non-cooperative cancellation primitive that maps cleanly to `StreamingSession.isCancelled()`.
 - **`AGENT_ORCHESTRATION`** tracks whether the underlying framework owns a multi-agent dispatch loop (ADK `LlmAgent`, Embabel goal graph, Koog `chatAgentStrategy`). Built-in / Spring AI / LC4j / SK / AgentScope / Spring AI Alibaba can still participate in `@Coordinator` fleets — the coordinator dispatches from Atmosphere — but do not own the loop themselves.

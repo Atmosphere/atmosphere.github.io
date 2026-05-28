@@ -88,10 +88,10 @@ aspiration.
 | `CONVERSATION_MEMORY` | ✅ | Per-session memory threaded through `AgentExecutionContext` |
 | `AGENT_ORCHESTRATION` | ✅ | Works with `@Coordinator` and `@Fleet` |
 | `TOKEN_USAGE` | ✅ | The `StreamFrame.End` handler reads Koog's usage totals and emits a typed `TokenUsage` record via `session.usage()` after drain (`executeWithAgent` lines 223-232). |
-| `VISION` | ✅ | Koog 0.8.0 accepts `ContentPart.Image` natively via `buildPrompt`'s `user(String, List<ContentPart>)` overload (no-tools path) |
+| `VISION` | ✅ | Koog 1.0.0 accepts `ContentPart.Image` natively via `buildPrompt`'s `user(String, List<ContentPart>)` overload (no-tools path) |
 | `AUDIO` | ✅ | Same path as `VISION` — `ContentPart.Audio` attached via `AttachmentContent.Binary.Base64` |
 | `MULTI_MODAL` | ✅ | Combined image + audio + text inputs work on the no-tools path; tools + multi-modal degrade gracefully (the tool path wins with a WARN — `AIAgent.run(String)` only accepts plain text) |
-| `PROMPT_CACHING` | ✅ | Koog 0.8.0 honors Bedrock-specific `CacheControl.Bedrock.{FiveMinutes, OneHour}` mapped from Atmosphere's portable `CacheHint`. Non-Bedrock providers silently drop the cache control — same shape Spring AI / LC4j take for OpenAI `prompt_cache_key`. |
+| `PROMPT_CACHING` | ✅ | Koog 1.0.0 honors Bedrock-specific `CacheControl.Bedrock.{FiveMinutes, OneHour}` mapped from Atmosphere's portable `CacheHint`. Non-Bedrock providers silently drop the cache control — same shape Spring AI / LC4j take for OpenAI `prompt_cache_key`. |
 | `CANCELLATION` | ✅ | `executeWithHandle` returns an `ExecutionHandle` whose `cancel()` calls `Job.cancel()` + `Thread.interrupt()` + resolves the done-future with synthetic completion (terminal-path closure per Correctness Invariant #2) |
 | `PER_REQUEST_RETRY` | ✅ | Honored via `executeWithOuterRetry` which wraps `executeInternal` in a retry loop respecting `context.retryPolicy()`. Pre-stream transient failures retry on top of Koog's native HTTP retry. |
 
