@@ -114,13 +114,24 @@ public class CheckpointConfig {
      * WorkflowSnapshot writes in the checkpoint store.
      */
     @Bean
+    @Primary
     public CoordinationJournal coordinationJournal(CheckpointStore store) {
-        return new CheckpointingCoordinationJournal(
-                new InMemoryCoordinationJournal(),
-                store);
+        var underlying = new InMemoryCoordinationJournal();
+        return new CheckpointingCoordinationJournal<>(
+                underlying,
+                store,
+                CheckpointingCoordinationJournal.onAgentBoundaries(),
+                CoordinationStateExtractors.event());
     }
 }
 ```
+
+The 4-arg constructor is the real one: `delegate` journal, `store`,
+a `Predicate<CoordinationEvent>` deciding which events become snapshots
+(`onAgentBoundaries()` captures `AgentCompleted` + `AgentFailed`), and
+a `CoordinationStateExtractor<S>` mapping the event to the snapshot
+state payload (`CoordinationStateExtractors.event()` stores the event
+itself as the state).
 
 `CheckpointingCoordinationJournal` is the bridge that turns "every
 `AgentCompleted` event the coordination emits" into "a snapshot in the
