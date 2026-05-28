@@ -3,7 +3,7 @@ title: Admin Control Plane
 description: Real-time dashboard, REST API, WebSocket event stream, and MCP tools for managing Atmosphere applications at runtime
 ---
 
-The `atmosphere-admin` module adds a management and control plane to any Atmosphere application. Drop it on the classpath and you get a real-time dashboard, 25 REST endpoints, a WebSocket event stream, and MCP tools — all auto-configured.
+The `atmosphere-admin` module adds a management and control plane to any Atmosphere application. Drop it on the classpath and you get a real-time dashboard, 54 REST endpoints (under `/api/admin/*` via `AtmosphereAdminEndpoint`'s `@GetMapping` / `@PostMapping` / `@PutMapping` / `@DeleteMapping` declarations), a WebSocket event stream, and MCP tools — all auto-configured.
 
 ## Quick Start
 
