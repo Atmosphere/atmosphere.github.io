@@ -18,6 +18,34 @@ The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.35.2**,
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
 
+## 4.0.50-SNAPSHOT — Code-as-action sandbox
+
+A model can now accomplish a task by **writing code** rather than negotiating
+many fine-grained tool calls. The `code_exec` tool runs that code — bash,
+JavaScript, or Python — in an isolated, ephemeral container and streams the
+logs, exit code, and any screenshots back as observations, so the agent
+iterates: write → run → observe → revise.
+
+- **Default-deny, container-isolated.** Code execution is off unless
+  `org.atmosphere.ai.code.enabled=true`, and the tool is offered only when a
+  container engine is confirmed present at runtime (not merely configured). Each
+  session gets one ephemeral container — `--network none` by default, non-root,
+  `--cap-drop ALL`, `no-new-privileges`, read-only rootfs + a bounded writable
+  workspace, with memory/cpu/pid caps — provisioned lazily and torn down on every
+  terminal path (success, error, cancel, timeout).
+- **Live in the Console.** When `code_exec` is enabled the tool-loop ceiling
+  lifts to many write→run→observe rounds, and each round streams an agent-step
+  event plus any screenshots the code produced — rendered inline in the
+  Atmosphere Console as you watch.
+- **`spring-boot-browser-agent` sample.** The agent drives a headless browser
+  with Playwright in the sandbox and streams the page screenshots back live
+  (Cohere-backed; requires Docker).
+
+> Executing model-written code is the largest boundary Atmosphere exposes. It is
+> opt-in, container-isolated, and default-deny — choose the network policy
+> deliberately, pin the image, and size the resource caps before enabling it in
+> production.
+
 ## 4.0.49-SNAPSHOT — Event-sourced coordination journal
 
 The coordinator gains a full event-sourced runtime contract — every
