@@ -46,6 +46,7 @@ export default defineConfig({
                 { label: 'Durable HITL Workflows', slug: 'tutorial/24-durable-hitl' },
                 { label: '@Command & Skill Files', slug: 'agents/skills' },
                 { label: '@Coordinator & Multi-Agent', slug: 'agents/coordinator' },
+                { label: 'Stateful Interactions', slug: 'tutorial/35-interactions' },
                 { label: 'AI Adapters', slug: 'tutorial/11-ai-adapters' },
                 { label: 'AI Filters & Routing', slug: 'tutorial/12-ai-filters' },
                 { label: 'Channels', slug: 'tutorial/23-channels' },
@@ -98,6 +99,7 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'AI / LLM', slug: 'reference/ai' },
+            { label: 'Interactions API', slug: 'reference/interactions' },
             { label: 'Runtime Selection', slug: 'reference/runtime-selection' },
             { label: 'RAG', slug: 'reference/rag' },
             { label: 'Embeddings', slug: 'agents/embeddings' },
