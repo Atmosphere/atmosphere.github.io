@@ -51,7 +51,7 @@ The built-in client is what powers `session.stream(message)` inside `@AiEndpoint
 
 ## Runtimes
 
-Atmosphere ships **nine** `AgentRuntime` implementations — one built-in and eight adapter modules for popular frameworks:
+Atmosphere ships **twelve** `AgentRuntime` implementations — one built-in and eleven adapter modules for popular frameworks:
 
 | Runtime | Module / Artifact | AI Framework | Version |
 |---------|------------------|-------------|---------|
@@ -86,14 +86,14 @@ This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()`
 | `TOKEN_USAGE`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `BUDGET_ENFORCEMENT`  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
 | `CONFIDENCE_SCORES`   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
-| `CANCELLATION`        |  — |  — |  — |  — |  — | ✅ |  — | ✅ |  — |  — |  — | ✅ |
+| `CANCELLATION`        | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `PASSIVATION`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
-| `VISION`              | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — | ✅ | ✅ |  — |
-| `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |  — |  — | ✅ | ✅ |  — |
-| `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |  — |  — |  — |
+| `VISION`              | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `MULTI_MODAL`         | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |  — |
+| `AUDIO`               | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — | ✅ | ✅ |  — |  — |  — |
 | `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |  — |  — |  — |
 | `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |  — |  — |  — |  — | ✅ |
-| `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
+| `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |  — |  — |  — | ✅ |  — |
 | `MODEL_ENUMERATION`   |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
 | `MULTI_AGENT_HANDOFF` |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
 
@@ -115,9 +115,9 @@ The first three rows plus `CONVERSATION_MEMORY` and `PER_REQUEST_RETRY` are univ
 
 ### Notes on the remaining gaps
 
-- **`VISION` / `AUDIO` / `MULTI_MODAL`** — Semantic Kernel has no multi-modal surface yet. Embabel's Atmosphere-native dispatch path translates `Content.Image` into Embabel `AgentImage` (no audio); the deployed-agent path ignores multi-modal parts, matching Embabel's own semantics where a deployed `@Agent` owns its own handling. Koog 1.0.0 accepts vision, audio, and multi-modal natively via `ContentPart.Image` / `ContentPart.Audio`, but its tool-calling surface (`AIAgent.run(String)`) only accepts a plain text message — multi-modal + tools together degrade gracefully (the tool path wins with a WARN). AgentScope and Spring AI Alibaba have no multi-modal surface in their current SDK releases.
+- **`VISION` / `AUDIO` / `MULTI_MODAL`** — eleven of the twelve runtimes accept image / multi-modal parts (CrewAI is the exception: its sidecar protocol carries text only). Semantic Kernel declares `VISION` + `MULTI_MODAL` (its `buildChatHistory` appends image parts) but not `AUDIO` — SK 1.5.0 exposes no audio surface. AgentScope (`ImageBlock` / `AudioBlock`) and Spring AI Alibaba (`attachMediaToTrailingUserMessage`) declare all three. Embabel's Atmosphere-native dispatch path translates `Content.Image` into Embabel `AgentImage` (vision + multi-modal, no audio); the deployed-agent path ignores multi-modal parts, matching Embabel's own semantics where a deployed `@Agent` owns its own handling. Koog 1.0.0 accepts vision, audio, and multi-modal natively via `ContentPart.Image` / `ContentPart.Audio`, but its tool-calling surface (`AIAgent.run(String)`) only accepts a plain text message — multi-modal + tools together degrade gracefully (the tool path wins with a WARN). Anthropic and Cohere accept vision + multi-modal but not audio (their Messages/Chat APIs have no audio block).
 - **`PROMPT_CACHING`** — Built-in / Spring AI / LC4j / ADK / Koog all honor the portable `CacheHint` attached to `AgentExecutionContext`. Mechanism varies per provider (OpenAI `prompt_cache_key`, Anthropic / Bedrock `CacheControl.Bedrock.{FiveMinutes, OneHour}`, ADK's per-request `ContextCacheConfig` wired via `buildRequestRunner`). Embabel, Semantic Kernel, AgentScope, and Spring AI Alibaba do not expose a caching hook that maps to `CacheHint` today.
-- **`CANCELLATION`** is honored natively by Koog (`AIAgent.cancel()` propagated from `StreamingSession.isCancelled()`) and AgentScope (Reactor subscription cancellation on every event tick). The other seven runtimes inherit `AbstractAgentRuntime.executeWithOuterRetry`'s baseline cancellation handling but do not declare it because the underlying SDK does not expose a non-cooperative cancellation primitive that maps cleanly to `StreamingSession.isCancelled()`.
+- **`CANCELLATION`** is declared by all twelve runtimes. Koog (`AIAgent.cancel()` propagated from `StreamingSession.isCancelled()`) and AgentScope (Reactor subscription cancellation on every event tick) cancel natively; the rest run their dispatch on a virtual thread behind an `ExecutionHandle` whose `cancel()` flips a flag the streaming worker polls cooperatively, settling `whenDone()` when the worker stops. This gives a uniform cooperative-cancellation guarantee across every runtime even where the underlying SDK exposes no native non-cooperative cancel primitive.
 - **`AGENT_ORCHESTRATION`** tracks whether the underlying framework owns a multi-agent dispatch loop (ADK `LlmAgent`, Embabel goal graph, Koog `chatAgentStrategy`). Built-in / Spring AI / LC4j / SK / AgentScope / Spring AI Alibaba can still participate in `@Coordinator` fleets — the coordinator dispatches from Atmosphere — but do not own the loop themselves.
 - **`TOOL_CALL_DELTA`** is Built-in only. `OpenAiCompatibleClient` forwards every `delta.tool_calls[].function.arguments` fragment through `session.toolCallDelta(id, chunk)` on both the chat-completions and responses-API streaming paths. The eight framework bridges cannot emit deltas without bypassing their high-level streaming APIs; they honor the default no-op contract instead.
 

@@ -126,7 +126,7 @@ See the `modules/semantic-kernel/README.md` exclusion note for the full trade-of
 
 ## Samples
 
-Semantic Kernel is wired into [spring-boot-ai-classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) as one of the nine swappable runtimes. Drop the `atmosphere-semantic-kernel` JAR alongside `atmosphere-ai` and the same `@AiEndpoint` code routes through SK.
+Semantic Kernel is wired into [spring-boot-ai-classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) as one of the twelve swappable runtimes. Drop the `atmosphere-semantic-kernel` JAR alongside `atmosphere-ai` and the same `@AiEndpoint` code routes through SK.
 
 ## See Also
 

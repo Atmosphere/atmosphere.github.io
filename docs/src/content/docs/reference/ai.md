@@ -438,7 +438,7 @@ Configure the built-in client with environment variables:
 | `@Param` | Describes a tool parameter's name, description, and required flag |
 | `AgentRuntime` | SPI for AI framework backends (ServiceLoader-discovered) |
 | `AiRequest` | Framework-agnostic request record (message, systemPrompt, model, userId, sessionId, agentId, conversationId, metadata) |
-| `AiEvent` | Sealed interface: 13 structured event types (TextDelta, ToolStart, ToolResult, AgentStep, EntityStart, etc.) |
+| `AiEvent` | Sealed interface: 15 structured event types (TextDelta, ToolStart, ToolResult, AgentStep, EntityStart, Handoff, ApprovalRequired, etc.) |
 | `AiCapability` | Enum for endpoint capability requirements (TEXT_STREAMING, TOOL_CALLING, STRUCTURED_OUTPUT, etc.) |
 | `AiInterceptor` | Pre/post processing hooks for RAG, guardrails, logging |
 | `AiConversationMemory` | SPI for conversation history storage |

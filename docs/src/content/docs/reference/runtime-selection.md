@@ -1,9 +1,9 @@
 ---
 title: Runtime Selection
-description: Decision tree for picking among Atmosphere's nine AgentRuntime adapters based on the capability your agent needs.
+description: Decision tree for picking among Atmosphere's twelve AgentRuntime adapters based on the capability your agent needs.
 ---
 
-Atmosphere ships nine `AgentRuntime` adapters. Every adapter implements
+Atmosphere ships twelve `AgentRuntime` adapters. Every adapter implements
 the same Java SPI, so switching between them is a one-line Maven
 dependency swap — but each one wraps a different upstream agent
 framework with different strengths. This page is the decision tree to

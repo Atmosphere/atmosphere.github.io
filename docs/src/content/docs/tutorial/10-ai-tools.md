@@ -1,6 +1,6 @@
 ---
 title: "@AiTool -- Framework-Agnostic Tool Calling"
-description: "Declare tools once with @AiTool and @Param, and they work across Atmosphere's nine AgentRuntime adapters"
+description: "Declare tools once with @AiTool and @Param, and they work across Atmosphere's twelve AgentRuntime adapters"
 sidebar:
   order: 10
 ---

@@ -8,7 +8,7 @@ description: "Highlights from the Atmosphere 4.0.x release line"
 Atmosphere 4.0 is the JDK 21+ rewrite of the framework. The 4.0.0 release shipped the
 core platform migration (Jakarta EE 10, virtual threads, Jetty 12 / Tomcat 11, native
 image support, rooms, AI streaming SPI, MCP, TypeScript client). Since then the 4.0.x
-line has grown into a full multi-agent runtime — unified agent annotations, nine
+line has grown into a full multi-agent runtime — unified agent annotations, twelve
 pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Native
 support, and major compatibility refreshes.
 
@@ -125,7 +125,7 @@ The current development line closes the seven gist gaps that the
   `samples/README.md` and `cli/README.md` — the canonical enterprise
   agent shapes most teams reach for first.
 - **`docs/runtime-selection.md` decision tree.** Question-by-question
-  walkthrough for picking among the nine `AgentRuntime` adapters,
+  walkthrough for picking among the twelve `AgentRuntime` adapters,
   mirrored on the website at
   [Runtime Selection](/docs/reference/runtime-selection/).
 
@@ -228,7 +228,7 @@ The current development line closes the seven gist gaps that the
 
 ### Streaming, tools, and events
 
-- **`AiEvent` sealed interface** — 13 structured event types (`TextDelta`,
+- **`AiEvent` sealed interface** — 15 structured event types (`TextDelta`,
   `ToolStart`, `ToolResult`, `AgentStep`, `EntityStart`, `StructuredField`,
   `Handoff`, and more) delivered via `StreamingSession.emit()`, powering rich
   real-time UIs.
@@ -558,12 +558,16 @@ Highlights:
 | `spring-boot-otel-chat` | OpenTelemetry tracing with Jaeger |
 | `spring-boot-ms-governance-chat` | Microsoft Agent Governance Toolkit demo with `@AgentScope` policy chain |
 | `spring-boot-coding-agent` | Sandboxed coding agent — clones a repo, reads files, proposes a patch |
+| `spring-boot-browser-agent` | Code-as-action agent — the model writes Playwright driving a headless browser in an isolated sandbox container; screenshots stream to the Console live (requires Docker) |
 | `spring-boot-guarded-email-agent` | Plan-and-Verify (`atmosphere-verifier`) inbox-exfiltration demo |
 | `spring-boot-personal-assistant` | Long-lived `@Coordinator` assistant with memory + delegation |
 | `spring-boot-reattach-harness` | Mid-stream reattach harness (`@AiEndpoint` reattach contract) |
 | `quarkus-chat` | Quarkus extension chat |
 | `quarkus-ai-chat` | Five `@AiEndpoint` demos on Quarkus + LangChain4j bridge (port 18810) |
+| `spring-boot-chat` | Real-time WebSocket chat with Spring Boot |
 | `grpc-chat` | Standalone gRPC transport |
+| `chat` | Classic Atmosphere chat (WAR deployment) |
+| `embedded-jetty-websocket-chat` | Embedded Jetty WebSocket chat (no framework) |
 
 ## Developer Experience
 

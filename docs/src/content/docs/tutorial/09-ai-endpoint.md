@@ -110,7 +110,7 @@ Key observations:
 
 1. **`@Ready` and `@Disconnect`** work the same as in `@ManagedService` -- they handle connection lifecycle.
 2. **`@Prompt`** receives the user's raw message and a `StreamingSession`.
-3. **`session.stream(message)`** sends the message to the resolved AI backend and streams the response back. This is the simplest way to invoke the LLM -- the framework resolves the correct adapter (any of the nine `AgentRuntime` implementations: Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, or the built-in OpenAI-compatible client) automatically via `ServiceLoader`.
+3. **`session.stream(message)`** sends the message to the resolved AI backend and streams the response back. This is the simplest way to invoke the LLM -- the framework resolves the correct adapter (any of the twelve `AgentRuntime` implementations: Spring AI, LangChain4j, ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, CrewAI, or the built-in OpenAI-compatible client) automatically via `ServiceLoader`.
 4. **Demo fallback** -- if no API key is configured, the sample uses `DemoResponseProducer` to simulate streaming. This pattern is useful for local development without an API key.
 5. **System prompt** -- loaded once at startup from `prompts/system-prompt.md` on the classpath via `PromptLoader`.
 
@@ -216,7 +216,7 @@ The `seq` field is a monotonically increasing counter for deduplication on recon
 
 `StreamingSession.emit(AiEvent)` sends structured events to the client alongside text. This enables rich real-time UIs that show tool activity, agent steps, and progressive entity rendering.
 
-`AiEvent` is a sealed interface with 13 event types:
+`AiEvent` is a sealed interface with 15 event types:
 
 | Event Type | Description |
 |-----------|-------------|
@@ -230,6 +230,8 @@ The `seq` field is a monotonically increasing counter for deduplication on recon
 | `EntityStart(typeName, jsonSchema)` | Structured entity streaming started |
 | `EntityComplete(typeName, entity)` | Entity fully assembled |
 | `RoutingDecision(from, to, reason)` | Backend routing changed |
+| `Handoff(fromAgent, toAgent, reason)` | Control handed from one agent to another |
+| `ApprovalRequired(approvalId, toolName, arguments, message, expiresIn)` | A tool call is paused awaiting human approval |
 | `Progress(message, percentage)` | Progress update |
 | `Error(message, code, recoverable)` | Structured error |
 | `Complete(summary, usage)` | Stream complete with usage stats |
@@ -761,7 +763,7 @@ The `samples/spring-boot-ai-chat/` sample contains the complete `AiChat` endpoin
 | `@AiEndpoint` | Annotation that wires up an AI chat endpoint with streaming, lifecycle, and configuration |
 | `@Prompt` | Marks the method that handles user messages (invoked on a virtual thread) |
 | `StreamingSession` | SPI for pushing streaming texts to clients: `send()`, `stream()`, `emit()`, `sendContent()` |
-| `AiEvent` | Sealed interface with 13 structured event types (tool calls, agent steps, entities, errors) |
+| `AiEvent` | Sealed interface with 15 structured event types (tool calls, agent steps, handoffs, approvals, entities, errors) |
 | `AiRequest` | Immutable record carrying message, identity fields, history, and metadata |
 | `Content` | Sealed interface for multi-modal content (text, images, files) |
 | `AiConfig` | Global LLM configuration (model, API key, base URL) |
