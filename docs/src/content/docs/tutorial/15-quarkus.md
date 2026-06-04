@@ -5,7 +5,7 @@ sidebar:
   order: 15
 ---
 
-The `atmosphere-quarkus-extension` module integrates Atmosphere with Quarkus 3.35.2. It uses Quarkus's build-time processing to scan annotations via Jandex (no runtime classpath scanning), registers the servlet via `ServletBuildItem`, and bridges Quarkus's Arc CDI container to Atmosphere's object factory.
+The `atmosphere-quarkus-extension` module integrates Atmosphere with Quarkus 3.36.0. It uses Quarkus's build-time processing to scan annotations via Jandex (no runtime classpath scanning), registers the servlet via `ServletBuildItem`, and bridges Quarkus's Arc CDI container to Atmosphere's object factory.
 
 The bundled Atmosphere Console UI gets the same `subtitle / endpoint / runtime / mode` payload it gets on Spring Boot, via the `AtmosphereConsoleInfoServlet` registered at build time alongside the core servlet (4.0.43+, commit `4be7c7f0ad`). Two new config keys mirror the Spring side:
 

@@ -1,11 +1,11 @@
 ---
 title: "Quarkus"
-description: "Build-time processing for Quarkus 3.35.2+"
+description: "Build-time processing for Quarkus 3.36.0+"
 ---
 
 # Quarkus Integration
 
-A Quarkus extension that integrates Atmosphere with Quarkus 3.35.2+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and GraalVM native image support.
+A Quarkus extension that integrates Atmosphere with Quarkus 3.36.0+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and GraalVM native image support.
 
 ## Maven Coordinates
 

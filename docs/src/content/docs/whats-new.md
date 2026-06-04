@@ -12,7 +12,7 @@ line has grown into a full multi-agent runtime — unified agent annotations, tw
 pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Native
 support, and major compatibility refreshes.
 
-The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.35.2**,
+The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.36.0**,
 **Jackson 3.1.1**, and **atmosphere.js 5.0.24**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
@@ -494,7 +494,7 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
   `spring-boot-health` where needed. The starter overrides the parent POM's old
   SLF4J 1.x/Logback 1.2.x pins in `<dependencies>` so upgrades don't regress.
   See [Spring Boot Reference](/docs/integrations/spring-boot/).
-- **Quarkus 3.35.2** — build-time Jandex annotation scanning, Arc CDI
+- **Quarkus 3.36.0** — build-time Jandex annotation scanning, Arc CDI
   integration, custom `QuarkusJSR356AsyncSupport`, and `@BuildStep`-driven native
   image registration via `quarkus.atmosphere.*` properties. See
   [Quarkus Reference](/docs/integrations/quarkus/).
