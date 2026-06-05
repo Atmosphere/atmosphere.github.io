@@ -174,12 +174,15 @@ verify --policy email.policy.json --workflow attack.plan.json
 
 The
 [`spring-boot-guarded-email-agent`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-guarded-email-agent)
-sample exercises the full pipeline end-to-end: a Spring Boot app, a
+sample exercises the full pipeline end-to-end: a Spring Boot app and a
 deterministic stub `AgentRuntime` that emits canned plans (so the demo
-runs without an API key), a REST endpoint, and a static UI that
-renders either the green `EXECUTED` summary or the red `REFUSED`
-violation list. Boot it and try the two example buttons; both flows are
-covered by Playwright e2e tests.
+runs without an API key). It has **no bespoke UI** — it drives the
+shared **Atmosphere Console's Validation tab** (`/atmosphere/console/`,
+where `/` redirects). The tab renders the live verifier chain, the
+resolved SMT solver, the policy, the plan AST, and a per-verifier
+pass/fail breakdown. Boot it and click the four example goals: two pass
+and execute (`EXECUTED`), two are refused (`REFUSED`) — one by taint, one
+by SMT. The controller behind the tab is covered by the sample's tests.
 
 ---
 
