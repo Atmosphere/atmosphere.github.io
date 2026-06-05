@@ -258,10 +258,13 @@ transparently falls back to SMTInterpol. Both backends run identical proof
 logic, so enabling Z3 changes only the solver engine, not the verified
 semantics.
 
-**Runnable sample.** [`spring-boot-smt-payments-guard`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-smt-payments-guard)
-demonstrates this end-to-end — a transfer agent where the solver proves
-`transfer.amount <= ref(balance)` or refuses the plan, shown live in the UI.
-Scaffold it with `atmosphere new my-app --template smt-payments`.
+**Runnable sample.** [`spring-boot-guarded-email-agent`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-guarded-email-agent)
+demonstrates this end-to-end alongside taint tracking — a bulk-send agent where
+the solver proves `send_bulk.count <= ref(quota)` or refuses the plan. It drives
+the **Atmosphere Console's Validation tab** (`/atmosphere/console/`), which
+renders the live verifier chain, the resolved SMT solver, the plan AST, and the
+per-verifier pass/fail breakdown for any goal. Scaffold it with
+`atmosphere new my-app --template guarded-agent`.
 
 ---
 
