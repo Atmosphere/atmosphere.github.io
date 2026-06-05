@@ -345,8 +345,10 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
   via `@RequiresCapability` grants; `TaintVerifier` (30) refuses
   dataflow into `@Sink`-marked parameters incl. transitive flow;
   `AutomatonVerifier` (40) executes plans against `SecurityAutomaton`
-  sequences; `SmtVerifier` (200) wraps the `SmtChecker` SPI for Z3-style
-  proof checks (no-op default ships in-tree).
+  sequences; `SmtVerifier` (200) proves numeric invariants over symbolic
+  tool-call data flow via the `SmtChecker` SPI — a real SMT backend ships as
+  `atmosphere-verifier-smt` (SMTInterpol pure-JVM default, Z3 opt-in; the no-op
+  default applies only when that module is absent).
 - **Co-located policy** — `@Sink(forbidden = {"fetch_emails"})` on a
   tool parameter is the entire dataflow declaration; `SinkScanner`
   derives the `TaintRule` at startup. Renaming a tool or parameter

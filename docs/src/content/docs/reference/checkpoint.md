@@ -56,6 +56,8 @@ Application code owns the workflow state type `S` and its serialization. The in-
 | `CheckpointEvent` | Sealed `Saved`/`Loaded`/`Forked`/`Deleted` lifecycle events |
 | `CheckpointListener` | Callback for lifecycle events |
 | `InMemoryCheckpointStore` | Default in-memory implementation, thread-safe, with eviction |
+| `SqliteCheckpointStore` | Durable single-file SQLite store (`atmosphere-checkpoint`) — survives JVM restart |
+| `PostgresCheckpointStore` | JDBC store (`atmosphere-checkpoint-postgres`); targets Postgres, works with any JSR-221 `DataSource` (operator supplies driver + pooling) |
 
 ## CoordinationJournal Bridge
 

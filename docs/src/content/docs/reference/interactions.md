@@ -118,10 +118,11 @@ enforced per-interaction — the same scope as the REST read.
 |----------------|--------|----------|
 | `InMemoryInteractionStore` | `atmosphere-interactions` | Default; lost on restart. |
 | `SqliteInteractionStore` | `atmosphere-interactions` | Single-node durability (`atmosphere-interactions.db`). |
+| `PostgresInteractionStore` | `atmosphere-interactions-postgres` | JDBC store; targets Postgres, works with any JSR-221 `DataSource` (operator supplies driver + pooling). |
 
 The `InteractionStore` SPI (`save`, `appendStep`, `load`, `list`, `delete`,
-`start`/`stop`) is pluggable for other backends (Redis, Postgres) — those are
-not in-tree.
+`start`/`stop`) ships in-memory + SQLite + Postgres backends in-tree; other
+backends (e.g. Redis) are pluggable via the SPI.
 
 ## JavaScript Client
 
