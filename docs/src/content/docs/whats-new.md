@@ -18,6 +18,30 @@ The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.36.0**,
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
 
+## 4.0.51 — MCP 2026-07-28 release candidate
+
+Atmosphere's MCP server now speaks the **`2026-07-28`** revision — the largest change to
+the Model Context Protocol since launch — **alongside** the session-based protocol it
+already supported (`2024-11-05` through `2025-11-25`). It is a stateless dialect chosen
+per request, so **every existing MCP client keeps working unchanged** while new clients get:
+
+- **Stateless transport** — no session id, no handshake; the server runs behind a plain
+  round-robin load balancer with no session affinity.
+- **Operability** — `Mcp-Method` / `Mcp-Name` routing headers, cacheable `tools/list` /
+  `resources/read` (`ttlMs`, `cacheScope`), and W3C trace context bridged into OpenTelemetry.
+- **Tasks extension** — a `@McpTool(longRunning = true)` call returns a handle the client
+  polls via `tasks/get`; multi-round-trip lets the server ask for more input mid-call.
+- **MCP Apps (SEP-1865)** — a tool can ship a `ui://` HTML UI that a host renders in a
+  sandboxed iframe. The bundled console is a working host with a **bidirectional App
+  Bridge** (apps call server tools through the host under governance; the host lists and
+  calls the app's own tools) and a **separate-origin sandbox proxy** for isolation.
+- **Authorization** — the server acts as an OAuth 2.0 Resource Server (RFC 9728 metadata +
+  `WWW-Authenticate`), delegating token validation to Spring Security / `quarkus-oidc`.
+
+The outbound `atmosphere-mcp-client` still tracks the official MCP Java SDK and negotiates
+the session protocol; stateless client negotiation waits on upstream SDK support. See the
+[MCP reference](/docs/reference/mcp/#mcp-2026-07-28-release-candidate).
+
 ## 4.0.50-SNAPSHOT — Code-as-action sandbox
 
 A model can now accomplish a task by **writing code** rather than negotiating

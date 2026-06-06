@@ -7,7 +7,7 @@ sidebar:
 
 The Model Context Protocol (MCP) is an open standard that lets AI agents (Claude Desktop, VS Code Copilot, Cursor, etc.) discover and call tools, read resources, and use prompt templates from external servers. Atmosphere's `atmosphere-mcp` module lets you build an MCP server by adding four annotations to any Spring bean -- no servlet wiring, no protocol code, no external SDK.
 
-`atmosphere-mcp` is a **self-contained MCP protocol implementation**. It speaks the MCP 2025-11-25 JSON-RPC wire protocol directly on top of Atmosphere's transport layer, so your server is automatically reachable over Streamable HTTP, WebSocket, and SSE with no additional dependencies.
+`atmosphere-mcp` is a **self-contained MCP protocol implementation**. It speaks the JSON-RPC wire protocol directly on top of Atmosphere's transport layer, so your server is automatically reachable over Streamable HTTP, WebSocket, and SSE with no additional dependencies. It serves the session-based protocol (`2024-11-05` through `2025-11-25`) **and** the stateless **`2026-07-28` release candidate** side by side — see the [MCP reference](/docs/reference/mcp/#mcp-2026-07-28-release-candidate) for the stateless dialect, Tasks extension, MCP Apps, and authorization.
 
 **Module:** `atmosphere-mcp`
 **Package:** `org.atmosphere.mcp`
