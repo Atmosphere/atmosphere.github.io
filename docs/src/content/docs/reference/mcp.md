@@ -157,6 +157,21 @@ atmosphere.packages=org.atmosphere.mcp,com.example.mcp
 
 There is no MCP-specific Spring Boot auto-configuration class and no `McpProperties` binding -- all MCP behavior is controlled through `@Agent` attributes and the annotations in this module.
 
+### Running on Quarkus
+
+MCP servers also run on the Quarkus extension. Add `atmosphere-agent` and
+`atmosphere-mcp` alongside `atmosphere-quarkus-extension`, and set
+`quarkus.atmosphere.packages` to your `@Agent` package. The Quarkus build step
+recognizes `@Agent` and indexes the agent/mcp jars, so the endpoint, tools, and
+OAuth authorization register exactly as they do on Spring Boot.
+
+:::caution[JVM only]
+Native image is not yet supported for `@Agent`-based MCP — the agent processor
+links optional sibling modules (e.g. AG-UI) at build time, which native-image
+analysis rejects when they are absent. No Quarkus MCP sample ships today; the
+capability is covered by the extension's authorization test suite.
+:::
+
 ## Supported Transports
 
 | Transport | How to connect |

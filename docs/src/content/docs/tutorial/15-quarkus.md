@@ -198,6 +198,17 @@ Quarkus `AdminProducer` looks up a user-supplied `ControlAuthorizer`
 bean before falling back to `REQUIRE_PRINCIPAL`), and the MCP-tool
 admin surface when `atmosphere-mcp` is also on the classpath.
 
+## MCP servers on Quarkus
+
+Beyond the admin surface, you can run a full MCP **server** on Quarkus: add
+`atmosphere-agent` and `atmosphere-mcp` alongside the extension and set
+`quarkus.atmosphere.packages` to your `@Agent` package. The Quarkus build step
+recognizes `@Agent` and registers the MCP endpoint, tools, and OAuth
+authorization exactly as on Spring Boot — see the
+[MCP reference](/docs/reference/mcp/#running-on-quarkus). **JVM only**: native
+image is not yet supported for `@Agent`-based MCP, and no Quarkus MCP sample
+ships today (the capability is covered by the extension's test suite).
+
 ## Running the sample
 
 The `quarkus-chat` sample demonstrates a complete chat application:
