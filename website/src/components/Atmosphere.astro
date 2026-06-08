@@ -26,7 +26,7 @@ const pillars = [
   },
   {
     label: 'AI Runtimes',
-    title: '9 backends, swap by dependency',
+    title: '12 backends, swap by dependency',
     description: 'Atmosphere is the infrastructure layer underneath your LLM library. Your @Agent and @AiTool annotations work across every backend; capability flags are pinned by AbstractAgentRuntimeContractTest so adapter rows cannot drift from the running code.',
     items: [
       { name: 'Built-in', detail: 'Atmosphere\'s zero-dependency OpenAI-compatible client. Function calling (up to 5 rounds), JSON mode, vision, audio, prompt caching, native retry. Works against OpenAI, Gemini, Ollama, or any OpenAI-compatible endpoint.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
@@ -38,6 +38,9 @@ const pillars = [
       { name: 'Alibaba AgentScope', detail: 'Alibaba\'s multi-agent framework. Structured output, conversation memory, token usage; agents are first-class with explicit tool dispatch managed by your code.', url: 'https://github.com/agentscope-ai/agentscope-java', urlLabel: 'GitHub' },
       { name: 'Embabel', detail: 'Goal-driven agent framework by Rod Johnson, the creator of Spring. Declarative goals, planned execution, native PromptRunner; agent orchestration, tool calling, vision.', url: 'https://embabel.com', urlLabel: 'embabel.com' },
       { name: 'Spring AI Alibaba', detail: 'Spring AI Alibaba ReactAgent. Structured output, conversation memory, prompt-driven tool selection through Spring AI\'s ChatClient surface.', url: 'https://java2ai.com', urlLabel: 'java2ai.com' },
+      { name: 'Anthropic', detail: 'Native Anthropic Messages API client — no third-party SDK. Direct HTTP+SSE with a tool loop (up to 5 rounds), structured output, conversation memory, token usage, and Helicone-style header passthrough.', url: 'https://docs.anthropic.com/en/api/messages', urlLabel: 'Anthropic API' },
+      { name: 'Cohere', detail: 'Native Cohere v2 Chat API client — no third-party SDK. HTTP+SSE against POST /v2/chat with content-delta, tool-call, and citation events surfaced verbatim; vision and multi-modal supported. Sovereign-endpoint override via cohere.base.url.', url: 'https://docs.cohere.com/reference/chat', urlLabel: 'Cohere API' },
+      { name: 'CrewAI', detail: 'The first non-Java runtime — Java owns transport and @AiTool execution; an out-of-process Python sidecar (FastAPI + crewai 1.14) owns the multi-agent crew graph. Availability is gated by a live /health probe.', url: 'https://www.crewai.com', urlLabel: 'crewai.com' },
     ],
     extras: ['Portable @AiTool across all backends', 'Capability matrix CI-pinned', 'No code change to swap runtime'],
   },
