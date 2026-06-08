@@ -36,7 +36,9 @@ per request, so **every existing MCP client keeps working unchanged** while new 
   Bridge** (apps call server tools through the host under governance; the host lists and
   calls the app's own tools) and a **separate-origin sandbox proxy** for isolation.
 - **Authorization** — the server acts as an OAuth 2.0 Resource Server (RFC 9728 metadata +
-  `WWW-Authenticate`), delegating token validation to Spring Security / `quarkus-oidc`.
+  `WWW-Authenticate`); a request authenticates via a configured `TokenValidator` over
+  `Authorization: Bearer`, or a servlet filter's principal (e.g. Spring Security). End-to-end
+  tested on the embedded server, Spring Boot, and Quarkus (JVM).
 
 The outbound `atmosphere-mcp-client` still tracks the official MCP Java SDK and negotiates
 the session protocol; stateless client negotiation waits on upstream SDK support. See the
