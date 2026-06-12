@@ -19,9 +19,10 @@ The pattern was introduced by Erik Meijer in
 [*Guardians of the Agents*, Communications of the ACM, January 2026](https://cacm.acm.org/practice/guardians-of-the-agents/);
 the [metareflection/guardians](https://github.com/metareflection/guardians)
 Python implementation is the reference we modelled the core on. Atmosphere
-keeps Meijer's contract and goes substantially further — a six-verifier chain,
-static taint dataflow, capability least-authority, two interchangeable SMT
-backends, and a deterministic GOAP planner — see
+keeps Meijer's contract and goes substantially further — a seven-verifier chain,
+data-dependent branches proved on both arms, deep taint dataflow, capability
+least-authority, two interchangeable SMT backends, a deterministic GOAP planner,
+and a fail-closed human-in-the-loop gate — see
 [Beyond *Guardians of the Agents*](#beyond-guardians-of-the-agents).
 
 ---
@@ -81,15 +82,17 @@ executes. That is the headline guarantee.
 
 ## What the verifier chain catches
 
-Six built-in verifiers, all auto-discovered via `ServiceLoader`:
+Seven built-in verifiers, all auto-discovered via `ServiceLoader` and run in
+priority order:
 
 | Priority | Verifier | What it refuses |
 |---|---|---|
+| 5 | `StructureVerifier` | Plans containing a `ConditionalNode` under a `LINEAR_ONLY` policy (the default); set `ControlFlowMode.BRANCHING` to admit data-dependent branches |
 | 10 | `AllowlistVerifier` | Plans naming tools not in `Policy.allowedTools()` *or* not in the runtime `ToolRegistry` (catches deployment drift both ways) |
-| 20 | `WellFormednessVerifier` | Forward references — a `SymRef` used before the step that produces its binding (def-before-use) |
+| 20 | `WellFormednessVerifier` | Forward references — a `SymRef` (or conditional predicate name) used before the step that produces its binding (def-before-use) |
 | 25 | `CapabilityVerifier` | Plans calling tools whose `@RequiresCapability` declarations are not subsumed by `Policy.grantedCapabilities()` (least-authority) |
-| 30 | `TaintVerifier` | Dataflow that routes a `TaintRule.sourceTool()` output (incl. transitively, through intermediate bindings) into the rule's `sinkParam` |
-| 40 | `AutomatonVerifier` | Tool-call sequences that drive a `SecurityAutomaton` into an error state ("must authenticate before fetch", "finalize is terminal") |
+| 30 | `TaintVerifier` | Dataflow that routes a `TaintRule.sourceTool()` output (transitively, at any `SymRef` depth, through both arms of any branch) into the rule's `sinkParam` |
+| 40 | `AutomatonVerifier` | Tool-call sequences that can drive a `SecurityAutomaton` into an error state ("must authenticate before fetch", "finalize is terminal") on any reachable path |
 | 200 | `SmtVerifier` | Numeric invariants over symbolic tool-call data flow via the `SmtChecker` SPI — a real SMT backend ships as `atmosphere-verifier-smt` (SMTInterpol by default, Z3 opt-in). Falls back to a no-op only when that module is absent. See [SMT and Z3 invariants](#smt-and-z3-invariants) below. |
 
 Each verifier is a pure function over `(Workflow, Policy, ToolRegistry)`
@@ -102,52 +105,67 @@ not just the first failure.
 ## How each verifier works
 
 These are classic program-analysis techniques applied to the LLM's plan instead
-of to source code. The two non-trivial ones:
+of to source code.
+
+**`StructureVerifier` — the control-flow gate.** Runs first (priority 5) and
+enforces the policy's `ControlFlowMode`. Under `LINEAR_ONLY` (the default) any
+`ConditionalNode` is a violation: the plan must be a flat list of tool calls, so
+the static proof covers the *single* sequence that runs — the linear-workflow
+model of Meijer's paper. Under `ControlFlowMode.BRANCHING` conditionals are
+admitted, and every structural verifier below descends into **both arms** of each
+branch (the runtime predicate is never trusted to keep an unsafe arm from firing).
 
 **`TaintVerifier` — forward dataflow taint analysis.** *Taint analysis* tracks
 which values are derived from an untrusted source. The verifier maintains a
-taint environment, `Map<binding, Set<sourceTool>>`, and walks the plan's steps
-in order. For each call it does three things, **in this order**: (1) **sink-check
-first** — if the call's tool is a rule's sink and its forbidden `sinkParam` is a
-`SymRef` into a binding already tainted by that rule's source (e.g. an
-`fetch_emails` result reaching `send_email.body`), emit a violation; (2)
-**propagate** — union the taint of every `SymRef` argument's referenced binding
-into the call's outgoing set, and add the call's own tool if it is itself a
-source; (3) **bind** — record that outgoing set under the call's `resultBinding`,
-so taint flows **transitively** through intermediate bindings. Sink-checking
-*before* propagation is deliberate: a tool that is a source for one rule and a
-sink for another still has its inbound flow checked. This is the engine behind
-the headline inbox→`send_email` refusal.
+taint environment, `Map<binding, Set<sourceTool>>`, and walks the steps in order.
+For each call, **in this order**: (1) **sink-check first** — if the call's tool
+is a rule's sink and a `SymRef` **at any depth** inside the forbidden `sinkParam`
+points at a binding already tainted by that rule's source (e.g. an `fetch_emails`
+result reaching `send_email.body`), emit a violation; (2) **propagate** — union
+the taint of every `SymRef` argument (at any depth) into the call's outgoing set,
+plus the call's own tool if it is itself a source; (3) **bind** — record that set
+under the call's `resultBinding`, so taint flows **transitively**. At a
+`ConditionalNode` each arm is walked over a *deep copy* of the environment and the
+two results are **unioned** back (a binding tainted on either arm is tainted
+afterward) — a sound over-approximation. This is the engine behind the headline
+inbox→`send_email` refusal.
 
-**`AutomatonVerifier` — symbolic execution over a security automaton.** A
+**`AutomatonVerifier` — symbolic execution over a *set* of automaton states.** A
 `SecurityAutomaton` is a finite-state machine (`states`, `transitions`,
 `initialState`) that declares legal tool-call orderings ("`authenticate` before
-`fetch`", "`finalize` is terminal"). The verifier sets the current state to
-`initialState` and walks the plan's calls in order: on each call it finds the
-transition matching `(fromState, toolName)`, advances the state, and emits a
-violation if the destination is an error state (one violation per automaton). A
-call with no matching transition is outside that automaton's vocabulary and
-passes. Matching is **first-transition-wins over a single current state** — the
-check is deliberately single-path, not a path-enumerating model checker (see
-[Scope](#scope)).
+`fetch`", "`finalize` is terminal"). The plan is executed symbolically over the
+**set** of states the automaton could be in (initially `{initialState}`). On each
+call, every current state advances through *all* matching `(fromState, toolName)`
+transitions; each transition's guard is evaluated statically in the
+[`Condition` grammar](#data-dependent-branches-and-guards) to a **tristate** —
+`TRUE` takes the target, `FALSE` blocks it, and `UNKNOWN` (a guard over a value
+resolved only at run time) keeps **both** the target *and* the staying state.
+Conditional arms are explored from the branch-point state set and unioned. If any
+reachable state is an error state the plan is refused. Tracking a state *set*
+(not a single path) and splitting on unknown guards is the sound
+over-approximation — the verifier never misses an error state a runtime value
+could reach.
 
 **`AllowlistVerifier`, `CapabilityVerifier`, `WellFormednessVerifier`** are the
-fully-decidable structural checks: set membership (`tool ∈ Policy.allowedTools ∩
-ToolRegistry` — drift in *either* direction fails), capability subsumption (each
-tool's `@RequiresCapability` set must be a subset of `Policy.grantedCapabilities()`
-— least authority), and *def-before-use* (every `SymRef` must be produced by an
-**earlier** step — forward references are rejected).
+fully-decidable structural checks, each covering both arms of every branch (the
+per-call ones via a shared `PlanWalk`, well-formedness by forking branch scope):
+set membership (`tool ∈ Policy.allowedTools ∩ ToolRegistry` — drift in *either*
+direction fails), capability subsumption (each tool's `@RequiresCapability` set
+must be a subset of `Policy.grantedCapabilities()` — least authority), and
+*def-before-use* (every `SymRef` **and** every conditional predicate name must be
+produced by an **earlier** step — forward references are rejected).
 
 **`SmtVerifier` → `SmtChecker` SPI.** For numeric properties the structural
 checks can't express, the chain delegates to an SMT (*Satisfiability Modulo
-Theories*) solver. It encodes the plan's symbolic dataflow plus the **negation**
-of each `NumericInvariant` and asks the solver whether that is satisfiable:
-**UNSAT** (unsatisfiable) means the invariant holds for **all** runtime values —
-proven safe; **SAT** (satisfiable) yields a concrete counterexample and the plan
-is refused. `SmtChecker.resolve()` selects the highest-priority backend whose
-`isAvailable()` reports *runtime* load success (not mere classpath presence),
-falling back to a green no-op (`NoOpSmtChecker`, priority 0) when no real backend
-is available — e.g. the optional `atmosphere-verifier-smt` module isn't present.
+Theories*) solver. For each `NumericInvariant` it asserts the invariant's
+**negation** against the plan's symbolic tool-call arguments and asks the solver
+whether that is satisfiable: **UNSAT** (unsatisfiable) means no runtime assignment
+violates the invariant — it holds for **all** values, proven safe; **SAT**
+(satisfiable) yields a concrete counterexample and the plan is refused.
+`SmtChecker.resolve()` selects the highest-priority backend whose `isAvailable()`
+reports *runtime* load success (not mere classpath presence), falling back to a
+green no-op (`NoOpSmtChecker`, priority 0) when no real backend is available —
+e.g. the optional `atmosphere-verifier-smt` module isn't present.
 
 ---
 
@@ -189,6 +207,56 @@ type discriminators. That means any structured-output-capable LLM can
 produce conformant plans, and the `verifier` module's compile path
 stays Jackson-free.
 
+The AST is a **sealed** hierarchy — `PlanNode permits ToolCallNode, ConditionalNode`
+— so every verifier's node-type `switch` is exhaustive and a new node kind cannot
+be added without each verifier being updated to handle it.
+
+---
+
+## Data-dependent branches and guards
+
+A plan is a flat list of tool calls by default. A policy that opts into
+`ControlFlowMode.BRANCHING` may also contain a **`ConditionalNode`** — a
+data-dependent branch:
+
+```json
+{
+  "conditional": {
+    "predicate": "score >= 80",
+    "then":      [ { "label": "approve",  "toolName": "approve",  "arguments": { "id": "@candidate" } } ],
+    "otherwise": [ { "label": "escalate", "toolName": "escalate", "arguments": { "id": "@candidate" } } ]
+  }
+}
+```
+
+`ConditionalNode(predicate, thenSteps, elseSteps)` carries a guard and two arms.
+The `predicate` — and every `AutomatonTransition` guard — is written in the
+**`Condition` grammar**, a single total comparison:
+
+```
+condition := <var> <op> <operand>
+<op>      := ==  |  !=  |  <=  |  >=  |  <  |  >
+```
+
+The left side is a bound variable; the right side is a number, boolean, quoted or
+bare string, or an `@`-reference to another binding. There are no boolean
+combinators (`&&` / `||` / `!`) and no arithmetic — a guard is exactly one
+comparison.
+
+Crucially the *same* expression is evaluated **two ways**:
+
+- **Statically, at verification time** (`evaluateStatic` → `TRUE` / `FALSE` /
+  `UNKNOWN`). When both operands are literally known the guard folds to `TRUE` or
+  `FALSE`; when an operand is a `SymRef` resolved only at run time it is `UNKNOWN`,
+  and the `AutomatonVerifier` soundly explores **both** successor states.
+- **At run time** (`evaluate` → `boolean`). `WorkflowExecutor` evaluates the
+  `ConditionalNode` predicate against the resolved environment to pick the `then`
+  or `otherwise` arm — but only *after* the whole plan (both arms) has already
+  passed verification.
+
+Because the structural verifiers prove **both** arms, a branch can never smuggle
+an unsafe call past the chain by hiding it behind a predicate the LLM controls.
+
 ---
 
 ## Implementation
@@ -212,19 +280,23 @@ The moving parts map one-to-one to source under
 
 **The plan AST** — immutable, sealed, Jackson-free
 
-- `Workflow` → ordered `WorkflowStep`s; each step is a `ToolCallNode` (the
-  `PlanNode` sealed hierarchy) with a `toolName`, an arguments map, and a
-  `resultBinding`. `SymRef` models the `"@binding"` references, resolved by the
-  executor **after** verification (`@@` escapes a literal `@`).
+- `Workflow` → ordered `WorkflowStep`s; each step's node is a `ToolCallNode`
+  (`toolName`, arguments map, `resultBinding`) or a `ConditionalNode`
+  (`predicate`, `thenSteps`, `elseSteps`) — the sealed
+  `PlanNode permits ToolCallNode, ConditionalNode`. `SymRef` models the
+  `"@binding"` references, resolved by the executor **after** verification
+  (`@@` escapes a literal `@`).
 
 **The verifier chain** — each a pure `PlanVerifier` SPI implementation,
 `ServiceLoader`-registered and run in priority order:
 
-- `AllowlistVerifier`, `WellFormednessVerifier`,
-  `CapabilityVerifier` (with `CapabilityScanner` + the `@RequiresCapability`
-  annotation), `TaintVerifier` (with `TaintRule`, the `@Sink` annotation, and
-  `SinkScanner`), `AutomatonVerifier` (with `SecurityAutomaton`,
-  `AutomatonState`, `AutomatonTransition`).
+- `StructureVerifier` (enforces the policy's `ControlFlowMode` — admitting or
+  refusing `ConditionalNode` branches), `AllowlistVerifier`,
+  `WellFormednessVerifier`, `CapabilityVerifier` (with `CapabilityScanner` + the
+  `@RequiresCapability` annotation), `TaintVerifier` (with `TaintRule`, the
+  `@Sink` annotation, and `SinkScanner`), `AutomatonVerifier` (with
+  `SecurityAutomaton`, `AutomatonState`, `AutomatonTransition`, and the
+  `Condition` guard grammar).
 - Each yields a `VerificationResult` of `Violation`s; `PlanAndVerify` merges
   them via `VerificationResult.merge` so callers see **every** failure, not
   just the first.
@@ -237,13 +309,15 @@ The moving parts map one-to-one to source under
 
 **Execution**
 
-- `WorkflowExecutor` resolves `SymRef`s against the run environment and
-  dispatches each verified step through a `ToolDispatcher` (default
-  `RegistryToolDispatcher` → the `ToolRegistry`).
+- `WorkflowExecutor` resolves `SymRef`s against the run environment, evaluates any
+  `ConditionalNode` predicate to select an arm, and dispatches each verified step
+  through a `ToolDispatcher` — either the default `RegistryToolDispatcher`
+  (→ the `ToolRegistry`) or the `GatedToolDispatcher`, which runs every call past a
+  fail-closed `ApprovalGate` (human-in-the-loop) before dispatch.
 
 **Complementary — deterministic planning.** The module also ships a GOAP
 planner (`GoapPlanner` / `GoapAction` / `GoapPlanRuntime`): the *never let the
-LLM author the plan* path. It computes a provably-reachable workflow from typed
+LLM author the plan* path. It computes a provably-reachable workflow from declared
 pre/post-conditions and feeds it to the **same** verifier chain — so you can
 verify an LLM-emitted plan or generate one deterministically, and either way
 the chain is the gate.
@@ -404,9 +478,16 @@ backends are tested against each other so enabling Z3 can never change a
 verdict. The suite under
 [`modules/verifier/src/test`](https://github.com/Atmosphere/atmosphere/tree/main/modules/verifier/src/test):
 
-- **Per-verifier** — `AllowlistVerifierTest`, `WellFormednessVerifierTest`,
-  `CapabilityVerifierTest`, `TaintVerifierTest`, `AutomatonVerifierTest`: each
-  asserts *both* the pass path and the exact `Violation` its verifier must raise.
+- **Per-verifier** — `StructureVerifierTest`, `AllowlistVerifierTest`,
+  `WellFormednessVerifierTest`, `CapabilityVerifierTest`, `TaintVerifierTest`,
+  `AutomatonVerifierTest`: each asserts *both* the pass path and the exact
+  `Violation` its verifier must raise.
+- **Branches & guards** — `ConditionalVerificationTest` (every verifier proves
+  both arms), `ConditionTest` (the guard grammar + static tristate /
+  runtime eval), `AutomatonGuardTest` (guarded transitions, including the
+  `UNKNOWN`-splits-both-ways case), `DeepSymRefTest` (taint through nested
+  list/map arguments), and `WorkflowJsonConditionalTest` /
+  `WorkflowExecutorConditionalTest` (parse + runtime arm selection).
 - **Orchestration** — `PlanAndVerifyTest` drives the full chain end-to-end (a
   clean plan executes; a malicious one throws `PlanVerificationException` with
   the expected violation). `PlanAstRoundtripTest` + `WorkflowJsonParserTest` pin
@@ -417,8 +498,9 @@ verdict. The suite under
 - **Taint plumbing** — `SinkScannerTest` pins that `@Sink` annotations derive
   the correct `TaintRule`s, so the code and the policy stay single-sourced.
 - **Execution & CLI** — `WorkflowExecutorTest` (post-verification `SymRef`
-  resolution + dispatch), `VerifyCliTest` / `VerifyCliEmptyChainTest` (exit
-  codes, empty-chain behavior).
+  resolution + dispatch), `GatedToolDispatcherTest` (fail-closed approval:
+  denied *and* throwing gates both block the tool), `VerifyCliTest` /
+  `VerifyCliEmptyChainTest` (exit codes, empty-chain behavior).
 - **Deterministic planning** — `GoapPlannerTest`, `GoapPlanRuntimeTest`.
 - **End-to-end** — `GuardedEmailAgentTest` exercises the console-driven sample
   pipeline (plans that execute *and* plans that are refused).
@@ -432,14 +514,22 @@ attack/clean plan pairs double as a security-regression corpus.
 
 Meijer's paper establishes the core contract — the LLM emits a symbolic plan, a
 static verifier checks it against a policy, and an SMT solver discharges numeric
-invariants. `atmosphere-verifier` keeps that contract and extends it on five axes:
+invariants. `atmosphere-verifier` keeps that contract and extends it on six axes:
 
-- **A verifier *chain*, not just allowlist + SMT.** Five structural verifiers
-  compose via `ServiceLoader` — `AllowlistVerifier`, `WellFormednessVerifier`,
-  `CapabilityVerifier` (least-authority), `TaintVerifier` (static `@Sink`
-  dataflow), and `AutomatonVerifier` (call-ordering) — plus the `SmtVerifier`
-  numeric layer. Each is independently pluggable, and the chain aggregates **every**
-  failure into one violation list rather than stopping at the first.
+- **A verifier *chain*, not just allowlist + SMT.** Six structural verifiers
+  compose via `ServiceLoader` — `StructureVerifier` (control-flow gate),
+  `AllowlistVerifier`, `WellFormednessVerifier`, `CapabilityVerifier`
+  (least-authority), `TaintVerifier` (static `@Sink` dataflow), and
+  `AutomatonVerifier` (call-ordering) — plus the `SmtVerifier` numeric layer. Each
+  is independently pluggable, and the chain aggregates **every** failure into one
+  violation list rather than stopping at the first.
+- **Data-dependent control flow, proved on both arms.** The paper's plans are
+  straight-line. Atmosphere admits `ConditionalNode` branches under
+  `ControlFlowMode.BRANCHING`, and every structural verifier descends into
+  **both** arms — taint forks its environment and the automaton forks its state
+  set, each walks both arms and unions the results — so a branch can never hide an
+  unsafe call behind a predicate the LLM controls. `LINEAR_ONLY` (the default)
+  keeps the airtight straight-line proof for deployments that don't need branching.
 - **Policy single-sourced from code.** `@Sink` and `@RequiresCapability`
   annotations on the `@AiTool` methods *are* the policy; `SinkScanner` and
   `CapabilityScanner` derive the `TaintRule`s and capability map by reflecting
@@ -453,37 +543,43 @@ invariants. `atmosphere-verifier` keeps that contract and extends it on five axe
   (`GoapPlanner`) computes the shortest plan reaching a goal from declared
   pre/post-conditions and emits a `Workflow` — the *same* AST the chain verifies
   — so you can verify an LLM-emitted plan **or** never let the LLM author one at all.
-- **A consumable module, not a one-off script.** The chain ships as
-  `atmosphere-verifier` behind a `PlanAndVerify` facade and is consumed three
-  ways: a CLI (`VerifyCli`), the Atmosphere **Console Validation tab** (the admin
-  `VerifierController`, auto-configured by the Spring Boot starter), and a worked
-  sample (`spring-boot-guarded-email-agent`). And it's native Java, not Python.
+- **A fail-closed human-in-the-loop gate.** `GatedToolDispatcher` wraps execution
+  in an `ApprovalGate`: a tool fires only on an explicit `true`, and a gate that
+  denies *or throws* refuses the call (`ApprovalDeniedException`) — defense in
+  depth *on top of* the static proof, drop-in interchangeable with the
+  auto-dispatching `RegistryToolDispatcher` at wiring time.
+
+All of this ships as a consumable module, not a one-off script: `atmosphere-verifier`
+behind a `PlanAndVerify` facade, consumed by a CLI (`VerifyCli`), the Atmosphere
+**Console Validation tab** (the admin `VerifierController`, auto-configured by the
+Spring Boot starter), and a worked sample (`spring-boot-guarded-email-agent`) —
+native Java, not Python.
 
 ---
 
 ## Scope
 
-The shipped verifiers are deliberately conservative. These are the boundaries of
-what the chain decides — stated as facts, not a roadmap:
+The chain is deliberately conservative. These are the boundaries of what it
+decides — stated as facts, not a roadmap:
 
-- **The plan AST is linear** — `PlanNode` is a sealed interface that permits only
-  `ToolCallNode`; the grammar has no conditional or loop nodes, so every verifier
-  reasons over a straight-line sequence of calls.
-- **Taint and `SymRef` resolution are shallow** — a `SymRef` nested inside a
-  list/map argument is not unwrapped. The executor shares this boundary, so a
-  reference the taint walk can't see through is one the executor won't dereference
-  either; the two stay consistent rather than the analysis going blind behind the
-  executor's back.
-- **Automaton checking is single-path** — the verifier advances a single current
-  state by first-matching transition and refuses any plan that reaches an error
-  state. It does not enumerate paths, treat multiple matching transitions
-  nondeterministically, or decide temporal (LTL/CTL) liveness properties.
-- **SMT is linear integer arithmetic** — the `atmosphere-verifier-smt` backend
+- **Control flow is bounded — branches, not loops.** `PlanNode permits
+  ToolCallNode, ConditionalNode`; there is no loop or iteration node, so a plan is
+  a tree of bounded depth and the both-arms proof always terminates. Under
+  `LINEAR_ONLY` (the default) even conditionals are refused.
+- **Guards are a single comparison.** The `Condition` grammar is `<var> <op>
+  <operand>` with no boolean combinators (`&&` / `||` / `!`) and no arithmetic.
+  Richer ordering logic is expressed as automaton *structure* (states and
+  transitions), not as a compound guard.
+- **Taint reasons over references, not value contents.** `SymRef`s are resolved at
+  any depth, but the AST has no string-concatenation or arithmetic nodes — there
+  is no sub-value flow (e.g. a substring of a tainted value) for a reference-level
+  analysis to model.
+- **SMT is linear integer arithmetic.** The `atmosphere-verifier-smt` backend
   proves numeric invariants over symbolic tool-call arguments. Real and
   bit-vector theories, and loop-carried cost/budget proofs, are out of scope.
-- **Plans are closed** — every binding is produced by a step; there is no
-  separate "external inputs" section, so a reference to an externally-supplied
-  env key fails well-formedness by design.
+- **Plans are closed.** Every binding is produced by a step; there is no separate
+  "external inputs" section, so a reference to an externally-supplied env key fails
+  well-formedness by design.
 
 Within these boundaries the structural and SMT guarantees cover the canonical
 prompt-injection and over-privilege attack classes the verifier is built for.
