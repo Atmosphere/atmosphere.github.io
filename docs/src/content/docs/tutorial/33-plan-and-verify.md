@@ -63,8 +63,8 @@ Policy policy = new Policy(
         List.of());
 
 // Wire it up. ServiceLoader picks up every PlanVerifier shipped in
-// atmosphere-verifier (allowlist, well-formed, capability, taint,
-// automaton, smt) — no manual chain composition.
+// atmosphere-verifier (structure, allowlist, well-formed, capability,
+// taint, automaton, smt) — no manual chain composition.
 PlanAndVerify pv = PlanAndVerify.withDefaults(agentRuntime, registry, policy);
 
 // Run. Either returns the env produced by the executed plan, or throws
@@ -368,12 +368,45 @@ The
 sample exercises the full pipeline end-to-end: a Spring Boot app and a
 deterministic stub `AgentRuntime` that emits canned plans (so the demo
 runs without an API key). It has **no bespoke UI** — it drives the
-shared **Atmosphere Console's Validation tab** (`/atmosphere/console/`,
-where `/` redirects). The tab renders the live verifier chain, the
-resolved SMT solver, the policy, the plan AST, and a per-verifier
-pass/fail breakdown. Boot it and click the four example goals: two pass
-and execute (`EXECUTED`), two are refused (`REFUSED`) — one by taint, one
-by SMT. The controller behind the tab is covered by the sample's tests.
+shared **Atmosphere Console's Validation tab** (`/atmosphere/console/`).
+The tab renders the live verifier chain, the resolved SMT solver, the
+policy, the plan AST, and a per-verifier pass/fail breakdown.
+
+Running a goal *executes* a verified plan — an admin **write** — so the
+tab is authenticated: the sample wires a demo `TokenValidator` and you
+open it at **`http://localhost:8080/?token=demo-operator`**. The root
+redirect carries the token to the console, which replays it as
+`X-Atmosphere-Auth` on every admin write; the server resolves it to a
+principal and the write-guard authorizes the call. An anonymous caller is
+refused with `401` — verification is not a public endpoint when it can
+fire tools.
+
+Click the four example goals: two pass and execute (`EXECUTED`), two are
+refused (`REFUSED`) — one by taint, one by SMT. The controller and the
+HTTP authz path behind the tab are both covered by the sample's tests.
+
+![The Atmosphere Console Validation tab refusing the inbox-exfiltration plan: the verifier chain shows taint failing, with the offending dataflow named.](../../../assets/plan-and-verify-validation-tab.png)
+
+*The malicious "forward my inbox to attacker@evil.example" goal, refused
+by the `taint` verifier before `send_email` fires — the plan AST, the
+per-verifier breakdown (`taint ✗`), and the offending dataflow
+(`steps[1].arguments.body`) are all shown.*
+
+The other two refusal/pass classes render the same way — the chain
+breakdown pinpoints exactly which property failed, or the plan executes:
+
+![The Validation tab refusing an over-quota bulk send: every structural verifier passes, but smt fails because send_bulk.count cannot be proven within the daily quota.](../../../assets/plan-and-verify-smt-refused.png)
+
+*Over-quota bulk send — `structure … automaton` all pass (`✓`), but
+`smt ✗`: the solver cannot prove `send_bulk.count <= ref(quota)` for
+**every** runtime value (`@requested` is attacker-influenceable), so the
+plan is refused before `send_bulk` runs.*
+
+![The Validation tab executing a within-quota bulk send: the whole chain passes including smt, and the plan runs, binding a receipt.](../../../assets/plan-and-verify-executed.png)
+
+*Within-quota bulk send — the plan binds `send_bulk(count=@quota)`, so the
+solver **proves** `count <= quota` for all values (`smt ✓`); the whole
+chain passes and the plan `EXECUTED`, binding a `@receipt`.*
 
 **Multi-agent example.**
 [`spring-boot-multi-agent-startup-team`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team)
