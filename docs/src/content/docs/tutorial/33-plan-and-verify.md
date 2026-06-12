@@ -375,6 +375,17 @@ pass/fail breakdown. Boot it and click the four example goals: two pass
 and execute (`EXECUTED`), two are refused (`REFUSED`) — one by taint, one
 by SMT. The controller behind the tab is covered by the sample's tests.
 
+**Multi-agent example.**
+[`spring-boot-multi-agent-startup-team`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team)
+takes the same chain to a *team*: a `@Coordinator` CEO verifies the whole team's
+plan **before any specialist agent is dispatched**, so cross-agent data governance
+(confidential `financial_model` output must not reach an external
+`publish_to_board`), an SMT budget bound (`commit_budget.amount <= ref(runway)`),
+and a research-before-finance ordering automaton are enforced on the
+*orchestration*, not just one agent's tools — plus the fail-closed
+`GatedToolDispatcher` approval gate on the CEO's consequential action. The
+verifier guards the plan; Atmosphere's governance plane gates each dispatch.
+
 ---
 
 ## SMT and Z3 invariants
@@ -596,3 +607,4 @@ prompt-injection and over-privilege attack classes the verifier is built for.
   is independent and shares no code with it.
 - Atmosphere implementation in [`modules/verifier/`](https://github.com/Atmosphere/atmosphere/tree/main/modules/verifier).
 - End-to-end sample: [`spring-boot-guarded-email-agent`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-guarded-email-agent).
+- Multi-agent sample: [`spring-boot-multi-agent-startup-team`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team) — the chain verifies a coordinator's team plan before any agent runs.
