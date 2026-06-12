@@ -16,7 +16,7 @@ dispatch**. Atmosphere refuses bad plans before any tool fires — the
 same mechanical reasoning that makes parameterised SQL safe.
 
 The pattern was introduced by Erik Meijer in
-[*Guardians of the Agents*, Communications of the ACM, January 2026](https://cacm.acm.org/research/guardians-of-the-agents/);
+[*Guardians of the Agents*, Communications of the ACM, January 2026](https://cacm.acm.org/practice/guardians-of-the-agents/);
 the [metareflection/guardians](https://github.com/metareflection/guardians)
 Python implementation is the reference we modelled this module on. Same
 guarantees, native Java API.
@@ -130,6 +130,65 @@ The wire format is intentionally flat — no Jackson polymorphism, no
 type discriminators. That means any structured-output-capable LLM can
 produce conformant plans, and the `verifier` module's compile path
 stays Jackson-free.
+
+---
+
+## Implementation
+
+`atmosphere-verifier` is a small, dependency-light module (the core compile
+path is Jackson-free; the optional `atmosphere-verifier-smt` adds the solver).
+The moving parts map one-to-one to source under
+[`modules/verifier/`](https://github.com/Atmosphere/atmosphere/tree/main/modules/verifier):
+
+**Orchestration**
+
+- `PlanAndVerify` — the entry point. `withDefaults(runtime, registry, policy)`
+  composes the `ServiceLoader`-discovered chain; `run(goal, env)` prompts the
+  runtime (in plan mode) for a workflow, parses it, runs every verifier, and
+  dispatches **only** on a clean result — otherwise it throws
+  `PlanVerificationException` carrying the full `Violation` list.
+- `PlanPromptBuilder` — builds the plan-mode system prompt that asks the LLM
+  for the flat JSON workflow.
+- `WorkflowJsonParser` — parses that JSON into the sealed AST and rejects
+  malformed plans **at the boundary** (a parse failure is a refusal, not a 500).
+
+**The plan AST** — immutable, sealed, Jackson-free
+
+- `Workflow` → ordered `WorkflowStep`s; each step is a `ToolCallNode` (the
+  `PlanNode` sealed hierarchy) with a `toolName`, an arguments map, and a
+  `resultBinding`. `SymRef` models the `"@binding"` references, resolved by the
+  executor **after** verification (`@@` escapes a literal `@`).
+
+**The verifier chain** — each a pure `PlanVerifier` SPI implementation,
+`ServiceLoader`-registered and run in priority order:
+
+- `AllowlistVerifier`, `WellFormednessVerifier`,
+  `CapabilityVerifier` (with `CapabilityScanner` + the `@RequiresCapability`
+  annotation), `TaintVerifier` (with `TaintRule`, the `@Sink` annotation, and
+  `SinkScanner`), `AutomatonVerifier` (with `SecurityAutomaton`,
+  `AutomatonState`, `AutomatonTransition`).
+- Each yields a `VerificationResult` of `Violation`s; `PlanAndVerify` merges
+  them via `VerificationResult.merge` so callers see **every** failure, not
+  just the first.
+
+**The SMT layer** — `atmosphere-verifier-smt`
+
+- `SmtVerifier` → the `SmtChecker` SPI → `SmtInterpolChecker` (pure-JVM default)
+  or `Z3SmtChecker` (native, opt-in), both built on `AbstractJavaSmtChecker`.
+  Invariants are `NumericInvariant`s declared on the `Policy`.
+
+**Execution**
+
+- `WorkflowExecutor` resolves `SymRef`s against the run environment and
+  dispatches each verified step through a `ToolDispatcher` (default
+  `RegistryToolDispatcher` → the `ToolRegistry`).
+
+**Complementary — deterministic planning.** The module also ships a GOAP
+planner (`GoapPlanner` / `GoapAction` / `GoapPlanRuntime`): the *never let the
+LLM author the plan* path. It computes a provably-reachable workflow from typed
+pre/post-conditions and feeds it to the **same** verifier chain — so you can
+verify an LLM-emitted plan or generate one deterministically, and either way
+the chain is the gate.
 
 ---
 
@@ -271,6 +330,37 @@ per-verifier pass/fail breakdown for any goal. Scaffold it with
 
 ---
 
+## Tests
+
+Every verifier and the orchestrator has a dedicated unit test, and the two SMT
+backends are tested against each other so enabling Z3 can never change a
+verdict. The suite under
+[`modules/verifier/src/test`](https://github.com/Atmosphere/atmosphere/tree/main/modules/verifier/src/test):
+
+- **Per-verifier** — `AllowlistVerifierTest`, `WellFormednessVerifierTest`,
+  `CapabilityVerifierTest`, `TaintVerifierTest`, `AutomatonVerifierTest`: each
+  asserts *both* the pass path and the exact `Violation` its verifier must raise.
+- **Orchestration** — `PlanAndVerifyTest` drives the full chain end-to-end (a
+  clean plan executes; a malicious one throws `PlanVerificationException` with
+  the expected violation). `PlanAstRoundtripTest` + `WorkflowJsonParserTest` pin
+  the JSON ↔ AST contract; `PlanPromptBuilderTest` pins the plan-mode prompt.
+- **SMT** — `SmtCheckerTest`, `SmtInterpolCheckerTest`, `Z3SmtCheckerTest`:
+  the same invariant resolves identically on both solvers (UNSAT → proven safe,
+  SAT → counterexample → refused).
+- **Taint plumbing** — `SinkScannerTest` pins that `@Sink` annotations derive
+  the correct `TaintRule`s, so the code and the policy stay single-sourced.
+- **Execution & CLI** — `WorkflowExecutorTest` (post-verification `SymRef`
+  resolution + dispatch), `VerifyCliTest` / `VerifyCliEmptyChainTest` (exit
+  codes, empty-chain behavior).
+- **Deterministic planning** — `GoapPlannerTest`, `GoapPlanRuntimeTest`.
+- **End-to-end** — `GuardedEmailAgentTest` exercises the console-driven sample
+  pipeline (plans that execute *and* plans that are refused).
+
+The whole suite runs on every push as part of the reactor build, and the
+attack/clean plan pairs double as a security-regression corpus.
+
+---
+
 ## Limitations
 
 The shipped verifiers are intentionally conservative:
@@ -301,8 +391,8 @@ attack class.
 
 ## References
 
-- Erik Meijer. [*Guardians of the Agents*](https://cacm.acm.org/research/guardians-of-the-agents/).
-  Communications of the ACM, Vol. 69 No. 1 (January 2026).
+- Erik Meijer. [*Guardians of the Agents*](https://cacm.acm.org/practice/guardians-of-the-agents/).
+  Communications of the ACM, January 2026. DOI [10.1145/3777544](https://dl.acm.org/doi/10.1145/3777544).
 - [metareflection/guardians](https://github.com/metareflection/guardians) —
   the Python reference implementation.
 - Atmosphere implementation in [`modules/verifier/`](https://github.com/Atmosphere/atmosphere/tree/main/modules/verifier).
