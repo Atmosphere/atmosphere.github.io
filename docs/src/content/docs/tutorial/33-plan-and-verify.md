@@ -111,8 +111,9 @@ enforces the policy's `ControlFlowMode`. Under `LINEAR_ONLY` (the default) any
 `ConditionalNode` is a violation: the plan must be a flat list of tool calls, so
 the static proof covers the *single* sequence that runs — the linear-workflow
 model of Meijer's paper. Under `ControlFlowMode.BRANCHING` conditionals are
-admitted, and every structural verifier below descends into **both arms** of each
-branch (the runtime predicate is never trusted to keep an unsafe arm from firing).
+admitted, and every verifier below — the structural checks *and* the SMT layer —
+descends into **both arms** of each branch (the runtime predicate is never trusted
+to keep an unsafe arm from firing).
 
 **`TaintVerifier` — forward dataflow taint analysis.** *Taint analysis* tracks
 which values are derived from an untrusted source. The verifier maintains a
@@ -253,8 +254,8 @@ Crucially the *same* expression is evaluated **two ways**:
   or `otherwise` arm — but only *after* the whole plan (both arms) has already
   passed verification.
 
-Because the structural verifiers prove **both** arms, a branch can never smuggle
-an unsafe call past the chain by hiding it behind a predicate the LLM controls.
+Because every verifier proves **both** arms, a branch can never smuggle an unsafe
+call past the chain by hiding it behind a predicate the LLM controls.
 
 ---
 
@@ -524,10 +525,11 @@ invariants. `atmosphere-verifier` keeps that contract and extends it on six axes
   violation list rather than stopping at the first.
 - **Data-dependent control flow, proved on both arms.** The paper's plans are
   straight-line. Atmosphere admits `ConditionalNode` branches under
-  `ControlFlowMode.BRANCHING`, and every structural verifier descends into
-  **both** arms — taint forks its environment and the automaton forks its state
-  set, each walks both arms and unions the results — so a branch can never hide an
-  unsafe call behind a predicate the LLM controls. `LINEAR_ONLY` (the default)
+  `ControlFlowMode.BRANCHING`, and every verifier descends into **both** arms —
+  taint forks its environment, the automaton forks its state set, and the SMT
+  layer discharges its invariants on calls in either arm; the results are unioned
+  — so a branch can never hide an unsafe call behind a predicate the LLM controls.
+  `LINEAR_ONLY` (the default)
   keeps the airtight straight-line proof for deployments that don't need branching.
 - **Policy single-sourced from code.** `@Sink` and `@RequiresCapability`
   annotations on the `@AiTool` methods *are* the policy; `SinkScanner` and
