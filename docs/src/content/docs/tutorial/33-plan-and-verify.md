@@ -16,13 +16,12 @@ dispatch**. Atmosphere refuses bad plans before any tool fires — the
 same mechanical reasoning that makes parameterised SQL safe.
 
 The pattern was introduced by Erik Meijer in
-[*Guardians of the Agents*, Communications of the ACM, January 2026](https://cacm.acm.org/practice/guardians-of-the-agents/);
-the [metareflection/guardians](https://github.com/metareflection/guardians)
-Python implementation is the reference we modelled the core on. Atmosphere
-keeps Meijer's contract and goes substantially further — a seven-verifier chain,
-data-dependent branches proved on both arms, deep taint dataflow, capability
-least-authority, two interchangeable SMT backends, a deterministic GOAP planner,
-and a fail-closed human-in-the-loop gate — see
+[*Guardians of the Agents*, Communications of the ACM, January 2026](https://cacm.acm.org/practice/guardians-of-the-agents/).
+`atmosphere-verifier` is an independent, native-Java implementation of that
+pattern — it keeps Meijer's contract and goes substantially further: a
+seven-verifier chain, data-dependent branches proved on both arms, deep taint
+dataflow, capability least-authority, two interchangeable SMT backends, a
+deterministic GOAP planner, and a fail-closed human-in-the-loop gate — see
 [Beyond *Guardians of the Agents*](#beyond-guardians-of-the-agents).
 
 ---
@@ -553,7 +552,7 @@ All of this ships as a consumable module, not a one-off script: `atmosphere-veri
 behind a `PlanAndVerify` facade, consumed by a CLI (`VerifyCli`), the Atmosphere
 **Console Validation tab** (the admin `VerifierController`, auto-configured by the
 Spring Boot starter), and a worked sample (`spring-boot-guarded-email-agent`) —
-native Java, not Python.
+a native-Java module end to end.
 
 ---
 
@@ -591,6 +590,7 @@ prompt-injection and over-privilege attack classes the verifier is built for.
 - Erik Meijer. [*Guardians of the Agents*](https://cacm.acm.org/practice/guardians-of-the-agents/).
   Communications of the ACM, January 2026. DOI [10.1145/3777544](https://dl.acm.org/doi/10.1145/3777544).
 - [metareflection/guardians](https://github.com/metareflection/guardians) —
-  the Python reference implementation.
+  the paper's own reference implementation (Python). Atmosphere's implementation
+  is independent and shares no code with it.
 - Atmosphere implementation in [`modules/verifier/`](https://github.com/Atmosphere/atmosphere/tree/main/modules/verifier).
 - End-to-end sample: [`spring-boot-guarded-email-agent`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-guarded-email-agent).
