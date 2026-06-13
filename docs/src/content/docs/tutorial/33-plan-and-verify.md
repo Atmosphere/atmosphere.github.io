@@ -446,15 +446,15 @@ natives on `java.library.path`:
 
 ```xml
 <dependency>
-  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.51</version>
+  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.54</version>
 </dependency>
 <!-- macOS arm64 (verified). Linux x64 → libz3-x64 / .so; Windows x64 → .dll -->
 <dependency>
-  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.51</version>
+  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.54</version>
   <classifier>libz3-arm64</classifier><type>dylib</type>
 </dependency>
 <dependency>
-  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.51</version>
+  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.54</version>
   <classifier>libz3java-arm64</classifier><type>dylib</type>
 </dependency>
 ```
