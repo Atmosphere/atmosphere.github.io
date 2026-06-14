@@ -66,8 +66,11 @@ Write your agent once. The execution engine is determined by what's on the class
 | Microsoft Semantic Kernel | `atmosphere-semantic-kernel` — `ChatCompletionService` with streaming + embeddings |
 | Alibaba AgentScope | `atmosphere-agentscope` — `ReActAgent` (no native tool dispatch in 1.0.12) |
 | Spring AI Alibaba | `atmosphere-spring-ai-alibaba` — `ReactAgent` (Spring Boot 3.5 only today) |
+| Anthropic | `atmosphere-anthropic` — native Claude Messages API client (`tool_use` loop, streaming) |
+| Cohere | `atmosphere-cohere` — native Cohere v2 Chat API client (citations, tool-plan deltas) |
+| CrewAI | `atmosphere-crewai` — Python multi-agent crews via an HTTP/SSE sidecar |
 
-Nine runtimes share one `AgentRuntime` SPI. Switching backends is
+Twelve runtimes share one `AgentRuntime` SPI. Switching backends is
 one dependency change. Your `@Agent`, `@AiTool`, `@Command`, skill
 files, conversation memory, guardrails, and protocol exposure stay
 the same. See [AI Adapters](/docs/tutorial/11-ai-adapters/) for the

@@ -133,6 +133,11 @@ export default defineConfig({
             { label: 'Embabel', slug: 'integrations/embabel' },
             { label: 'JetBrains Koog', slug: 'integrations/koog' },
             { label: 'Semantic Kernel', slug: 'integrations/semantic-kernel' },
+            { label: 'AgentScope', slug: 'integrations/agentscope' },
+            { label: 'Spring AI Alibaba', slug: 'integrations/spring-ai-alibaba' },
+            { label: 'Anthropic', slug: 'integrations/anthropic' },
+            { label: 'Cohere', slug: 'integrations/cohere' },
+            { label: 'CrewAI', slug: 'integrations/crewai' },
           ],
         },
         {

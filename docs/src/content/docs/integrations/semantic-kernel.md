@@ -7,7 +7,7 @@ description: "AgentRuntime backed by Microsoft Semantic Kernel — ChatCompletio
 
 `AgentRuntime` implementation backed by [Microsoft Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/) for Java. Semantic Kernel is Microsoft's enterprise-grade AI orchestration SDK with plugins, memory, and planners. Adding `atmosphere-semantic-kernel` as a dependency makes `@AiEndpoint` route streaming chat through an SK `ChatCompletionService` and makes `EmbeddingRuntime` use SK's `TextEmbeddingGenerationService`.
 
-Semantic Kernel landed as the 7th `AgentRuntime` in Atmosphere 4.0.36; the 8th and 9th (AgentScope, Spring AI Alibaba) followed in 4.0.42.
+Semantic Kernel landed as the 7th `AgentRuntime` in Atmosphere 4.0.36; AgentScope and Spring AI Alibaba (the 8th and 9th) followed in 4.0.42, and the native [Anthropic](anthropic/), [Cohere](cohere/), and [CrewAI](crewai/) runtimes followed after — twelve runtimes share the SPI today.
 
 ## Maven Coordinates
 

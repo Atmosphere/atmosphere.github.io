@@ -51,7 +51,7 @@ modules/ai-test/.../CapabilitySnapshotTest.java
 
 `AiCapability` is a 20-entry Java enum
 ([source](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/src/main/java/org/atmosphere/ai/AiCapability.java)).
-Each of the 9 framework runtimes overrides
+Each of the 11 framework runtimes overrides
 `AbstractAgentRuntimeContractTest.expectedCapabilities()` to declare its
 exact subset, and the contract test asserts the runtime's live
 `capabilities()` method returns the same set. That's the existing per-runtime

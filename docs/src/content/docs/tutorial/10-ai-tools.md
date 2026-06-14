@@ -522,4 +522,4 @@ Because `@AiTool` definitions are framework-agnostic, the same `AssistantTools` 
 | `@AiEndpoint(tools={...})` | Selects which tool classes are available at this endpoint |
 | `conversationMemory = true` | Enables multi-turn history including tool calls and results |
 
-In the [next chapter](/docs/tutorial/11-ai-adapters/), you will learn how Atmosphere's AI adapters connect to the built-in OpenAI-compatible client, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, and Spring AI Alibaba.
+In the [next chapter](/docs/tutorial/11-ai-adapters/), you will learn how Atmosphere's AI adapters connect to the built-in OpenAI-compatible client, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, and CrewAI.

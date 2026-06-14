@@ -129,10 +129,14 @@ returns non-empty). See the per-module READMEs for full DSL examples:
 [`modules/adk`](https://github.com/Atmosphere/atmosphere/blob/main/modules/adk/README.md#multi-agent-composition-adkrootagent),
 and the [`ToolLoopPolicy`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/README.md#tool-loop-policy) section.
 
-All eight framework runtimes now ship a per-request sidecar (the four added
-most recently — `SemanticKernelInvocation`, `EmbabelPromptRunner`,
-`AgentScopeAgent`, `SpringAiAlibabaRunnableConfig` — close the matrix that
-previously left these adapters without a per-request escape hatch). `Embabel`
+All eight framework-wrapping runtimes ship a per-request sidecar
+(`SpringAiAdvisors`, `LangChain4jAiServices`, `KoogStrategy`, `AdkRootAgent`,
+`SemanticKernelInvocation`, `EmbabelPromptRunner`, `AgentScopeAgent`,
+`SpringAiAlibabaRunnableConfig`). The three native runtimes — Anthropic and
+Cohere (direct HTTP clients) and CrewAI (a Python sidecar process) — wrap no
+third-party composition DSL, so they take per-request configuration through
+`AgentExecutionContext` (system prompt, retry policy, tool approval) rather
+than a dedicated sidecar. `Embabel`
 also has **native streaming**: when
 `StreamingPromptRunnerBuilder.streaming().generateStream()` is available the
 runtime emits `Flux<String>` chunks directly to the session, with graceful

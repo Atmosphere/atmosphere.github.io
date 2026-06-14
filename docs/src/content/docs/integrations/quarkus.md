@@ -113,7 +113,7 @@ See [Spring Boot → `@AiEndpoint` annotation surfaces](spring-boot/#aiendpoint-
 
 - **`load-on-startup`** must be > 0 for the endpoint to register at boot time (Quarkus's `UndertowDeploymentRecorder` skips on `<= 0`, unlike the Servlet spec).
 
-**Runtime coverage:** all eight framework adapters declare `PER_REQUEST_RETRY` honestly as of 4.0.43 (commit `374631e7`) — they all inherit `AbstractAgentRuntime.executeWithOuterRetry`. Each adapter stacks this on top of its own native retry layer (Spring Retry, LC4j `RetryUtils`, ADK `HttpClient`, Koog `CallRetryPolicy`, SK `OpenAIAsyncClient`). See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix).
+**Runtime coverage:** every framework adapter declares `PER_REQUEST_RETRY` honestly — they all inherit `AbstractAgentRuntime.executeWithOuterRetry` (introduced in 4.0.43, commit `374631e7`). Each adapter stacks this on top of its own native retry layer (Spring Retry, LC4j `RetryUtils`, ADK `HttpClient`, Koog `CallRetryPolicy`, SK `OpenAIAsyncClient`). See the [per-runtime capability matrix](../../tutorial/11-ai-adapters/#per-runtime-capability-matrix).
 
 ## Samples
 
