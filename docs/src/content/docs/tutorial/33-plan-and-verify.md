@@ -221,15 +221,18 @@ data-dependent branch:
 
 ```json
 {
-  "conditional": {
-    "predicate": "score >= 80",
-    "then":      [ { "label": "approve",  "toolName": "approve",  "arguments": { "id": "@candidate" } } ],
-    "otherwise": [ { "label": "escalate", "toolName": "escalate", "arguments": { "id": "@candidate" } } ]
-  }
+  "label":     "decide",
+  "condition": "score >= 80",
+  "then":      [ { "label": "approve",  "toolName": "approve",  "arguments": { "id": "@candidate" } } ],
+  "otherwise": [ { "label": "escalate", "toolName": "escalate", "arguments": { "id": "@candidate" } } ]
 }
 ```
 
-`ConditionalNode(predicate, thenSteps, elseSteps)` carries a guard and two arms.
+A conditional is itself a step in the top-level `steps` array, distinguished by
+carrying a `condition` (the guard) plus `then` / `otherwise` arms instead of a
+`toolName` — the wire format is flat, with no `conditional` wrapper object. The
+parser turns it into a `ConditionalNode(predicate, thenSteps, elseSteps)` — a
+guard and two arms.
 The `predicate` — and every `AutomatonTransition` guard — is written in the
 **`Condition` grammar**, a single total comparison:
 
@@ -479,15 +482,15 @@ natives on `java.library.path`:
 
 ```xml
 <dependency>
-  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.54</version>
+  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.14.0</version>
 </dependency>
 <!-- macOS arm64 (verified). Linux x64 → libz3-x64 / .so; Windows x64 → .dll -->
 <dependency>
-  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.54</version>
+  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.14.0</version>
   <classifier>libz3-arm64</classifier><type>dylib</type>
 </dependency>
 <dependency>
-  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.0.54</version>
+  <groupId>org.sosy-lab</groupId><artifactId>javasmt-solver-z3</artifactId><version>4.14.0</version>
   <classifier>libz3java-arm64</classifier><type>dylib</type>
 </dependency>
 ```
@@ -546,8 +549,9 @@ verdict. The suite under
   denied *and* throwing gates both block the tool), `VerifyCliTest` /
   `VerifyCliEmptyChainTest` (exit codes, empty-chain behavior).
 - **Deterministic planning** — `GoapPlannerTest`, `GoapPlanRuntimeTest`.
-- **End-to-end** — `GuardedEmailAgentTest` exercises the console-driven sample
-  pipeline (plans that execute *and* plans that are refused).
+- **End-to-end** — `GuardedEmailAgentTest` (in the `spring-boot-guarded-email-agent`
+  sample, not the verifier module) exercises the console-driven pipeline (plans
+  that execute *and* plans that are refused).
 
 The whole suite runs on every push as part of the reactor build, and the
 attack/clean plan pairs double as a security-regression corpus.
