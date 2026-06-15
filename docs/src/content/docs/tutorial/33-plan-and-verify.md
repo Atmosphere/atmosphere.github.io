@@ -11,8 +11,9 @@ that mental check goes straight to the database.
 
 `atmosphere-verifier` flips it. The LLM emits a JSON workflow describing
 the entire intended sequence, a deterministic verifier chain runs over
-the AST against a declarative policy, and **only verified plans
-dispatch**. Atmosphere refuses bad plans before any tool fires — the
+the plan's abstract syntax tree (AST) — the structured, in-memory tree of
+typed nodes the JSON parses into — against a declarative policy, and
+**only verified plans dispatch**. Atmosphere refuses bad plans before any tool fires — the
 same mechanical reasoning that makes parameterised SQL safe.
 
 The pattern was introduced by Erik Meijer in
@@ -23,6 +24,41 @@ seven-verifier chain, data-dependent branches proved on both arms, deep taint
 dataflow, capability least-authority, two interchangeable SMT backends, a
 deterministic GOAP planner, and a fail-closed human-in-the-loop gate — see
 [Beyond *Guardians of the Agents*](#beyond-guardians-of-the-agents).
+
+## The pipeline at a glance
+
+The LLM never calls a tool directly. It proposes a whole plan; that plan is
+parsed into an AST, run through the verifier chain in priority order, and only
+dispatched if **every** verifier passes. Any violation refuses the plan before
+the first tool fires.
+
+```mermaid
+flowchart TD
+    LLM["LLM emits a JSON workflow<br/>(the entire intended plan)"]
+    Parse["WorkflowJsonParser<br/>builds the immutable, sealed AST"]
+    LLM --> Parse --> Chain
+
+    subgraph Chain["Verifier chain — ServiceLoader, priority order"]
+        direction TB
+        V1["StructureVerifier · 5<br/>control-flow gate"]
+        V2["AllowlistVerifier · 10<br/>tool allowlist + registry"]
+        V3["WellFormednessVerifier · 20<br/>def-before-use"]
+        V4["CapabilityVerifier · 25<br/>least-authority"]
+        V5["TaintVerifier · 30<br/>dataflow taint"]
+        V6["AutomatonVerifier · 40<br/>call-ordering FSM"]
+        V7["SmtVerifier · 200<br/>numeric invariants (SMT)"]
+        V1 --> V2 --> V3 --> V4 --> V5 --> V6 --> V7
+    end
+
+    Chain --> Gate{"All verifiers pass?"}
+    Gate -->|yes| Run["WorkflowExecutor<br/>resolves @refs and dispatches the tool calls"]
+    Gate -->|no| Refuse["REFUSED<br/>no tool ever fires — full violation list returned"]
+
+    classDef refuse fill:#fdecec,stroke:#e02424,color:#9b1c1c;
+    classDef pass fill:#e9f6ec,stroke:#2f9e44,color:#1b4332;
+    class Refuse refuse;
+    class Run pass;
+```
 
 ---
 
@@ -103,8 +139,14 @@ not just the first failure.
 
 ## How each verifier works
 
-These are classic program-analysis techniques applied to the LLM's plan instead
-of to source code.
+Every check below is a *static* analysis — the kind a compiler or linter runs
+over source code — except the input is the LLM's plan AST and nothing executes
+during the pass. Four well-understood techniques carry the weight: control-flow
+analysis (`StructureVerifier`), dataflow/taint tracking (`TaintVerifier`),
+finite-state model checking (`AutomatonVerifier`), and SMT solving
+(`SmtVerifier`). The remaining three (`Allowlist`, `Capability`,
+`WellFormedness`) are decidable structural checks — set membership and
+def-before-use.
 
 **`StructureVerifier` — the control-flow gate.** Runs first (priority 5) and
 enforces the policy's `ControlFlowMode`. Under `LINEAR_ONLY` (the default) any

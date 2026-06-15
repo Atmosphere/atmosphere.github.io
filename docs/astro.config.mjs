@@ -1,10 +1,17 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 
 export default defineConfig({
   site: 'https://async-io.org',
   base: '/docs',
   integrations: [
+    // Must come BEFORE starlight so it intercepts ```mermaid fences
+    // before Expressive Code tries to syntax-highlight them.
+    mermaid({
+      theme: 'neutral',
+      autoTheme: true,
+    }),
     starlight({
       title: 'Atmosphere',
       description: 'Real-time for the JVM — WebSocket, SSE, gRPC, rooms, presence, AI streaming, and multi-agent orchestration',
