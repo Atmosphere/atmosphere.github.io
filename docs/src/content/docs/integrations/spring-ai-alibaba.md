@@ -45,13 +45,13 @@ public class MyChat {
 
 ## Buffered Streaming — Important
 
-Spring AI Alibaba's `ReactAgent.call(List<Message>) → AssistantMessage` is **synchronous** as of v1.1.2.0; there is no native `Flux<...>` streaming agent method. This adapter wraps `call(...)` and delivers the full reply as a single `session.send(text)` chunk followed by `session.complete()`. The Atmosphere transport still frames that chunk as a streamed message, so the UI sees a streaming response — but **there are no incremental token deltas from the LLM**.
+Spring AI Alibaba's `ReactAgent.call(List<Message>) → AssistantMessage` is **synchronous** as of v1.1.2.2; there is no native `Flux<...>` streaming agent method. This adapter wraps `call(...)` and delivers the full reply as a single `session.send(text)` chunk followed by `session.complete()`. The Atmosphere transport still frames that chunk as a streamed message, so the UI sees a streaming response — but **there are no incremental token deltas from the LLM**.
 
 If token-by-token streaming matters, drive Spring AI's `StreamingChatModel` directly via [`atmosphere-spring-ai`](spring-ai/). You will lose Spring AI Alibaba's multi-agent / graph orchestration patterns; that's the trade.
 
 ## Requirements — Spring Boot 3 only today
 
-Spring AI Alibaba `1.1.2.2` is compiled against Spring AI `1.1.2`, which pins the Spring Boot 3-era FQN of `RestClientAutoConfiguration` (Spring Boot 4 ships it at a renamed FQN). Run this adapter under a Spring Boot 3 application:
+Spring AI Alibaba `1.1.2.2` is compiled against Spring AI `1.1.6`, which pins the Spring Boot 3-era FQN of `RestClientAutoConfiguration` (Spring Boot 4 ships it at a renamed FQN). Run this adapter under a Spring Boot 3 application:
 
 ```bash
 cd samples/spring-boot-ai-chat

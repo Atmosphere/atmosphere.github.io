@@ -84,8 +84,8 @@ Walk these questions in order; stop at the first match.
    `AssistantMessage`); Atmosphere still streams that buffered reply
    over WebSocket / SSE; `TOKEN_USAGE` works via the
    `UsageCapturingChatModel` decorator threaded into auto-config.
-   **Pin Spring Boot 3 today** — Alibaba `1.1.2.0` hardcodes Spring AI
-   1.1.2 types.
+   **Pin Spring Boot 3 today** — Alibaba `1.1.2.2` hardcodes Spring AI
+   1.1.x types.
 
 10. **Anthropic Messages API directly, without going through Spring AI
     / LangChain4j?** →
