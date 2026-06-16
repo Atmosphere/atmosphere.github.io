@@ -3,7 +3,7 @@ title: "OWASP Agentic AI Top-10 — Atmosphere Evidence Matrix"
 description: "Self-assessment against OWASP's December 2025 Agentic AI Top 10 with evidence pointers per row, CI-pinned so marketing copy cannot drift from the code."
 ---
 
-The [OWASP Agentic AI Top 10](https://genai.owasp.org/resource/agentic-ai-top-10/) (December 2025) is now a vendor-qualification taxonomy. Procurement RFPs ask "which rows does your framework cover?" — silent or imprecise answers cost deals. Atmosphere ships a self-assessment matrix with **CI-pinned evidence pointers** per row: every claim points at a real class in this repo, and the build fails if the class is renamed or removed.
+The [OWASP Agentic AI Top 10](https://genai.owasp.org/initiatives/agentic-security-initiative/) (December 2025) is now a vendor-qualification taxonomy. Procurement RFPs ask "which rows does your framework cover?" — silent or imprecise answers cost deals. Atmosphere ships a self-assessment matrix with **CI-pinned evidence pointers** per row: every claim points at a real class in this repo, and the build fails if the class is renamed or removed.
 
 ## The matrix at a glance
 
@@ -97,4 +97,4 @@ External compliance tooling (Microsoft's `agt verify`, internal auditors, vendor
 - **Sample**: [`samples/spring-boot-ms-governance-chat`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ms-governance-chat) — mirrors MS customer-service rule set and exercises most matrix rows live
 - **Reference**: [Governance Policy Plane](/docs/reference/governance/) — full API surface
 - **Previous chapter**: [@AgentScope & Goal-Hijacking Prevention](/docs/tutorial/31-agent-scope/)
-- **Upstream**: [OWASP Agentic AI Top 10](https://genai.owasp.org/resource/agentic-ai-top-10/)
+- **Upstream**: [OWASP Agentic AI Top 10](https://genai.owasp.org/initiatives/agentic-security-initiative/)

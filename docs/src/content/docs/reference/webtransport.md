@@ -1,11 +1,11 @@
 ---
 title: "WebTransport over HTTP/3"
-description: "Bidirectional streaming via QUIC — first Java framework with WebTransport"
+description: "Bidirectional streaming via QUIC — native WebTransport support for the JVM"
 ---
 
 # WebTransport over HTTP/3
 
-Bidirectional streaming transport for Atmosphere using WebTransport over HTTP/3 (QUIC). The first Java framework with WebTransport support. Browsers connect over QUIC with multiplexed streams, built-in congestion control, and sub-millisecond latency — with automatic fallback to WebSocket.
+Bidirectional streaming transport for Atmosphere using WebTransport over HTTP/3 (QUIC). Native WebTransport support for the JVM, auto-detected via `AsyncSupport`. Browsers connect over QUIC with multiplexed streams, built-in congestion control, and sub-millisecond latency — with automatic fallback to WebSocket.
 
 ## How It Works
 

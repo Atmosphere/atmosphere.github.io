@@ -5,7 +5,7 @@ description: "React Native hooks with EventSource polyfill"
 
 # React Native / Expo Guide
 
-atmosphere.js `5.0.24` supports React Native and Expo via the `atmosphere.js/react-native` subpath export. Tested baseline: Expo SDK 55, React Native 0.83, React 19.2 (see `samples/spring-boot-ai-classroom/expo-client/package.json`).
+atmosphere.js `5.0.32` supports React Native and Expo via the `atmosphere.js/react-native` subpath export. Tested baseline: Expo SDK 55, React Native 0.83, React 19.2 (see `samples/spring-boot-ai-classroom/expo-client/package.json`).
 
 ## Installation
 
