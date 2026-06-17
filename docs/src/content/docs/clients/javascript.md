@@ -5,7 +5,7 @@ description: "TypeScript client with React, Vue, and Svelte hooks"
 
 # atmosphere.js -- TypeScript Client
 
-TypeScript client for the Atmosphere Framework (currently `5.0.27`). Supports WebTransport/HTTP3, WebSocket, SSE, HTTP Streaming, and Long-Polling transports with first-class React, Vue, and Svelte hooks.
+TypeScript client for the Atmosphere Framework (currently `5.0.32`). Supports WebTransport/HTTP3, WebSocket, SSE, HTTP Streaming, and Long-Polling transports with first-class React, Vue, and Svelte hooks.
 
 ## npm Coordinates
 
@@ -56,7 +56,7 @@ const atm = new Atmosphere({
   fallbackTransport: 'long-polling',
 });
 
-atm.version;       // '5.0.27'
+atm.version;       // '5.0.32'
 atm.closeAll();    // Close every active subscription
 atm.getSubscriptions();  // Map<string, Subscription>
 ```
@@ -709,7 +709,7 @@ Complete TypeScript type reference for the public surface.
 
 ```typescript
 class Atmosphere {
-  readonly version: string;  // '5.0.27'
+  readonly version: string;  // '5.0.32'
 
   constructor(config?: {
     logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent';

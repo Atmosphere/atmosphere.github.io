@@ -56,7 +56,7 @@ Atmosphere ships **twelve** `AgentRuntime` implementations — one built-in and 
 | Runtime | Module / Artifact | AI Framework | Version |
 |---------|------------------|-------------|---------|
 | Built-in | `atmosphere-ai` (OpenAI-compatible client) | OpenAI, Gemini, Ollama, Azure OpenAI | shipped |
-| Spring AI | `atmosphere-spring-ai` | Spring AI (`ChatClient`) | 2.0.0-M2 |
+| Spring AI | `atmosphere-spring-ai` | Spring AI (`ChatClient`) | 2.0.0 |
 | LangChain4j | `atmosphere-langchain4j` | LangChain4j (`StreamingChatLanguageModel`) | 1.15.0 |
 | Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) | 1.2.0 |
 | Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) | 0.3.5 |
