@@ -124,6 +124,7 @@ export default defineConfig({
             { label: 'Admin Control Plane', slug: 'reference/admin' },
             { label: 'Coordinator', slug: 'reference/coordinator' },
             { label: 'Governance Policy Plane', slug: 'reference/governance' },
+            { label: 'Sandbox Execution', slug: 'reference/sandbox' },
             { label: 'Durable Sessions', slug: 'reference/durable-sessions' },
             { label: 'Durable Checkpoints', slug: 'reference/checkpoint' },
             { label: 'Performance Benchmarks', slug: 'reference/benchmarks' },

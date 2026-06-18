@@ -281,3 +281,7 @@ See [AI Testing](../testing/) for the full contract test surface.
 - [ExecutionHandle](../execution-handle/) — cooperative cancel semantics
 - [Observability](../observability/) — wiring listeners into OpenTelemetry and Micrometer
 - [AI Testing](../testing/) — `CapturingLifecycleListener` and `LlmJudge`
+
+## Source
+
+- Source: [`AgentLifecycleListener.java`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/src/main/java/org/atmosphere/ai/AgentLifecycleListener.java)

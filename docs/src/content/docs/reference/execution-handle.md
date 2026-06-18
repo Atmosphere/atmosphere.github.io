@@ -207,3 +207,7 @@ which asserts the cancel path on each adapter's subclass.
 - [AI / LLM Reference](../ai/) — `AgentRuntime.executeWithHandle()`
 - [AgentLifecycleListener](../lifecycle-listener/) — `onError(CancellationException)` semantics
 - [ToolApprovalPolicy](../tool-approval-policy/) — cancelling across approval gates
+
+## Source
+
+- Source: [`ExecutionHandle.java`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/src/main/java/org/atmosphere/ai/ExecutionHandle.java)

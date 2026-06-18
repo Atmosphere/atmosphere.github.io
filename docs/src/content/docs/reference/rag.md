@@ -186,3 +186,7 @@ List<ContextProvider.Document> hits =
 The `rag` flagship template (`atmosphere new <name> --template rag`)
 scaffolds a Spring Boot project that wires `InMemoryContextProvider`
 plus the chunker, and is the canonical "start from here" path.
+
+## Source
+
+- Module README: [`modules/rag/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/rag/README.md)

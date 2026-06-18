@@ -164,3 +164,7 @@ The client also exposes `get`, `list`, `cancel`, and an async-iterator `watch(id
 - [`@AiEndpoint` & Streaming](/docs/tutorial/09-ai-endpoint/)
 - [ExecutionHandle](execution-handle.md) — the cancellation primitive interactions build on
 - [Durable Sessions](durable-sessions.md) — connection-level persistence (complementary)
+
+## Source
+
+- Module README: [`modules/interactions/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/interactions/README.md)

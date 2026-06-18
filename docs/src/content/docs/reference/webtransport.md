@@ -165,3 +165,7 @@ The `org.atmosphere.webtransport` package provides a transport-agnostic SPI:
 - QUIC datagrams not yet exposed to application code
 - Multiplexed streams deferred to v2
 - Chrome strips query params from WebTransport CONNECT `:path` — auth tokens must use header-based authentication, not query parameters
+
+## Source
+
+- Source: [`modules/cpr/.../webtransport`](https://github.com/Atmosphere/atmosphere/tree/main/modules/cpr/src/main/java/org/atmosphere/webtransport)

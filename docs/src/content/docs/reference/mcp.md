@@ -413,3 +413,7 @@ For clients that only support stdio, build the bridge JAR with `./mvnw package -
 - [AI / LLM Integration](/docs/reference/ai/) -- `@AiEndpoint`, `StreamingSession`, and the AI-to-MCP tool bridge
 - [Core Runtime](/docs/reference/core/)
 - Module README: `modules/mcp/README.md`
+
+## Source
+
+- Module README: [`modules/mcp/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/mcp/README.md)

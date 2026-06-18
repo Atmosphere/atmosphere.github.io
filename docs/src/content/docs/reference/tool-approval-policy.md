@@ -243,3 +243,7 @@ runtime subclass against the four policy variants through
 - [AI / LLM Reference](../ai/) — HITL approval wire protocol
 - [AgentLifecycleListener](../lifecycle-listener/) — `onToolCall` fires after policy check
 - [Durable Checkpoints](../checkpoint/) — approvals that survive process restarts
+
+## Source
+
+- Source: [`ToolApprovalPolicy.java`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/src/main/java/org/atmosphere/ai/approval/ToolApprovalPolicy.java)

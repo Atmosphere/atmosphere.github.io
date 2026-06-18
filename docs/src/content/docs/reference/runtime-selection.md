@@ -178,3 +178,7 @@ Samples whose Java code imports provider-specific types directly (e.g.
 `OpenAiStreamingChatModel`) still need manual edits after a
 force-swap; the transparent templates (`ai-chat`, `multi-agent`, etc.)
 work end-to-end with no code changes.
+
+## Source
+
+- Module README: [`modules/ai/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/README.md)

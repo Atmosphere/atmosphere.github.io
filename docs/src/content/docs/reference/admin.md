@@ -267,3 +267,7 @@ The bundle deliberately does not pin an `AgentRuntime` adapter or a
 vector-store driver — operators pick those independently. See
 [Runtime Selection](/docs/reference/runtime-selection/) for the
 decision tree.
+
+## Source
+
+- Module README: [`modules/admin/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/admin/README.md)
