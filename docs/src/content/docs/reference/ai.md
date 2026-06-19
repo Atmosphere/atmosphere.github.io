@@ -78,6 +78,9 @@ public interface AgentRuntime {
 | `atmosphere-semantic-kernel` | Microsoft Semantic Kernel `ChatCompletionService` | 100 |
 | `atmosphere-agentscope` | Alibaba AgentScope `ReActAgent` | 100 |
 | `atmosphere-spring-ai-alibaba` | Spring AI Alibaba `ReactAgent` *(see runtime caveat below)* | 100 |
+| `atmosphere-anthropic` | Anthropic `AnthropicMessagesClient` (built-in Messages API client) *(requires `anthropic.api.key`)* | 100 |
+| `atmosphere-cohere` | Cohere `CohereChatClient` (built-in Chat API client) *(requires `cohere.api.key`)* | 100 |
+| `atmosphere-crewai` | CrewAI `CrewAiSidecarClient` (out-of-process Python sidecar over HTTP+SSE) *(requires `ATMOSPHERE_CREWAI_SIDECAR_URL` + live `/health`)* | 50 |
 
 To switch runtimes, change a single Maven dependency — no code changes needed.
 

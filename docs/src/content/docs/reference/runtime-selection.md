@@ -25,7 +25,7 @@ Walk these questions in order; stop at the first match.
 
 1. **New to Atmosphere AI and just need it to work?** →
    **Built-in** (`atmosphere-ai`). Zero extra deps, OpenAI-compatible
-   client out of the box, the only runtime that emits
+   client out of the box, one of two runtimes (with Cohere) that emit
    `TOOL_CALL_DELTA` for token-streaming tool-call argument deltas.
    Use `--model` / `LLM_API_KEY` to point at OpenAI / Gemini / Ollama
    / any compatible endpoint.
@@ -65,7 +65,7 @@ Walk these questions in order; stop at the first match.
 
 7. **Microsoft Semantic Kernel plugin / planner ecosystem
    (.NET-equivalent surface on the JVM)?** →
-   **Semantic Kernel** (`atmosphere-semantic-kernel`). SK 1.4 surface
+   **Semantic Kernel** (`atmosphere-semantic-kernel`). SK 1.5 surface
    with `KernelFunction` tool bridge through Atmosphere's
    `ToolExecutionHelper`, sidecar bridge for per-request
    `InvocationContext` / `KernelHooks`.

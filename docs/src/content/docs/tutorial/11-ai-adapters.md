@@ -119,7 +119,7 @@ The first three rows plus `CONVERSATION_MEMORY` and `PER_REQUEST_RETRY` are univ
 - **`PROMPT_CACHING`** — Built-in / Spring AI / LC4j / ADK / Koog all honor the portable `CacheHint` attached to `AgentExecutionContext`. Mechanism varies per provider (OpenAI `prompt_cache_key`, Anthropic / Bedrock `CacheControl.Bedrock.{FiveMinutes, OneHour}`, ADK's per-request `ContextCacheConfig` wired via `buildRequestRunner`). Embabel, Semantic Kernel, AgentScope, and Spring AI Alibaba do not expose a caching hook that maps to `CacheHint` today.
 - **`CANCELLATION`** is declared by all twelve runtimes. Koog (`AIAgent.cancel()` propagated from `StreamingSession.isCancelled()`) and AgentScope (Reactor subscription cancellation on every event tick) cancel natively; the rest run their dispatch on a virtual thread behind an `ExecutionHandle` whose `cancel()` flips a flag the streaming worker polls cooperatively, settling `whenDone()` when the worker stops. This gives a uniform cooperative-cancellation guarantee across every runtime even where the underlying SDK exposes no native non-cooperative cancel primitive.
 - **`AGENT_ORCHESTRATION`** tracks whether the underlying framework owns a multi-agent dispatch loop (ADK `LlmAgent`, Embabel goal graph, Koog `chatAgentStrategy`). Built-in / Spring AI / LC4j / SK / AgentScope / Spring AI Alibaba can still participate in `@Coordinator` fleets — the coordinator dispatches from Atmosphere — but do not own the loop themselves.
-- **`TOOL_CALL_DELTA`** is Built-in only. `OpenAiCompatibleClient` forwards every `delta.tool_calls[].function.arguments` fragment through `session.toolCallDelta(id, chunk)` on both the chat-completions and responses-API streaming paths. The eight framework bridges cannot emit deltas without bypassing their high-level streaming APIs; they honor the default no-op contract instead.
+- **`TOOL_CALL_DELTA`** is declared by Built-in and Cohere. `OpenAiCompatibleClient` forwards every `delta.tool_calls[].function.arguments` fragment through `session.toolCallDelta(id, chunk)` on both the chat-completions and responses-API streaming paths, and Cohere's `CohereChatClient.handleToolCallDelta` forwards each `tool-call-delta` event's argument fragment the same way. The remaining ten framework bridges cannot emit deltas without bypassing their high-level streaming APIs; they honor the default no-op contract instead.
 
 When a framework adds a capability in a new release, update both the runtime's `capabilities()` method and the `expectedCapabilities()` override in its contract test in the same commit. The contract test will fail on either side of a drift, which is the intended safety net.
 
@@ -161,7 +161,7 @@ When multiple `AgentRuntime` implementations are on the classpath, the one with 
 | Class | Role |
 |-------|------|
 | `SpringAiStreamingAdapter` | Bridges `ChatClient` Flux-based streaming to `StreamingSession`. Supports advisors (RAG, logging, memory) via a customizer callback. |
-| `SpringAiAgentRuntime` | `AgentRuntime` implementation backed by `ChatClient`. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, `SYSTEM_PROMPT`. |
+| `SpringAiAgentRuntime` | `AgentRuntime` implementation backed by `ChatClient`. Capabilities include `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, and `SYSTEM_PROMPT` — see the [per-runtime capability matrix](#per-runtime-capability-matrix) for the full pinned set. |
 | `SpringAiToolBridge` | Converts Atmosphere `ToolDefinition` to Spring AI `ToolCallback`. Spring AI handles the tool call loop automatically. |
 | `AtmosphereSpringAiAutoConfiguration` | Spring Boot `@AutoConfiguration`. Activates when `ChatClient` is on the classpath. |
 
@@ -228,7 +228,7 @@ When an `@AiEndpoint` receives a message, `SpringAiAgentRuntime.execute()` runs 
 | `LangChain4jStreamingAdapter` | Bridges `StreamingChatLanguageModel` to `StreamingSession`. |
 | `AtmosphereStreamingResponseHandler` | Simple `StreamingChatResponseHandler`: forwards streaming texts via `session.send()`, completion via `session.complete()`. |
 | `ToolAwareStreamingResponseHandler` | Extends the basic handler with tool calling support. Executes tools via `LangChain4jToolBridge` and re-submits conversations. Max 5 tool rounds. |
-| `LangChain4jAgentRuntime` | `AgentRuntime` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, `SYSTEM_PROMPT`. |
+| `LangChain4jAgentRuntime` | `AgentRuntime` implementation. Capabilities include `TEXT_STREAMING`, `TOOL_CALLING`, `STRUCTURED_OUTPUT`, and `SYSTEM_PROMPT` — see the [per-runtime capability matrix](#per-runtime-capability-matrix) for the full pinned set. |
 | `LangChain4jToolBridge` | Converts `ToolDefinition` to `ToolSpecification` and handles tool execution. |
 | `AtmosphereLangChain4jAutoConfiguration` | Activates when `StreamingChatLanguageModel` is on the classpath. |
 
@@ -295,7 +295,7 @@ Unlike Spring AI, LangChain4j does not execute tool callbacks automatically. Whe
 | Class | Role |
 |-------|------|
 | `AdkStreamingAdapter` | Bridges ADK `Runner.runAsync()` RxJava `Flowable<Event>` to `StreamingSession` via `AdkEventAdapter`. |
-| `AdkAgentRuntime` | `AgentRuntime` implementation. Capabilities: `TEXT_STREAMING`, `TOOL_CALLING`, `AGENT_ORCHESTRATION`, `CONVERSATION_MEMORY`, `SYSTEM_PROMPT`. |
+| `AdkAgentRuntime` | `AgentRuntime` implementation. Capabilities include `TEXT_STREAMING`, `TOOL_CALLING`, `AGENT_ORCHESTRATION`, `CONVERSATION_MEMORY`, and `SYSTEM_PROMPT` — see the [per-runtime capability matrix](#per-runtime-capability-matrix) for the full pinned set. |
 | `AdkToolBridge` | Converts `ToolDefinition` to ADK `BaseTool`. Each tool extends `BaseTool` with `runAsync()` that delegates to the Atmosphere `ToolExecutor`. |
 | `AdkBroadcastTool` | Ready-made `BaseTool` that lets an ADK agent broadcast messages to Atmosphere clients. |
 | `AdkEventAdapter` | Subscribes to a `Flowable<Event>` and forwards partial streaming texts, turn completions, and errors to a `StreamingSession`. |

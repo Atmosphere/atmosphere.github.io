@@ -1,6 +1,6 @@
 ---
 title: "Embeddings"
-description: "EmbeddingRuntime SPI — runtime-agnostic text embedding across Spring AI, LangChain4j, Semantic Kernel, Embabel, and the Built-in client"
+description: "EmbeddingRuntime SPI — runtime-agnostic text embedding across Spring AI, Spring AI Alibaba, LangChain4j, Semantic Kernel, Embabel, Koog, and the Built-in client"
 ---
 
 # Embeddings
@@ -25,8 +25,8 @@ that into a runtime-agnostic SPI with a uniform API:
   answer without a network call
 - `boolean isAvailable()` — whether this runtime's native API is on the
   classpath AND a concrete embedding model has been wired
-- `String name()` — human-readable ID: `"spring-ai"`, `"langchain4j"`,
-  `"semantic-kernel"`, `"embabel"`, `"built-in"`
+- `String name()` — human-readable ID: `"spring-ai"`, `"spring-ai-alibaba"`,
+  `"langchain4j"`, `"semantic-kernel"`, `"embabel"`, `"koog"`, `"built-in"`
 - `int priority()` — selection priority when multiple runtimes are present
   (higher wins)
 
@@ -39,9 +39,11 @@ adapter wrappers always win over the zero-dependency fallback:
 | Runtime | Priority | Status |
 |---------|---------:|--------|
 | Spring AI (`spring-ai`) | **200** | Available when a Spring-managed `EmbeddingModel` bean is wired |
+| Spring AI Alibaba (`spring-ai-alibaba`) | **200** | Available when a Spring AI Alibaba `EmbeddingModel` bean is wired |
 | LangChain4j (`langchain4j`) | **190** | Available when a `dev.langchain4j.model.embedding.EmbeddingModel` instance is injected |
 | Semantic Kernel (`semantic-kernel`) | **180** | Available when a `TextEmbeddingGenerationService` is supplied. Uses `Mono.block()` at the sync boundary and unwraps `List<Float>` → `float[]` |
 | Embabel (`embabel`) | **170** | Thin pass-through over `com.embabel.common.ai.model.EmbeddingService` |
+| Koog (`koog`) | **100** | Wraps a Koog `LLMEmbeddingProvider` (inherits the SPI default priority) |
 | Built-in (`built-in`) | **50** | Zero-dependency OpenAI-compatible `/v1/embeddings` client. Fallback used when no framework-native `EmbeddingModel` is wired. |
 
 The Built-in runtime sits below every adapter so a framework-native
@@ -108,8 +110,8 @@ priority order if you need to fan out or pick a specific backend manually.
 
 ## Wiring a framework-native embedding model
 
-The embedding-capable runtimes are Built-in, Spring AI, LangChain4j,
-Semantic Kernel, and Embabel. The adapter runtimes wrap a framework-managed
+The embedding-capable runtimes are Built-in, Spring AI, Spring AI Alibaba,
+LangChain4j, Semantic Kernel, Embabel, and Koog. The adapter runtimes wrap a framework-managed
 `EmbeddingModel` / `EmbeddingService` / `TextEmbeddingGenerationService`
 instance. Wire it via the adapter's static setter during startup:
 
@@ -155,6 +157,20 @@ SemanticKernelEmbeddingRuntime.setEmbeddingService(skService);
 EmbabelEmbeddingRuntime.setEmbeddingService(embabelEmbeddingService);
 ```
 
+### Spring AI Alibaba
+
+```java
+// Any Spring AI Alibaba EmbeddingModel (e.g. DashScope)
+SpringAiAlibabaEmbeddingRuntime.setEmbeddingModel(dashScopeEmbeddingModel);
+```
+
+### Koog
+
+```java
+// A Koog LLMEmbeddingProvider (e.g. backed by an OpenAI/Bedrock model)
+KoogEmbeddingRuntime.setEmbeddingProvider(koogEmbeddingProvider);
+```
+
 ### Built-in (zero-dep fallback)
 
 No wiring needed — the Built-in runtime reads `AiConfig.baseUrl` + `apiKey`
@@ -193,11 +209,13 @@ need to write the same assertions again.
 
 | Runtime | `embed()` | `embedAll()` batched | `dimensions()` | Notes |
 |---------|:---------:|:--------------------:|:--------------:|-------|
-| Spring AI      | ✅ | ✅ native batch | ✅ | `model.dimensions()` |
-| LangChain4j    | ✅ | ✅ native batch via `TextSegment` | ✅ | `model.dimension()` |
-| Semantic Kernel| ✅ | ✅ native batch | `-1` | `Mono.block()` sync boundary |
-| Embabel        | ✅ | ✅ native batch | ✅ | 1:1 pass-through |
-| Built-in       | ✅ | ✅ via `/v1/embeddings` | ✅ from config | OpenAI-compatible wire format |
+| Spring AI       | ✅ | ✅ native batch | ✅ | `model.dimensions()` |
+| Spring AI Alibaba | ✅ | ✅ native batch | ✅ | wraps Spring AI `EmbeddingModel` |
+| LangChain4j     | ✅ | ✅ native batch via `TextSegment` | ✅ | `model.dimension()` |
+| Semantic Kernel | ✅ | ✅ native batch | `-1` | `Mono.block()` sync boundary |
+| Embabel         | ✅ | ✅ native batch | ✅ | 1:1 pass-through |
+| Koog            | ✅ | ✅ native batch | ✅ | wraps `LLMEmbeddingProvider` |
+| Built-in        | ✅ | ✅ via `/v1/embeddings` | ✅ from config | OpenAI-compatible wire format |
 
 ## See also
 
