@@ -176,7 +176,7 @@ Tool invocation arrives
 
 ## Runtime coverage
 
-All five tool-calling runtimes thread `context.approvalPolicy()` through
+All seven tool-calling runtimes thread `context.approvalPolicy()` through
 their bridges and into `ToolExecutionHelper.executeWithApproval`:
 
 | Runtime | Threads policy | Notes |
@@ -186,8 +186,8 @@ their bridges and into `ToolExecutionHelper.executeWithApproval`:
 | LangChain4j     | ✅ | `ToolAwareStreamingResponseHandler` 6-arg `executeWithApproval` |
 | Google ADK      | ✅ | `AdkToolBridge` 6-arg `executeWithApproval` |
 | JetBrains Koog  | ✅ | `AtmosphereToolBridge` 6-arg `executeWithApproval` |
-| Embabel         |  —  | No tool-calling path |
-| Semantic Kernel |  —  | Tool-calling deferred in 4.0.36 |
+| Embabel         | ✅ | `EmbabelToolBridge` 6-arg `executeWithApproval` |
+| Semantic Kernel | ✅ | `SemanticKernelToolBridge` 6-arg `executeWithApproval` |
 
 Tool-loop reconstruction across rounds preserves the policy — round 2 of a
 multi-tool execution sees the same `approvalPolicy` as round 1.
