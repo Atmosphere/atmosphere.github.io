@@ -45,13 +45,13 @@ Creates spans for every request with the following attributes:
 
 With the Spring Boot starter, tracing is auto-configured when an `OpenTelemetry` bean is present. Disable with `atmosphere.tracing.enabled=false`.
 
-### OpenTelemetry GenAI semantic conventions (experimental)
+### OpenTelemetry GenAI semantic conventions
 
-When `atmosphere-ai` is in use, Atmosphere emits the **experimental** [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) **additively** — the existing `ai.tokens.*` metadata and the `atmosphere.ai.*` Micrometer series are emitted unchanged alongside the `gen_ai.*` signals, so token and latency data lands in Langfuse / LangSmith / Grafana GenAI dashboards with no per-metric remapping.
+When `atmosphere-ai` is in use, Atmosphere emits the [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) — a spec OpenTelemetry still marks **experimental** — **additively** — the existing `ai.tokens.*` metadata and the `atmosphere.ai.*` Micrometer series are emitted unchanged alongside the `gen_ai.*` signals, so token and latency data lands in Langfuse / LangSmith / Grafana GenAI dashboards with no per-metric remapping.
 
-> **Experimental.** The OpenTelemetry GenAI semantic convention is not stable; attribute and metric names may change in a future OTel release. Treat the `gen_ai.*` signals below as additive and subject to change, and keep building dashboards on the stable `atmosphere.ai.*` series where you need long-term stability.
+> **OpenTelemetry spec status.** The OpenTelemetry GenAI semantic convention is not stable; attribute and metric names may change in a future OTel release. (Atmosphere's emitter is production code — only the upstream convention it follows is experimental.) Treat the `gen_ai.*` signals below as additive and subject to change, and keep building dashboards on the stable `atmosphere.ai.*` series where you need long-term stability.
 
-**Span attributes.** When `io.opentelemetry.api` is on the classpath *and* a live span is active (an `AtmosphereTracing` SERVER span, for example), `GenAiTracer` tags that **current** span with the experimental GenAI span attributes. Emission is via a reflection-based helper with no hard OpenTelemetry dependency — absent OTel, or absent a current span, it is a no-op and no orphan span is ever created.
+**Span attributes.** When `io.opentelemetry.api` is on the classpath *and* a live span is active (an `AtmosphereTracing` SERVER span, for example), `GenAiTracer` tags that **current** span with the OpenTelemetry GenAI span attributes. Emission is via a reflection-based helper with no hard OpenTelemetry dependency — absent OTel, or absent a current span, it is a no-op and no orphan span is ever created.
 
 | Span attribute | Type | Source |
 |----------------|------|--------|
