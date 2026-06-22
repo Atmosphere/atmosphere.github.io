@@ -21,26 +21,48 @@ description: "AG-UI protocol — auto-bridge from @Agent + @Prompt to AG-UI SSE,
 
 ## Overview
 
-AG-UI (Agent-User Interaction) is CopilotKit's open protocol for connecting AI agents to frontend components. When the `atmosphere-agui` module is on the classpath, every `@Agent` that exposes a `@Prompt` method is auto-bridged into the AG-UI SSE protocol — no extra annotation is required.
+AG-UI (Agent-User Interaction) is CopilotKit's open protocol for connecting AI agents to frontend components. When the `atmosphere-agui` module is on the classpath, every `@Agent` that exposes a `@Prompt` method is auto-bridged into the AG-UI SSE protocol — no extra annotation is required. The bridge carries **real `AgentRuntime` output**: a user message drives the agent's real `AiPipeline`, and the resulting `AiEvent`s are mapped to AG-UI frames and streamed to the browser as Server-Sent Events.
 
 ## How auto-registration works
 
-For each `@Agent` with a `@Prompt(String, StreamingSession)` method, the framework registers an `AgUiHandler` at `{basePath}/agui` (where `basePath` defaults to `/atmosphere/agent/{name}` or the explicit `endpoint` value on `@Agent`). Incoming AG-UI POST requests are parsed into a `RunContext`, the bridge extracts `lastUserMessage()`, and the agent's existing `@Prompt` method is invoked with that message and a streaming session that emits AG-UI SSE events.
+For each `@Agent` with a `@Prompt(String, StreamingSession)` method, the framework registers an `AgUiHandler` at `{basePath}/agui` (where `basePath` defaults to `/atmosphere/agent/{name}` or the explicit `endpoint` value on `@Agent`). Incoming AG-UI POST requests are parsed into a `RunContext`, `AgUiHandler` emits `RUN_STARTED`, the bridge extracts `lastUserMessage()` and invokes the agent's existing `@Prompt` method on a virtual thread, and `RUN_FINISHED` is emitted on completion.
 
 ```java
-@Agent(name = "assistant", endpoint = "/atmosphere/a2a/assistant")
+@Agent(name = "assistant")
 public class AssistantAgent {
 
     @Prompt
     public void onPrompt(String message, StreamingSession session) {
-        // Tokens written here are framed as AG-UI TEXT_MESSAGE_CONTENT events.
-        session.send("Hello, " + message);
-        session.complete();
+        // Drives the real AiPipeline — LLM tokens and @AiTool dispatch flow
+        // through as AG-UI TEXT_MESSAGE_* / TOOL_CALL_* events.
+        session.stream(message);
+    }
+
+    @AiTool(name = "get_weather", description = "Short weather report for a city")
+    public String getWeather(@Param(value = "city", description = "City name") String city) {
+        return weatherService.report(city);
     }
 }
 ```
 
-Because the AG-UI endpoint is wired off the same `@Prompt` method, every AI pipeline feature (interceptors, guardrails, tool calling, memory) applies uniformly to the AG-UI path and to any other protocol the agent exposes.
+Because the AG-UI endpoint is wired off the same `@Prompt` method, every AI pipeline feature (interceptors, guardrails, tool calling, memory) applies uniformly to the AG-UI path and to any other protocol the agent exposes. A plain `@Agent` is all that is required — there is no scripted/demo-only mode.
+
+## How a turn maps to AG-UI frames
+
+When `@Prompt` calls `session.stream(message)`, the real `AiPipeline` runs (LLM + `@AiTool` dispatch). Each `AiEvent` it emits is translated by the shipped `AgUiEventMapper` into the matching AG-UI frame sequence:
+
+| `AiEvent` | AG-UI frames |
+|-----------|--------------|
+| `TextDelta` | `TEXT_MESSAGE_START` (first delta) → `TEXT_MESSAGE_CONTENT` |
+| `TextComplete` | `TEXT_MESSAGE_END` |
+| `ToolStart` | `TOOL_CALL_START` → `TOOL_CALL_ARGS` |
+| `ToolResult` | `TOOL_CALL_RESULT` → `TOOL_CALL_END` |
+
+`RUN_STARTED` and `RUN_FINISHED` bracket the whole run (emitted by `AgUiHandler`, not the mapper). The overall sequence for a tool-calling turn is therefore `RUN_STARTED` → `TEXT_MESSAGE_*` → `TOOL_CALL_*` → `RUN_FINISHED`.
+
+### No-key demo fallback
+
+If no LLM key is configured, an agent can fall back to a deterministic producer that streams the same AG-UI lifecycle frames (`RUN_STARTED` … `TEXT_MESSAGE_CONTENT` … `RUN_FINISHED`) over the same `StreamingSession`, so the frontend behaves identically — only the *content* and *tool dispatch* differ. The keyed path drives the real pipeline; the demo path does not call the model, so no tool dispatch happens there. The [`spring-boot-agui-chat`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-agui-chat) sample wires exactly this contract: `@Prompt` checks `AiConfig.get()` and routes to `session.stream(message)` when a key is present, otherwise to the demo producer.
 
 ## Custom AG-UI handlers (`@AgUiAction`)
 

@@ -349,6 +349,73 @@ var router = RoutingLlmClient.builder(defaultClient, "gemini-2.5-flash")
         .build();
 ```
 
+### Config-driven routing (Spring Boot)
+
+The Spring Boot starter exposes **all four** `RoutingRule` families — content, model, cost, and latency — through `atmosphere.ai.routing.*` properties, with no Java wiring. **Off by default.** When `atmosphere.ai.routing.enabled=true`, the starter wraps the framework-resolved LLM client in a `RoutingLlmClient` and installs it via `AiConfig.installClient(...)`, so it becomes the client every `AgentRuntime` dispatch reads on the request critical path. When disabled, the resolved client is left untouched and the request path is byte-identical to today's behavior.
+
+**Compose order.** Rules are added to the router (and therefore evaluated first-match-wins) in the fixed order **content → model → cost → latency** — most-specific intent first. Within each family, rules are evaluated in config order. Requests matching no rule fall through to the resolved client and the configured `default-model` (or the `AiConfig` model when `default-model` is omitted). The compose order is pinned by `AtmosphereRoutingAutoConfigurationTest`.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `atmosphere.ai.routing.enabled` | boolean | `false` | Wrap the resolved client in a `RoutingLlmClient`. |
+| `atmosphere.ai.routing.default-model` | string | (resolved `AiConfig` model) | Fallback model when no rule matches. |
+
+**Content rules** (`atmosphere.ai.routing.content-rules[i]`) match on the latest user message by case-insensitive substring; a rule with no `model` or no `keywords` is skipped with a `WARN`:
+
+| Property | Description |
+|---|---|
+| `…content-rules[i].keywords` | Keywords matched case-insensitively against the latest user message. |
+| `…content-rules[i].model` | Model to route to when a keyword matches. |
+| `…content-rules[i].base-url` / `.api-key` | Optional: target a different OpenAI-compatible endpoint for this rule. |
+
+**Model rules** (`atmosphere.ai.routing.model-rules[i]`) match on the incoming `request.model()` by **literal case-insensitive equals** (not regex; the request is routed unchanged — the model name is *not* rewritten). A blank `model-pattern` is skipped with a `WARN`:
+
+| Property | Description |
+|---|---|
+| `…model-rules[i].model-pattern` | Routed when `request.model()` `equalsIgnoreCase` this value. |
+| `…model-rules[i].base-url` / `.api-key` | Optional: dedicated endpoint for the matched model. |
+
+**Cost rules** (`atmosphere.ai.routing.cost-rules[i]`) pick the highest-`capability` model whose total cost (`cost-per-streaming-text × request.maxStreamingTexts()`) is within `max-cost`. **Latency rules** (`atmosphere.ai.routing.latency-rules[i]`) pick the highest-`capability` model whose `average-latency-ms` is within `max-latency-ms`. Each lists candidate `models[j]` carrying `model`, `cost-per-streaming-text` (null → `0.0`), `average-latency-ms` (null → `0`), `capability` (null → `0`), and optional per-option `base-url` / `api-key`. A cost/latency rule with a null budget or empty `models` is skipped with a `WARN`.
+
+```yaml
+# application.yml — all four families on one router. Evaluated content → model
+# → cost → latency, first match wins.
+atmosphere:
+  ai:
+    model: gemini-2.5-flash          # resolved default client + model
+    routing:
+      enabled: true
+      default-model: gemini-2.5-flash
+      content-rules:
+        - keywords: [code, function, refactor, stack trace]
+          model: gpt-4o              # reuses the resolved client; only the model changes
+          base-url: https://api.openai.com/v1   # optional: dedicated endpoint
+          api-key: ${OPENAI_API_KEY}            # optional: key for that endpoint
+      model-rules:
+        - model-pattern: gpt-4o      # request.model()=="gpt-4o" → dedicated client, unchanged request
+          base-url: https://api.openai.com/v1
+          api-key: ${OPENAI_API_KEY}
+      cost-rules:
+        - max-cost: 5.0              # highest-capability model fitting the budget
+          models:
+            - model: gpt-4o
+              cost-per-streaming-text: 0.01
+              capability: 10
+            - model: gpt-4o-mini
+              cost-per-streaming-text: 0.001
+              capability: 5
+      latency-rules:
+        - max-latency-ms: 100        # highest-capability model under 100ms
+          models:
+            - model: gemini-2.5-flash
+              average-latency-ms: 50
+              capability: 8
+```
+
+Every rule reuses the resolved client by default (same provider/credentials; only the model name changes where applicable); set `base-url` and/or `api-key` to target a different OpenAI-compatible endpoint. For routing logic beyond these property shapes (custom predicates, budget-degradation), build a `RoutingLlmClient` in Java and install it with `AiConfig.installClient(router)`.
+
+The CLI scaffolds the opt-in block for you: `atmosphere new my-app --template ai-chat --routing` appends a commented, ready-to-uncomment `atmosphere.ai.routing.*` tree to the generated `application.yml`. `--routing` is only valid for AI templates that ship an `application.yml`, and the emitted block is commented so the scaffold is byte-identical until you uncomment it.
+
 ## Direct Adapter Usage
 
 You can bypass `@AiEndpoint` and use adapters directly:

@@ -179,6 +179,19 @@ Samples whose Java code imports provider-specific types directly (e.g.
 force-swap; the transparent templates (`ai-chat`, `multi-agent`, etc.)
 work end-to-end with no code changes.
 
+Add `--routing` to scaffold the opt-in, config-driven model router:
+
+```bash
+atmosphere new my-app --template ai-chat --routing
+```
+
+This appends a commented, ready-to-uncomment `atmosphere.ai.routing.*`
+block to the generated `application.yml` (off by default; the scaffold
+is byte-identical until you uncomment it). It is only valid for AI
+templates that ship an `application.yml`. The four rule families
+(content / model / cost / latency) and their compose order are
+documented in [the AI reference](/docs/reference/ai/#config-driven-routing-spring-boot).
+
 ## Source
 
 - Module README: [`modules/ai/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/ai/README.md)
