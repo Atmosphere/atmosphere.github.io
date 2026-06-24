@@ -102,6 +102,10 @@ Exclusions are **honest** — Koog declares them as absent in its `capabilities(
 - [spring-boot-ai-chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) — swap to Koog by adding `atmosphere-koog` to `pom.xml`; the same `@AiEndpoint` code routes through `KoogAgentRuntime` (Atmosphere's SPI promise)
 - [spring-boot-ai-classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) — multi-room shared AI; same one-Maven-dep swap to route through Koog
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, this runtime enforces the schema at the **provider** level by carrying the generated JSON Schema on the prompt's `LLMParams.schema`, which Koog's streaming executor forwards to the provider's native structured-output field — preserving streaming (rather than the non-streaming `executeStructured` API). This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully to the prompt-injection path if the provider rejects the schema.
+
 ## See Also
 
 - [AI Reference](../../reference/ai/) — `AgentRuntime` SPI, capability matrix

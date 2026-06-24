@@ -70,6 +70,10 @@ The `ChatClient` bean must be configured separately via Spring AI's own starter.
 
 - [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- drop `atmosphere-spring-ai` on the classpath and the same `@AiEndpoint` code switches to Spring AI
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, this runtime enforces the schema at the **provider** level on the OpenAI-backed path via `OpenAiChatOptions.outputSchema(…)` (Spring AI 2.0, which maps it to a strict `json_schema` response format) — the model cannot emit non-conforming JSON. Non-OpenAI chat models ignore the OpenAI-specific option and fall through to the prompt-injection path. This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully if the provider rejects the schema.
+
 ## See Also
 
 - [AI Reference](../../reference/ai/) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing

@@ -128,6 +128,10 @@ See the `modules/semantic-kernel/README.md` exclusion note for the full trade-of
 
 Semantic Kernel is wired into [spring-boot-ai-classroom](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-classroom) as one of the twelve swappable runtimes. Drop the `atmosphere-semantic-kernel` JAR alongside `atmosphere-ai` and the same `@AiEndpoint` code routes through SK.
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, this runtime enforces the schema at the **provider** level via `PromptExecutionSettings.withResponseFormat(JsonSchemaResponseFormat)` on the `InvocationContext` (which SK maps to the Azure-SDK JSON-schema response format) — the model cannot emit non-conforming JSON. This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully to the prompt-injection path if the provider rejects the schema.
+
 ## See Also
 
 - [AI Reference](../../reference/ai/) — `AgentRuntime` SPI, capability matrix

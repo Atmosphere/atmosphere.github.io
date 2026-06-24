@@ -62,6 +62,10 @@ Bridges LangChain4j's `StreamingChatResponseHandler` to Atmosphere's `StreamingS
 
 - [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- drop `atmosphere-langchain4j` on the classpath and the framework auto-selects LangChain4j
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, this runtime enforces the schema at the **provider** level via LangChain4j's `ResponseFormat` (the JSON schema is derived with `JsonSchemas.jsonSchemaFrom(Type)` and attached to the `ChatRequest`) — the model cannot emit non-conforming JSON. This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully to the prompt-injection path if the provider rejects the schema.
+
 ## See Also
 
 - [AI Reference](../../reference/ai/) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing

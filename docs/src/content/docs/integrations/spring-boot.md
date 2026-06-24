@@ -253,6 +253,10 @@ public class BackgroundChat {
 - [Spring Boot MCP Server](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-mcp-server) -- MCP tools, resources, prompts
 - [Spring Boot OTel Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-otel-chat) -- OpenTelemetry tracing with Jaeger
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, the built-in (OpenAI-compatible) runtime enforces the schema at the **provider** level by emitting `response_format:{"type":"json_schema","strict":true,…}` with the generated JSON Schema — the model cannot emit non-conforming JSON. This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully to the weaker `json_object` + prompt-injection path if the provider rejects the schema.
+
 ## See Also
 
 - [Core Runtime](../reference/core/)

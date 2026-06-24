@@ -703,25 +703,35 @@ table below mirrors the twelve-runtime snapshot pinned by each runtime's
 capability and the contract tests assert it.
 
 Legend: TS=TEXT_STREAMING, TC=TOOL_CALLING, SO=STRUCTURED_OUTPUT,
-SP=SYSTEM_PROMPT, AO=AGENT_ORCHESTRATION, CM=CONVERSATION_MEMORY,
-TA=TOOL_APPROVAL, V=VISION, A=AUDIO, MM=MULTI_MODAL, PC=PROMPT_CACHING,
-TU=TOKEN_USAGE, PRR=PER_REQUEST_RETRY, TCD=TOOL_CALL_DELTA,
+NSO=NATIVE_STRUCTURED_OUTPUT, SP=SYSTEM_PROMPT, AO=AGENT_ORCHESTRATION,
+CM=CONVERSATION_MEMORY, TA=TOOL_APPROVAL, V=VISION, A=AUDIO, MM=MULTI_MODAL,
+PC=PROMPT_CACHING, TU=TOKEN_USAGE, PRR=PER_REQUEST_RETRY, TCD=TOOL_CALL_DELTA,
 BE=BUDGET_ENFORCEMENT, CS=CONFIDENCE_SCORES, PSV=PASSIVATION.
 
-| Runtime | Priority | TS | TC | SO | SP | AO | CM | TA | V | A | MM | PC | TU | PRR | TCD | BE | CS | PSV |
-|---------|---------:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:-:|:-:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Built-in | 0 | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
-| Spring AI | 100 | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
-| LangChain4j | 100 | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
-| Google ADK | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
-| Embabel | 100 | Y | Y | Y | Y | Y | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
-| JetBrains Koog | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
-| Alibaba AgentScope | 100 | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
-| Spring AI Alibaba | 100 | Y¹ | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
-| Microsoft Semantic Kernel | 100 | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
-| Anthropic | 100 | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
-| Cohere | 100 | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
-| CrewAI² | 50 | Y | Y | Y | Y | Y |  | Y |  |  |  |  | Y | Y |  |  |  |  |
+`SO` is pipeline-level structured output (schema injected into the prompt + parsed
+by `StructuredOutputCapturingSession`), declared by every runtime. `NSO` is
+provider-enforced structured output — the generated JSON Schema is threaded into the
+provider's own structured-output field (OpenAI `response_format:json_schema`,
+Anthropic `output_config`, Cohere `response_format`, Gemini `responseSchema`, etc.)
+so non-conforming output cannot be emitted. Governed by `NativeStructuredOutputMode`
+(AUTO default, with graceful fall-back to the prompt-injection path when a provider
+rejects the schema). The three runtimes without `NSO` carry no schema field on their
+wire/SDK path and stay on `SO` — declaring `NSO` for them would violate Runtime Truth.
+
+| Runtime | Priority | TS | TC | SO | NSO | SP | AO | CM | TA | V | A | MM | PC | TU | PRR | TCD | BE | CS | PSV |
+|---------|---------:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:-:|:-:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Built-in | 0 | Y | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
+| Spring AI | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| LangChain4j | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| Google ADK | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| Embabel | 100 | Y | Y | Y |  | Y | Y | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| JetBrains Koog | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
+| Alibaba AgentScope | 100 | Y | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
+| Spring AI Alibaba | 100 | Y¹ | Y | Y |  | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
+| Microsoft Semantic Kernel | 100 | Y | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
+| Anthropic | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| Cohere | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| CrewAI² | 50 | Y | Y | Y |  | Y | Y |  | Y |  |  |  |  | Y | Y |  |  |  |  |
 
 ¹ Spring AI Alibaba emits its final reply as one Atmosphere stream chunk, but
 the upstream `ReactAgent.call()` path is buffered rather than token-by-token.

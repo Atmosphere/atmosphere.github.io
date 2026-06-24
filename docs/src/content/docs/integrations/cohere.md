@@ -52,6 +52,10 @@ Point the runtime at any environment that speaks the Cohere v2 wire protocol (fo
 
 - [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) — drop `atmosphere-cohere` on the classpath and the same `@AiEndpoint` code switches to Cohere
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, this runtime enforces the schema at the **provider** level via Cohere v2's `response_format` field (`{"type":"json_object","schema":{…}}`) — the model cannot emit non-conforming JSON. This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully to the prompt-injection path if the provider rejects the schema.
+
 ## See Also
 
 - [AI Reference](../../reference/ai/) — `AgentRuntime` SPI, `@AiEndpoint`, capability matrix, tool calling

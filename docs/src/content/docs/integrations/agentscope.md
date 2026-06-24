@@ -63,6 +63,10 @@ AgentScope is exposed as a streaming `AgentRuntime`. As of the bundled AgentScop
 
 - [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) — drop `atmosphere-agentscope` on the classpath and the same `@AiEndpoint` code switches to AgentScope
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, this runtime enforces the schema at the **provider** level via AgentScope's schema-aware `stream(msgs, opts, responseType)` overload (which drives the formatter's `ResponseFormat.jsonSchema(…)` / structured-output tool) — the model cannot emit non-conforming JSON. This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully to the prompt-injection path if the provider rejects the schema.
+
 ## See Also
 
 - [AI Reference](../../reference/ai/) — `AgentRuntime` SPI, `@AiEndpoint`, capability matrix, per-request extensions

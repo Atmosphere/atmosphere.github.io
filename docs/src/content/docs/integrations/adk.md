@@ -96,6 +96,10 @@ LlmAgent agent = LlmAgent.builder()
 
 - [Spring Boot AI Chat](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat) -- drop `atmosphere-adk` on the classpath and the framework auto-selects ADK
 
+## Native structured output
+
+When an `@AiEndpoint` declares `responseAs = SomeRecord.class`, this runtime enforces the schema at the **provider** level via `LlmAgent.Builder.outputSchema(Schema.fromJson(…))` on the no-tool path — the Gemini model cannot emit non-conforming JSON. (Gemini disallows a response schema together with function calling, so tools-present requests stay on the prompt-injection path.) This is the `NATIVE_STRUCTURED_OUTPUT` capability; activation is governed by `NativeStructuredOutputMode` (AUTO default), which falls back gracefully to the prompt-injection path if the provider rejects the schema.
+
 ## See Also
 
 - [AI Reference](../../reference/ai/) -- `AgentRuntime` SPI, `@AiEndpoint`, filters, routing
