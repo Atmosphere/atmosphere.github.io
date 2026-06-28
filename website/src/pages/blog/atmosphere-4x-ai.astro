@@ -189,7 +189,7 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           Scope confinement rides the same layer: you pin an agent to a declared purpose,
           and an off-topic or prompt-injection-style "ignore your instructions" request is
           turned away before it reaches the LLM — by rule-based keywords, embedding-similarity
-          to the purpose, or an LLM classifier, whichever tier you pick. An <code>@Agent</code>
+          to the purpose, semantic-intent matching, or an LLM classifier, whichever tier you pick. An <code>@Agent</code>
           declares that boundary in its skill file's <code>## Guardrails</code>; if you're
           writing the lower-level <code>@AiEndpoint</code> or <code>@Coordinator</code>
           directly, it's an explicit <code>@AgentScope(purpose = …)</code>. The default
@@ -237,7 +237,7 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           <em>statically</em>, catching a class of prompt-injection a step-by-step ReAct
           loop would happily run. It's opt-in — you wire <code>PlanAndVerify</code> into
           your agent application, as a couple of the samples do — and the Console's
-          Validation tab shows the verdicts live.
+          Validation tab shows the verdicts on demand.
         </p>
 
         <h2>State that outlives the request</h2>
@@ -267,8 +267,8 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         <p>
           The endpoint model scales up from there. You already saw an <code>@AiTool</code>
           method in the first example — each one becomes a function the model can call
-          mid-conversation, and every call is routed through a human-in-the-loop approval
-          gate before it runs.
+          mid-conversation, and a tool you mark <code>@RequiresApproval</code> — like the
+          refund above — is routed through a human-in-the-loop approval gate before it runs.
           <code>responseAs = SomeRecord.class</code> turns free text into a typed
           Java object — and nine of the twelve runtimes now enforce that schema
           <em>natively</em>, threading it into the model API's own structured-output
@@ -317,9 +317,9 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         <p>
           An agent is only useful if clients can reach it. For the browser and mobile
           there's <strong>atmosphere.js</strong>, a TypeScript client that does much more
-          than open a socket. It negotiates the transport for you — WebSocket, SSE,
-          long-polling, chunked streaming, or WebTransport/HTTP3 — and falls back down the
-          chain when one is blocked. When the network drops, an <strong>offline queue</strong>
+          than open a socket. It speaks WebSocket, SSE, long-polling, chunked streaming, or
+          WebTransport/HTTP3, and falls back to a configured secondary transport if the
+          primary one fails. When the network drops, an <strong>offline queue</strong>
           holds outbound messages and drains them on reconnect, while
           <strong>history sync</strong> replays exactly the messages you missed using a
           persisted <code>sinceId</code> cursor. There's a rooms-and-<strong>presence</strong>
@@ -340,8 +340,8 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         </p>
         <p>
           And if the client is itself a JVM service, <strong>wasync</strong> is the Java
-          counterpart to atmosphere.js — the same transport negotiation and
-          WebSocket/SSE/long-polling/gRPC fallback, server-to-server.
+          counterpart to atmosphere.js — a server-to-server client with an ordered
+          WebSocket/SSE/long-polling/gRPC fallback chain.
         </p>
 
         <h2>Bring an agent you already have: OpenClaw-compatible</h2>
@@ -369,10 +369,11 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         <p>
           The same artifact thinking shows up one level down, at the level of a single
           agent's personality and tools. A <strong>skill</strong> is a
-          <code>SKILL.md</code> file — YAML frontmatter (name, description, tags) followed
-          by Markdown that becomes the agent's system prompt, with
+          <code>SKILL.md</code> file — YAML frontmatter (name, description, and metadata)
+          followed by Markdown that becomes the agent's system prompt, with
           <code>## Tools</code>, <code>## Guardrails</code>, and <code>## Channels</code>
-          sections the framework reads into tool stubs and policy. You point an agent at one
+          sections — <code>## Tools</code> is cross-referenced against your <code>@AiTool</code>
+          methods, while guardrails and channels feed policy and routing. You point an agent at one
           with <code>@Agent(skillFile = "skill:research-agent")</code> and that file
           <em>is</em> the agent.
         </p>
@@ -417,9 +418,9 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           RAG, checkpoints, and durable sessions together.
         </p>
         <p>
-          Deploying in a container is first-class too. The scaffold emits a
-          <code>Dockerfile</code> (a slim <code>eclipse-temurin:21-jre-alpine</code> base,
-          <code>EXPOSE 8080</code>) and a <code>docker-compose.yml</code> alongside the
+          Deploying in a container is first-class too. The <code>atmosphere compose</code>
+          scaffold emits a <code>Dockerfile</code> (a slim <code>eclipse-temurin:21-jre-alpine</code>
+          base, <code>EXPOSE 8080</code>) and a <code>docker-compose.yml</code> alongside the
           project, so your agent ships as an image with no extra setup — and one of the
           samples ships a Jaeger compose file you bring up alongside the app (run with
           <code>./mvnw spring-boot:run</code>) to show the OpenTelemetry
