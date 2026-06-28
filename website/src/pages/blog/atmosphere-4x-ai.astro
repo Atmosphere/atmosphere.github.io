@@ -1,0 +1,541 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+// Code blocks are rendered via set:html so Astro never tries to interpret the
+// Java/XML braces or angle brackets as markup. Angle brackets are pre-escaped.
+const agentSnippet = `@Agent(name = "support",
+       skillFile = "skill:support-agent",          // persona + instructions live in the SKILL.md
+       description = "Billing and refund support")
+public class SupportAgent {
+
+    @AiTool(name = "issue_refund", description = "Refund a customer order")
+    @RequiresApproval("This refund posts immediately. Approve?")
+    public String issueRefund(@Param(value = "orderId", description = "Order to refund") String orderId) {
+        return billing.refund(orderId);   // runs only after a human approves
+    }
+
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) {
+        session.stream(message);   // streams the reply to this client, token by token
+    }
+}`;
+
+const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no dependency.
+     Swap the runtime without touching a line of the code above: --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.atmosphere&lt;/groupId&gt;
+  &lt;artifactId&gt;atmosphere-langchain4j&lt;/artifactId&gt;
+  &lt;!-- or any one of:
+       atmosphere-spring-ai          atmosphere-anthropic
+       atmosphere-spring-ai-alibaba  atmosphere-cohere
+       atmosphere-adk                atmosphere-koog
+       atmosphere-embabel            atmosphere-semantic-kernel
+       atmosphere-agentscope         atmosphere-crewai --&gt;
+&lt;/dependency&gt;`;
+
+---
+
+<Layout
+  title="Atmosphere 4 released — a portable AI agent component"
+  description="Atmosphere 4 ships an AI agent layer on top of its real-time transport: one @Agent class, twelve interchangeable runtimes behind one SPI, a governance layer, and a static plan verifier."
+>
+  <Header />
+  <main class="blog">
+    <article class="post">
+      <header class="post-header">
+        <p class="eyebrow">Engineering · Jean-François Arcand</p>
+        <h1>Atmosphere 4 released, now shipping a portable AI agent component</h1>
+        <p class="lede">
+          I added an AI agent layer to Atmosphere. Wiring up the LLM was the easy
+          part — the streaming was already done.
+        </p>
+      </header>
+
+      <div class="post-body">
+        <p>
+          I've worked on Atmosphere for years — a real-time transport for the JVM
+          that pushes event streams from a server to connected clients over
+          WebSocket, Server-Sent Events, long-polling, gRPC, and now
+          WebTransport/HTTP3, on Spring Boot, Quarkus, or a plain servlet container,
+          with reconnect and connection write-timeouts on by default, and configurable
+          drop-oldest / newest / disconnect backpressure policies when you need them. Atmosphere 4 adds an AI agent layer on top
+          of that transport.
+        </p>
+        <p>
+          Java developers are right to be skeptical of yet another AI wrapper, so
+          let me be clear about what this is. The call to the model is the easy bit.
+          The hard part is delivering a token stream — plus tool-call events,
+          structured-output frames, and multi-agent handoffs — to a lot of
+          concurrent clients at once, live, without dropping connections. That's the
+          problem Atmosphere already solved, so I plugged the LLM into the streaming
+          layer that was already there instead of building a new framework around the LLM.
+        </p>
+
+        <h2>One annotation, twelve runtimes</h2>
+        <p>
+          The headline annotation is <code>@Agent</code> — a class is an agent, its persona
+          and instructions come from a skill file, and conversation memory plus protocol
+          exposure (A2A, MCP, AG-UI) are wired automatically. Rather than a hello-world,
+          here's one worth looking at — a billing-support agent that streams its reply and
+          gates a money-moving tool behind a human:
+        </p>
+        <pre class="code"><code set:html={agentSnippet}></code></pre>
+        <p>
+          That's the whole class. The persona lives in <code>skill:support-agent</code> —
+          the same <code>SKILL.md</code> format from the Skills section, so the agent stays a
+          shareable artifact. <code>@RequiresApproval</code> parks the refund tool — the
+          pipeline suspends the virtual thread, sends an approval request to the client, and
+          resumes only on a yes — while tokens stream the whole time. None of that is glue
+          you write; it's the annotations.
+        </p>
+        <p>
+          That one line in <code>@Prompt</code> deserves a closer look, because it doesn't
+          behave like a normal method call. <code>session.stream(message)</code> hands the
+          message to the resolved runtime and streams the model's reply back to <em>this</em>
+          client over whatever transport it connected on — token by token, as they're
+          generated. It returns <code>void</code>: there's no <code>Future</code> to await
+          and no response object to inspect, because the reply goes out over the wire, not
+          back through your method. The body runs on a <strong>virtual thread</strong>, so
+          you write plain blocking-looking code that costs almost nothing to park — which is
+          exactly what lets <code>@RequiresApproval</code> suspend the call mid-flight and
+          resume on a human's answer with no callback in sight, and what lets the framework
+          cancel the in-flight call for you if the client disconnects.
+        </p>
+        <p>
+          By default this runs on a built-in, dependency-free OpenAI-compatible
+          client. The part I care about is what happens next. Atmosphere has a single
+          <code>AgentRuntime</code> SPI. Drop a different Maven artifact on the classpath
+          and the <em>same</em> code above runs on a different runtime:
+        </p>
+        <pre class="code"><code set:html={swapSnippet}></code></pre>
+        <p>
+          And this is the part that matters most: that dependency line is the
+          <em>only</em> thing that changes. Look back at the agent — it imports
+          <code>@Agent</code>, <code>@AiTool</code>, <code>@RequiresApproval</code>,
+          <code>StreamingSession</code>: all <code>org.atmosphere</code> types. It never
+          imports a Spring AI <code>ChatClient</code> or a LangChain4j
+          <code>ChatModel</code>. Your agent has <strong>no compile-time dependency on the
+          framework underneath it</strong> — which runtime you pick is a deployment detail
+          behind the <code>AgentRuntime</code> SPI, not something woven through your code. That's what
+          makes an agent portable: you can move it from LangChain4j to Spring AI to the
+          built-in client, or hand it to someone running a different stack, and the class
+          doesn't change. It's the same bet Atmosphere has made from the start. Its transport
+          layer carried application code across WebSocket, Server-Sent Events, and
+          long-polling before the Java WebSocket spec existed — and to this day it does more
+          than the spec, with the transport fallback and reconnect the standard never
+          covered. The AI runtimes are that same idea one layer up: write to the abstraction,
+          swap the implementation — and tap a framework's native features when you need them,
+          without giving up that portability.
+        </p>
+        <p>
+          Your agent runs on any of twelve contract-tested runtimes. Nine wrap an AI
+          framework you already use — Spring AI, Spring AI Alibaba, LangChain4j, Google ADK,
+          Embabel, JetBrains Koog, Microsoft Semantic Kernel, AgentScope, and CrewAI — and
+          three talk straight to a model API with no framework at all: the built-in
+          OpenAI-compatible client, Anthropic, and Cohere. CrewAI is the one that isn't on
+          the JVM — it runs as an out-of-process <strong>Python sidecar</strong> the JVM
+          reaches over HTTP and SSE, gated on a live health check, so a Python-native agent
+          stack is reachable from the same <code>@Agent</code> without loading Python into
+          your JVM. The highest-priority available runtime wins; your endpoint code never
+          changes. By default each client gets its own streaming session; for shared rooms
+          you opt into a broadcaster and one reply fans out to every subscriber.
+        </p>
+
+        <h2>Why this isn't another LLM library</h2>
+        <p>
+          Spring AI and LangChain4j are excellent abstractions over model APIs — very good
+          at "talk to a model." Atmosphere isn't trying to compete with them on how many
+          models they support, and it would lose if it did.
+        </p>
+        <p>
+          Atmosphere builds on them. It's a real-time, streaming
+          <strong>agent runtime</strong> that wraps those frameworks behind one
+          annotation-driven endpoint and one SPI. If you already use Spring AI or
+          LangChain4j, you keep it — Atmosphere gives it a transport and a uniform
+          agent surface, and lets you swap the runtime with one dependency. The
+          differentiation isn't the model integration; it's what Atmosphere adds on
+          top — the real-time transport, a governance layer, and a plan verifier.
+        </p>
+        <p>
+          And the abstraction doesn't trap you below a framework's own features. When
+          you need something only one of them has — a Spring AI advisor chain, a RAG
+          <code>QuestionAnswerAdvisor</code>, a <code>VectorStore</code> — you bind your
+          own fully-configured Spring AI <code>ChatClient</code> with
+          <code>SpringAiAgentRuntime.setChatClient(...)</code>, and Atmosphere runs
+          <em>that</em> client through the same agent pipeline; it
+          keeps the <code>defaultAdvisors(...)</code> you wired in, and you can attach
+          more per request. Or step outside the runtime for a slice of work and call the
+          framework's primitives directly — the rag-chat sample indexes into a real Spring AI
+          <code>SimpleVectorStore</code> when an embedding model is configured, though its
+          default retrieval path uses the built-in word-overlap retriever. You get the portability when you
+          want it and the framework's own features when you don't.
+        </p>
+
+        <h2>Governance in the box</h2>
+        <p>
+          Governance is the part I care about most. Atmosphere ships a composable
+          governance layer that runs at the agent's entry point, before the model is
+          called. You compose a policy-admission chain
+          — allow/deny lists, authorization, rate-limit, concurrency-limit,
+          message-length, time-window, a kill switch — and a denied request is
+          rejected and recorded to a decision audit log. It's opt-in: out of the box
+          the gateway is permissive and logs a startup warning telling you to install
+          an enforcing one for production, so you turn governance <em>on</em> rather
+          than discovering it was off.
+        </p>
+        <p>
+          Scope confinement rides the same layer: you pin an agent to a declared purpose,
+          and an off-topic or prompt-injection-style "ignore your instructions" request is
+          turned away before it reaches the LLM — by rule-based keywords, embedding-similarity
+          to the purpose, or an LLM classifier, whichever tier you pick. An <code>@Agent</code>
+          declares that boundary in its skill file's <code>## Guardrails</code>; if you're
+          writing the lower-level <code>@AiEndpoint</code> or <code>@Coordinator</code>
+          directly, it's an explicit <code>@AgentScope(purpose = …)</code>. The default
+          politely redirects rather than
+          answering off-scope.
+        </p>
+        <p>
+          The same machinery includes dedicated prompt-injection classifiers
+          (rule-based, embedding, and LLM-backed), two on-by-default screens — one on the
+          RAG read path that drops poisoned retrieved documents, one on the write path that
+          checks what gets saved to long-term memory — and an OWASP-agentic-threats matrix
+          the admin Console surfaces alongside the live policy decisions. Because it lives in
+          the pipeline, it applies no matter which of the twelve runtimes is underneath.
+        </p>
+        <p>
+          You write those policies programmatically, or — if you'd rather keep them
+          declarative — in <strong>AWS Cedar</strong> or <strong>OPA Rego</strong>
+          (<code>ai-policy-cedar</code>, <code>ai-policy-rego</code>). And the decision
+          log isn't only in memory: point it at <strong>Kafka</strong> or
+          <strong>Postgres</strong> (<code>ai-audit-kafka</code>,
+          <code>ai-audit-postgres</code>) and every admit and deny is persisted for the
+          audit trail.
+        </p>
+
+        <h2>Guardians of the Agents: verify the plan before it runs</h2>
+        <p>
+          Governance gates a single request. The verifier goes a step further and
+          checks the agent's <em>whole plan</em> before any tool executes. Atmosphere
+          ships a production implementation of Erik Meijer's
+          <a href="https://cacm.acm.org/practice/guardians-of-the-agents/"
+             target="_blank" rel="noopener">"Guardians of the Agents"</a>
+          (Communications of the ACM, January 2026):
+          the model emits a structured tool-call plan up front — with symbolic
+          references standing in for data that only exists at runtime — and a pluggable
+          chain of checks proves that plan safe against a declarative policy before
+          execution begins. A verified plan never executes an unverified tool call.
+        </p>
+        <p>
+          The chain runs allowlist, well-formedness, capability, taint, and sequencing
+          checks, and — with the SMT module on the classpath — proves numeric invariants
+          (for example, "a transfer can never exceed the fetched balance") with an
+          in-JVM solver, <code>SMTInterpol</code> by default or native <code>Z3</code> if
+          you have it. Taint tracking is the one that matters most: a plan that routes
+          attacker-controlled tool output into a forbidden parameter is rejected
+          <em>statically</em>, catching a class of prompt-injection a step-by-step ReAct
+          loop would happily run. It's opt-in — you wire <code>PlanAndVerify</code> into
+          your agent application, as a couple of the samples do — and the Console's
+          Validation tab shows the verdicts live.
+        </p>
+
+        <h2>State that outlives the request</h2>
+        <p>
+          Agents aren't always stateless request/response. A dropped connection or
+          restarted process doesn't lose the session — it re-attaches to its rooms and
+          broadcasters through a durable session token, backed by an in-memory, SQLite, or
+          Redis session store. And a paused agent's conversation can be snapshotted and
+          resumed later — the <code>PASSIVATION</code> capability — backed by an in-memory,
+          SQLite, or Postgres checkpoint store (the SPI is pluggable). With a checkpoint you
+          can inspect a run, fork it, or hold it at a human-approval gate before it
+          continues — <code>list</code>, <code>show</code>, <code>fork</code>, and
+          <code>approve</code> are right there in the CLI.
+        </p>
+        <p>
+          For long-running work there's a durable <strong>Interaction</strong> resource:
+          you <code>create</code> an agent turn, get an id back, and the run keeps a step
+          log that survives a disconnect — so a client can fire a request in the
+          background, drop off, and reconnect later to replay every step or
+          <code>continue</code> the conversation from where it left off, over REST or a
+          live socket. And when one node isn't enough, a Redis or Kafka broadcast
+          backplane relays an agent's streams across a cluster, so a session opened on one
+          JVM is reachable from any of them.
+        </p>
+
+        <h2>Beyond chat</h2>
+        <p>
+          The endpoint model scales up from there. You already saw an <code>@AiTool</code>
+          method in the first example — each one becomes a function the model can call
+          mid-conversation, and every call is routed through a human-in-the-loop approval
+          gate before it runs.
+          <code>responseAs = SomeRecord.class</code> turns free text into a typed
+          Java object — and nine of the twelve runtimes now enforce that schema
+          <em>natively</em>, threading it into the model API's own structured-output
+          field (OpenAI <code>response_format</code>, Anthropic <code>output_config</code>,
+          and so on), with a graceful fallback to system-prompt schema instructions when
+          one can't.
+          <code>@Coordinator</code> and <code>@Fleet</code> compose multiple agents. And
+          because agents rarely live alone, Atmosphere speaks the open interop
+          protocols. It's an MCP server and an MCP client. It talks
+          <strong>A2A</strong> (Agent-to-Agent, v1.0.0) — an Atmosphere agent publishes
+          an <code>AgentCard</code> — optionally Ed25519-signed — and can call other A2A
+          agents over JSON-RPC.
+          And it exposes agents over <strong>AG-UI</strong>, streaming the run lifecycle
+          (<code>RunStarted</code>, <code>RunFinished</code>, <code>RunError</code>) to a
+          standard frontend at <code>/atmosphere/agent/&#123;name&#125;/agui</code>.
+        </p>
+        <p>
+          And there's more in the agent surface than a chat turn: it can route across
+          models by cost or latency, hand a conversation off between agents, keep
+          long-term memory across sessions, take <strong>vision and audio</strong> input,
+          and run model-generated code in a Docker-backed sandbox when a tool needs to
+          execute something untrusted.
+        </p>
+        <p>
+          For retrieval, there's a pluggable <strong>RAG</strong> layer with a
+          <code>ContextProvider</code> SPI and six backends out of the box — an in-memory
+          store for development, plus <strong>pgvector</strong>, <strong>Qdrant</strong>,
+          <strong>Pinecone</strong>, and bridges to a Spring AI <code>VectorStore</code> or
+          a LangChain4j embedding store — so the same agent can pull grounded context from
+          whichever vector database you already run. Retrieved documents are screened by
+          the poisoned-RAG safety filter from the governance section — on by default and
+          fail-closed (it drops a flagged document rather than letting it through) — before
+          they reach the model.
+        </p>
+        <p>
+          All of it is visible in the bundled admin Console — a Vue app the Spring Boot
+          starter serves at <code>/atmosphere/console/</code> with no extra setup. It has
+          a live chat tab plus operational tabs that appear as you wire the matching
+          pieces in: the governance policy decisions as they happen, the
+          OWASP-agentic-threats matrix, the plan-verifier's verdicts, and the MCP
+          Apps host. It's the same UI the samples run on — roughly two dozen of them,
+          mostly Spring Boot and Quarkus, with a few plain embedded-server and gRPC builds.
+        </p>
+
+        <h2>Reachable from anywhere</h2>
+        <p>
+          An agent is only useful if clients can reach it. For the browser and mobile
+          there's <strong>atmosphere.js</strong>, a TypeScript client that does much more
+          than open a socket. It negotiates the transport for you — WebSocket, SSE,
+          long-polling, chunked streaming, or WebTransport/HTTP3 — and falls back down the
+          chain when one is blocked. When the network drops, an <strong>offline queue</strong>
+          holds outbound messages and drains them on reconnect, while
+          <strong>history sync</strong> replays exactly the messages you missed using a
+          persisted <code>sinceId</code> cursor. There's a rooms-and-<strong>presence</strong>
+          API, <strong>optimistic updates</strong> so a sent message renders instantly and
+          reconciles when the server confirms, and a connection-status state machine you can
+          bind to a badge.
+        </p>
+        <p>
+          All of that ships as idiomatic bindings for <strong>React, React Native, Vue, and
+          Svelte</strong> (hooks, composables, and stores — <code>useChat</code>,
+          <code>useStreaming</code>, <code>useRoom</code>, <code>useOfflineQueue</code>, and
+          the rest), plus a set of pre-built chat UI components if you don't want to draw the
+          bubbles yourself. And the agent doesn't have to live in a browser at all: a built-in
+          channels bridge connects an agent to <strong>Telegram</strong>,
+          <strong>Messenger</strong>, <strong>Slack</strong>, <strong>WhatsApp</strong>, and
+          <strong>Discord</strong> over webhooks (Discord over the Gateway WebSocket API). Write the agent once; reach it from a
+          web app, a phone, or a Telegram chat.
+        </p>
+        <p>
+          And if the client is itself a JVM service, <strong>wasync</strong> is the Java
+          counterpart to atmosphere.js — the same transport negotiation and
+          WebSocket/SSE/long-polling/gRPC fallback, server-to-server.
+        </p>
+
+        <h2>Bring an agent you already have: OpenClaw-compatible</h2>
+        <p>
+          An agent doesn't have to be Java to run here. Atmosphere treats an agent as an
+          artifact — a directory of Markdown — and reads the
+          <strong>OpenClaw</strong> canonical workspace layout directly:
+          <code>AGENTS.md</code>, <code>SOUL.md</code>, <code>USER.md</code>,
+          <code>IDENTITY.md</code>, and the <code>skills/</code> tree. Point Atmosphere at an
+          OpenClaw workspace authored
+          without any Atmosphere extensions and it runs as-is — no conversion step. That's
+          the whole compatibility promise: the adapter is discovered through an
+          <code>AgentWorkspace</code> SPI, so the layout is recognized and loaded, not
+          rewritten.
+        </p>
+        <p>
+          When you do want Atmosphere's extras, you add them as files the OpenClaw spec
+          ignores — <code>CHANNELS.md</code> to put the agent on Telegram or Slack,
+          <code>MCP.md</code> to wire MCP servers, <code>PERMISSIONS.md</code> for the
+          governance layer, <code>SKILLS.md</code> and <code>RUNTIME.md</code> for the
+          rest. Your agent stays portable; Atmosphere just reads more of the directory.
+        </p>
+
+        <h2>Skills: an agent you can share</h2>
+        <p>
+          The same artifact thinking shows up one level down, at the level of a single
+          agent's personality and tools. A <strong>skill</strong> is a
+          <code>SKILL.md</code> file — YAML frontmatter (name, description, tags) followed
+          by Markdown that becomes the agent's system prompt, with
+          <code>## Tools</code>, <code>## Guardrails</code>, and <code>## Channels</code>
+          sections the framework reads into tool stubs and policy. You point an agent at one
+          with <code>@Agent(skillFile = "skill:research-agent")</code> and that file
+          <em>is</em> the agent.
+        </p>
+        <p>
+          Skills resolve from the classpath first — a bundled
+          <code>atmosphere-skills</code> artifact ships curated skills offline — and the
+          CLI can also fetch trusted skill files or registry entries from the separate
+          <code>atmosphere-skills</code> repository. That gives you a workflow: browse with
+          <code>atmosphere skills list</code>, scaffold a project from one with
+          <code>atmosphere import &lt;id&gt;</code>, or wire several into a multi-agent app
+          with <code>atmosphere compose</code>. Remote imports are restricted to trusted
+          sources unless you pass <code>--trust</code>. An agent stops being code you write
+          and becomes a file you can pull, version, and share.
+        </p>
+
+        <h2>Runtime truth, not classpath truth</h2>
+        <p>
+          One principle shaped the whole design: a runtime only advertises a capability
+          it actually performs. Each adapter's capability set — drawn from a vocabulary of
+          twenty-one — is pinned by a contract test, so an adapter's <code>capabilities()</code> can't
+          claim a feature the bytecode doesn't do. When I added native structured
+          output, the three runtimes whose wire protocol has no schema field simply
+          don't declare it — saying otherwise is a lie the build won't let me ship. If
+          you've been burned by frameworks that promise more than they deliver,
+          that's the part I cared about most.
+        </p>
+
+        <h2>Try it</h2>
+        <p>
+          Getting started is one dependency. Add
+          <code>atmosphere-spring-boot-starter</code> and a single
+          <code>@Agent</code>-annotated class is a running, streaming chat app —
+          the starter auto-configures the framework, the AI pipeline, and the Console.
+          Prefer to scaffold? The CLI does it in one line —
+          <code>atmosphere new my-app --template ai-chat</code>, then
+          <code>./mvnw spring-boot:run</code>. The CLI exposes thirteen starters —
+          chat, AI chat, tools, RAG, MCP, multi-agent, classroom, governance, coding,
+          guarded-agent, assistant, browser-agent, and a dentist agent — all sparse-cloned
+          from the real sample applications. Kotlin is a first-class option too — there's a small DSL and
+          coroutine extensions — and for an enterprise console you can pull a single
+          <code>atmosphere-admin-bundle</code> that wires the runtime, AI, coordinator,
+          RAG, checkpoints, and durable sessions together.
+        </p>
+        <p>
+          Deploying in a container is first-class too. The scaffold emits a
+          <code>Dockerfile</code> (a slim <code>eclipse-temurin:21-jre-alpine</code> base,
+          <code>EXPOSE 8080</code>) and a <code>docker-compose.yml</code> alongside the
+          project, so your agent ships as an image with no extra setup — and one of the
+          samples ships a Jaeger compose file you bring up alongside the app (run with
+          <code>./mvnw spring-boot:run</code>) to show the OpenTelemetry
+          traces. (Worth not confusing with the Docker <em>sandbox</em> from earlier: that
+          one runs the model's <em>own</em> generated code in a throwaway container; this
+          is just packaging the Atmosphere app itself.)
+        </p>
+        <p>
+          Atmosphere is Apache 2.0, JDK 21, and the AI layer is additive — it doesn't
+          disturb the transport you may already run in production. I'm not selling you
+          a model wrapper. If the streaming-first framing is wrong for your use case,
+          I'd genuinely like to hear why.
+        </p>
+        <ul class="links">
+          <li><a href="https://github.com/Atmosphere/atmosphere">github.com/Atmosphere/atmosphere</a></li>
+          <li><a href="/">Async-IO — the company behind Atmosphere</a></li>
+        </ul>
+        <p class="sign">— JFA</p>
+      </div>
+    </article>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .blog {
+    background: var(--color-bg-primary);
+    min-height: 100vh;
+    padding: calc(var(--space-4xl) + 2rem) var(--space-lg) var(--space-4xl);
+  }
+  .post {
+    max-width: 46rem;
+    margin: 0 auto;
+  }
+  .post-header {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-xl);
+    margin-bottom: var(--space-2xl);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    margin: 0 0 var(--space-md);
+  }
+  .post h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.1;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-md);
+    font-weight: 400;
+  }
+  .lede {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.3rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+  .post-body {
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--color-text-primary);
+  }
+  .post-body h2 {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 400;
+    color: var(--color-text-primary);
+    margin: var(--space-3xl) 0 var(--space-md);
+  }
+  .post-body p {
+    margin: 0 0 var(--space-lg);
+    color: var(--color-text-secondary);
+  }
+  .post-body strong { color: var(--color-text-primary); }
+  .post-body em { color: var(--color-text-primary); font-style: italic; }
+  .post-body code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-bg-tertiary);
+    color: var(--color-accent);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  .post-body a {
+    color: var(--color-accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-accent-dim);
+  }
+  .post-body a:hover { border-bottom-color: var(--color-accent); }
+  pre.code {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: var(--space-lg);
+    overflow-x: auto;
+    margin: 0 0 var(--space-xl);
+  }
+  pre.code code {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    background: none;
+    color: var(--color-text-primary);
+    padding: 0;
+  }
+  .links { list-style: none; padding: 0; margin: 0 0 var(--space-xl); }
+  .links li { margin-bottom: var(--space-sm); }
+  .sign {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+</style>
