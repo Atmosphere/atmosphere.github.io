@@ -55,31 +55,32 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
 
       <div class="post-body">
         <p>
-          I've worked on Atmosphere for years — a real-time transport for the JVM
-          that pushes event streams from a server to connected clients over
-          WebSocket, Server-Sent Events, long-polling, gRPC, and now
-          WebTransport/HTTP3, on Spring Boot, Quarkus, or a plain servlet container,
-          with reconnect and connection write-timeouts on by default, and configurable
-          drop-oldest / newest / disconnect backpressure policies when you need them. Atmosphere 4 adds an AI agent layer on top
-          of that transport.
+          I've worked on Atmosphere for years — a real-time transport for the JVM.
+          It streams events from the server to connected clients, picking whatever
+          transport the client can actually use — WebSocket, SSE, long-polling, gRPC,
+          or WebTransport/HTTP3 — and handling the parts that break at scale:
+          reconnects, write-timeouts, and backpressure when a client falls behind.
+          It runs on Spring Boot, Quarkus, or a plain servlet container. Atmosphere 4
+          adds an AI agent layer on top of that transport.
         </p>
         <p>
-          Java developers are right to be skeptical of yet another AI wrapper, so
+          Developers are right to be skeptical of yet another AI wrapper, so
           let me be clear about what this is. The call to the model is the easy bit.
           The hard part is delivering a token stream — plus tool-call events,
-          structured-output frames, and multi-agent handoffs — to a lot of
-          concurrent clients at once, live, without dropping connections. That's the
+          structured-output frames, and multi-agent handoffs — to many concurrent
+          clients, live, without dropping connections. That's the
           problem Atmosphere already solved, so I plugged the LLM into the streaming
           layer that was already there instead of building a new framework around the LLM.
         </p>
 
         <h2>One annotation, twelve runtimes</h2>
         <p>
-          The headline annotation is <code>@Agent</code> — a class is an agent, its persona
-          and instructions come from a skill file, and conversation memory plus protocol
-          exposure (A2A, MCP, AG-UI) are wired automatically. Rather than a hello-world,
-          here's one worth looking at — a billing-support agent that streams its reply and
-          gates a money-moving tool behind a human:
+          The annotation that matters is <code>@Agent</code> — drop it on a class and that
+          class is an agent. Its persona and instructions live in a skill file, it keeps
+          track of the conversation for you, and it shows up over A2A, MCP, and AG-UI without
+          a line of plumbing. So, not a hello-world — here's one worth looking at: a
+          billing-support agent that streams its reply and gates a money-moving tool behind a
+          human:
         </p>
         <pre class="code"><code set:html={agentSnippet}></code></pre>
         <p>
