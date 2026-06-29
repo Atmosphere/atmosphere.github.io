@@ -219,14 +219,15 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         <p>
           Governance gates a single request. The verifier goes a step further and
           checks the agent's <em>whole plan</em> before any tool executes. Atmosphere
-          ships a production implementation of Erik Meijer's
+          ships an implementation of Erik Meijer's
           <a href="https://cacm.acm.org/practice/guardians-of-the-agents/"
              target="_blank" rel="noopener">"Guardians of the Agents"</a>
           (Communications of the ACM, January 2026):
-          the model emits a structured tool-call plan up front — with symbolic
-          references standing in for data that only exists at runtime — and a pluggable
-          chain of checks proves that plan safe against a declarative policy before
-          execution begins. A verified plan never executes an unverified tool call.
+          a plan source (an LLM, or a deterministic planner) emits a structured
+          tool-call plan up front, with symbolic references standing in for data that
+          only exists at runtime, and a pluggable chain of checks proves that plan safe
+          against a declarative policy before execution begins. A verified plan never
+          executes an unverified tool call.
         </p>
         <p>
           The chain runs allowlist, well-formedness, capability, taint, and sequencing
@@ -243,24 +244,25 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
 
         <h2>State that outlives the request</h2>
         <p>
-          Agents aren't always stateless request/response. A dropped connection or
-          restarted process doesn't lose the session — it re-attaches to its rooms and
-          broadcasters through a durable session token, backed by an in-memory, SQLite, or
-          Redis session store. And a paused agent's conversation can be snapshotted and
-          resumed later — the <code>PASSIVATION</code> capability — backed by an in-memory,
-          SQLite, or Postgres checkpoint store (the SPI is pluggable). With a checkpoint you
-          can inspect a run, fork it, or hold it at a human-approval gate before it
-          continues — <code>list</code>, <code>show</code>, <code>fork</code>, and
-          <code>approve</code> are right there in the CLI.
+          Agents aren't always stateless request/response. When a connection drops or a
+          process restarts, the session isn't lost — a durable session token re-attaches
+          the client to its rooms and broadcasters, persisted through the pluggable
+          <code>SessionStore</code> SPI (in-memory, SQLite, and Redis backends ship
+          in-tree). Separately, a paused agent's whole conversation can be snapshotted and
+          resumed — the <code>PASSIVATION</code> capability — through the pluggable
+          <code>CheckpointStore</code> SPI (in-memory, SQLite, and Postgres ship in-tree).
+          From a checkpoint you can inspect a run, fork it, or hold it at a human-approval
+          gate before it continues — <code>list</code>, <code>show</code>, <code>fork</code>,
+          and <code>approve</code> are right there in the CLI.
         </p>
         <p>
           For long-running work there's a durable <strong>Interaction</strong> resource:
-          you <code>create</code> an agent turn, get an id back, and the run keeps a step
-          log that survives a disconnect — so a client can fire a request in the
-          background, drop off, and reconnect later to replay every step or
-          <code>continue</code> the conversation from where it left off, over REST or a
-          live socket. And when one node isn't enough, a Redis or Kafka broadcast
-          backplane relays an agent's streams across a cluster, so a session opened on one
+          <code>POST</code> an agent turn to <code>/api/interactions</code>, get an id back,
+          and the run keeps a bounded step log that survives a disconnect — so a client can
+          fire a request in the background, drop off, and reconnect later to replay every
+          step or <code>continue</code> the conversation from where it left off, over REST or
+          a live socket. And when one node isn't enough, a Redis or Kafka broadcast
+          backplane relays an agent's streams across the cluster, so a session opened on one
           JVM is reachable from any of them.
         </p>
 
@@ -359,11 +361,11 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           rewritten.
         </p>
         <p>
-          When you do want Atmosphere's extras, you add them as files the OpenClaw spec
-          ignores — <code>CHANNELS.md</code> to put the agent on Telegram or Slack,
-          <code>MCP.md</code> to wire MCP servers, <code>PERMISSIONS.md</code> for the
-          governance layer, <code>SKILLS.md</code> and <code>RUNTIME.md</code> for the
-          rest. Your agent stays portable; Atmosphere just reads more of the directory.
+          When you want Atmosphere's extras, you colocate files the OpenClaw spec
+          ignores — <code>CHANNELS.md</code>, <code>MCP.md</code>, <code>PERMISSIONS.md</code>,
+          <code>SKILLS.md</code>, and <code>RUNTIME.md</code>. Atmosphere reads them and
+          surfaces their contents on the loaded agent definition for downstream primitives
+          to pick up. Your agent stays portable; Atmosphere just reads more of the directory.
         </p>
 
         <h2>Skills: an agent you can share</h2>
