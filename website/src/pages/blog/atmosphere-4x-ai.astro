@@ -56,9 +56,9 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
       <div class="post-body">
         <p>
           I've worked on Atmosphere for years — a real-time transport for the JVM.
-          It streams events from the server to connected clients, picking whatever
-          transport the client can actually use — WebSocket, SSE, long-polling, gRPC,
-          or WebTransport/HTTP3 — and handling the parts that break at scale:
+          It streams events from the server to connected clients, auto-negotiating
+          WebSocket, SSE, or long-polling — with gRPC and WebTransport/HTTP3 available
+          as separate transports — and handling the parts that break at scale:
           reconnects, write-timeouts, and backpressure when a client falls behind.
           It runs on Spring Boot, Quarkus, or a plain servlet container. Atmosphere 4
           adds an AI agent layer on top of that transport.
@@ -87,9 +87,9 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           That's the whole class. The persona lives in <code>skill:support-agent</code> —
           the same <code>SKILL.md</code> format from the Skills section, so the agent stays a
           shareable artifact. <code>@RequiresApproval</code> parks the refund tool — the
-          pipeline suspends the virtual thread, sends an approval request to the client, and
-          resumes only on a yes — while tokens stream the whole time. None of that is glue
-          you write; it's the annotations.
+          pipeline suspends the virtual thread and sends an approval request to the client;
+          the tool runs only if the human approves, and a denial or timeout resumes the call
+          without running it. None of that is glue you write; it's the annotations.
         </p>
         <p>
           That one line in <code>@Prompt</code> deserves a closer look, because it doesn't
