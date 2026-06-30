@@ -182,8 +182,8 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           — allow/deny lists, authorization, rate-limit, concurrency-limit,
           message-length, time-window, a kill switch — and a denied request is
           rejected and recorded to a decision audit log. It's opt-in: out of the box
-          the gateway is permissive and logs a startup warning telling you to install
-          an enforcing one for production, so you turn governance <em>on</em> rather
+          the gateway is permissive and logs a warning on the first call telling you to
+          install an enforcing one for production, so you turn governance <em>on</em> rather
           than discovering it was off.
         </p>
         <p>
@@ -207,8 +207,10 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         </p>
         <p>
           You write those policies programmatically, or — if you'd rather keep them
-          declarative — in <strong>AWS Cedar</strong> or <strong>OPA Rego</strong>
-          (<code>ai-policy-cedar</code>, <code>ai-policy-rego</code>). And the decision
+          declarative — in <strong>AWS Cedar</strong> or <strong>OPA Rego</strong> via
+          adapters over the engines' own CLIs (<code>ai-policy-cedar</code>,
+          <code>ai-policy-rego</code>; you install the <code>cedar</code> or
+          <code>opa</code> binary). And the decision
           log isn't only in memory: point it at <strong>Kafka</strong> or
           <strong>Postgres</strong> (<code>ai-audit-kafka</code>,
           <code>ai-audit-postgres</code>) and every admit and deny is persisted for the
@@ -349,8 +351,9 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
 
         <h2>Bring an agent you already have: OpenClaw-compatible</h2>
         <p>
-          An agent doesn't have to be Java to run here. Atmosphere treats an agent as an
-          artifact — a directory of Markdown — and reads the
+          An agent's persona doesn't have to be written in Java. Atmosphere treats an
+          agent as an artifact — a directory of Markdown — that a small Java
+          <code>@Agent</code> host loads, reading the
           <strong>OpenClaw</strong> canonical workspace layout directly:
           <code>AGENTS.md</code>, <code>SOUL.md</code>, <code>USER.md</code>,
           <code>IDENTITY.md</code>, and the <code>skills/</code> tree. Point Atmosphere at an
@@ -397,9 +400,10 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           One principle shaped the whole design: a runtime only advertises a capability
           it actually performs. Each adapter's capability set — drawn from a vocabulary of
           twenty-one — is pinned by a contract test, so an adapter's <code>capabilities()</code> can't
-          claim a feature the bytecode doesn't do. When I added native structured
+          silently drift from what it declares, and the built-in runtime's native
+          paths are checked behaviorally. When I added native structured
           output, the three runtimes whose wire protocol has no schema field simply
-          don't declare it — saying otherwise is a lie the build won't let me ship. If
+          don't declare it. If
           you've been burned by frameworks that promise more than they deliver,
           that's the part I cared about most.
         </p>
@@ -407,9 +411,11 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         <h2>Try it</h2>
         <p>
           Getting started is one dependency. Add
-          <code>atmosphere-spring-boot-starter</code> and a single
-          <code>@Agent</code>-annotated class is a running, streaming chat app —
-          the starter auto-configures the framework, the AI pipeline, and the Console.
+          <code>atmosphere-ai-spring-boot-starter</code> and a single
+          <code>@Agent</code>-annotated class is a running, streaming chat app — it
+          pulls the transport, the AI pipeline, and the agent layer, and auto-configures
+          the framework and the Console. (Transport only, no AI? Use the lean
+          <code>atmosphere-spring-boot-starter</code>.)
           Prefer to scaffold? The CLI does it in one line —
           <code>atmosphere new my-app --template ai-chat</code>, then
           <code>./mvnw spring-boot:run</code>. The CLI exposes thirteen starters —
