@@ -13,18 +13,21 @@ it'll guess. The fix is not a better prompt — it's a companion
 deterministic layer that supplies the ground truth on every turn.
 
 `FactResolver` is that companion. You implement it, you declare which
-keys you supply, and Atmosphere prepends the resolved bundle to the
-system prompt before every dispatch.
+keys you supply, and Atmosphere appends the resolved bundle to the
+end of the system prompt before every dispatch — after the stable
+persona/schema text, so provider prompt-prefix caches keep hitting.
 
 ## The default behavior
 
 Atmosphere ships `DefaultFactResolver` out of the box. It supplies
-`time.now` (UTC ISO-8601) and `time.timezone` only. With no extra
-wiring, every turn's system prompt starts with:
+`time.now` (UTC ISO-8601, minute granularity — so same-minute turns
+produce byte-identical blocks and stay cache-friendly) and
+`time.timezone` only. With no extra wiring, every turn's system prompt
+ends with:
 
 ```
 Grounded facts (deterministic, as of this turn):
-- time.now: 2026-04-19T18:32:14Z
+- time.now: 2026-04-19T18:32Z
 - time.timezone: UTC
 ```
 
@@ -127,12 +130,14 @@ in `@AfterEach`.
 ## What the model sees
 
 The resolver's bundle is rendered as a newline-delimited block and
-prepended to the system prompt. A request from `alice@example.com` on
-a paid tier sees, at the top of the system prompt:
+appended after the system prompt (volatile facts stay the suffix so
+the stable prefix remains cacheable). A request from
+`alice@example.com` on a paid tier sees, at the end of the system
+prompt:
 
 ```
 Grounded facts (deterministic, as of this turn):
-- time.now: 2026-04-19T18:32:14Z
+- time.now: 2026-04-19T18:32Z
 - time.timezone: UTC
 - user.id: alice@example.com
 - user.name: Alice Martin
