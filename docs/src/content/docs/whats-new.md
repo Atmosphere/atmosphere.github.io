@@ -18,6 +18,34 @@ The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.36.0**,
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
 
+## 4.0.60-SNAPSHOT — Deep-agent harness on by default
+
+Atmosphere agents are now **deep agents out of the box**. A new `harness()`
+attribute — typed by the `Harness` enum (`MEMORY`, `CACHE`, `DELEGATION`,
+`ALL`) — lands on `@Agent`, `@Coordinator`, and `@AiEndpoint`:
+
+- **`@Agent` and `@Coordinator` default to `{Harness.ALL}`** — a plain
+  annotation gets conversation memory, long-term memory (facts extracted at
+  session close, recalled on the next connection), a conservative
+  prompt-cache default, and — on a coordinator — the built-in `delegate_task`
+  tool plus governed fleet dispatch. `harness = {}` opts a class down to a
+  bare loop.
+- **`@AiEndpoint` defaults to `{}`** — bare, with per-endpoint opt-in
+  (`harness = {Harness.MEMORY}` activates conversation memory even when
+  `conversationMemory = false`; an explicit `true` always wins).
+- **Tri-state app-wide flag** — `atmosphere.ai.harness.enabled` (Spring),
+  `quarkus.atmosphere.ai.harness.enabled` (Quarkus), or the
+  `org.atmosphere.ai.harness.enabled` init-param (servlet): unset leaves the
+  annotations in charge, `true` gives bare `@AiEndpoint`s the full harness
+  too, and `false` is the operational kill switch that beats every
+  annotation. `exclude-paths` carves individual endpoint paths out.
+- **Runtime truth** — `GET /api/console/info` reports a `harness` block with
+  each primitive's *actual* state (`ACTIVE` / `INACTIVE(reason)` /
+  `CONVENTION`), never configuration intent.
+
+See the [Harness page](/docs/agents/harness/) for the enum table, precedence
+rules, per-runtime configuration keys, and the console payload.
+
 ## 4.0.51 — MCP 2026-07-28 release candidate
 
 Atmosphere's MCP server now speaks the **`2026-07-28`** revision — the largest change to

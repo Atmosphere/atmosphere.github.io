@@ -34,6 +34,7 @@ A chat endpoint that:
 | `interceptors` | `Class<? extends AiInterceptor>[]` | `{}` | AI interceptors applied to every prompt (FIFO for `preProcess`, LIFO for `postProcess`) |
 | `conversationMemory` | `boolean` | `false` | Enable automatic multi-turn conversation memory per client |
 | `maxHistoryMessages` | `int` | `20` | Max messages retained in conversation memory per client (10 turns) |
+| `harness` | `Harness[]` | `{}` | Deep-agent [harness](/docs/agents/harness/) features for this endpoint — bare by default, opt in per endpoint (e.g. `harness = {Harness.MEMORY}` for conversation + long-term memory, or `{Harness.ALL}` for the full set) |
 | `tools` | `Class<?>[]` | `{}` | Tool provider classes with `@AiTool`-annotated methods |
 | `excludeTools` | `Class<?>[]` | `{}` | Tool classes to exclude (only relevant when `tools` is empty, meaning all tools available) |
 | `fallbackStrategy` | `String` | `"NONE"` | Fallback strategy for model routing when the primary backend fails |
@@ -485,6 +486,12 @@ public interface AiConversationMemory {
 ```
 
 The default implementation is `InMemoryConversationMemory`, which uses a sliding window capped at `maxHistoryMessages`.
+
+### Precedence with the Harness
+
+The [harness](/docs/agents/harness/) is a second way to activate conversation memory. When the `MEMORY` feature resolves for the endpoint — via `harness = {Harness.MEMORY}` / `{Harness.ALL}` on the annotation, or app-wide `atmosphere.ai.harness.enabled=true` — the framework resolves a conversation memory **even when `conversationMemory` is `false`** (`maxHistoryMessages` is still honored). The two never fight in the other direction: `conversationMemory = true` always wins — the harness never turns memory *off*. The app-wide `false` kill switch and `exclude-paths` disable the harness path, but not an explicit `conversationMemory = true`.
+
+Harness `MEMORY` also appends a `LongTermMemoryInterceptor` after the endpoint's declared interceptors (a user-declared one is authoritative and suppresses it) — see [Harness](/docs/agents/harness/) for the full feature set and precedence.
 
 ## Identity Fields
 

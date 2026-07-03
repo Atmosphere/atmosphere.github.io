@@ -21,7 +21,7 @@ description: "The @Agent annotation — wiring AI endpoints, commands, tools, sk
 
 ## Overview
 
-`@Agent` is the single entry point for building AI agents with Atmosphere. Annotate a class, and the framework wires the AI endpoint, commands, tools, skill file, conversation memory, and protocol exposure automatically.
+`@Agent` is the single entry point for building AI agents with Atmosphere. Annotate a class, and the framework wires the AI endpoint, commands, tools, skill file, the deep-agent [harness](/docs/agents/harness/), and protocol exposure automatically.
 
 ```java
 @Agent(
@@ -53,6 +53,8 @@ public class MyAgent {
 | `endpoint` | `String` | `""` | Custom endpoint path for the agent's A2A protocol endpoint. Overrides the default `/atmosphere/agent/{name}/a2a`. |
 | `version` | `String` | `"1.0.0"` | Agent version for Agent Card metadata and protocol responses. |
 | `headless` | `boolean` | `false` | When `true`, no WebSocket UI handler is registered — agent operates as a headless A2A/MCP service only. |
+| `harness` | `Harness[]` | `{Harness.ALL}` | The [harness](/docs/agents/harness/) features attached to this agent — batteries-included by default: `ALL` expands to `{MEMORY, CACHE, DELEGATION}`. Narrow the set (e.g. `harness = {Harness.MEMORY}`) or declare `harness = {}` to opt the agent down to a bare loop. The app-wide kill switch and `exclude-paths` beat this attribute. |
+| `responseAs` | `Class<?>` | `Void.class` | Target Java type for structured output from this agent. Mirrors `@AiEndpoint#responseAs()`. |
 
 ## What `@Agent` Wires
 
@@ -62,7 +64,7 @@ public class MyAgent {
 | **Commands** | Methods annotated with `@Command` become slash commands with type-safe parameters |
 | **Tools** | Methods annotated with `@AiTool` are registered as portable tools, callable by any LLM backend |
 | **Skill file** | Loaded from the `skillFile` path, or auto-discovered at `META-INF/skills/` by convention |
-| **Conversation memory** | Session-scoped conversation history is enabled by default |
+| **Harness** | The full deep-agent [harness](/docs/agents/harness/) is on by default (`harness()` defaults to `{Harness.ALL}`) — conversation memory, long-term memory, and a conservative prompt-cache default |
 | **Protocol exposure** | MCP, A2A, and AG-UI protocols are auto-registered based on classpath dependencies |
 
 ## Full-Stack vs Headless Mode
@@ -182,11 +184,17 @@ with `@Agent`. Pull one with `atmosphere import <url>` (see
 the CLI drops it under `META-INF/skills/` so convention-based
 auto-discovery picks it up without a code change.
 
-## Conversation Memory
+## Memory and the Harness
 
-Conversation memory is enabled by default. Atmosphere maintains a session-scoped conversation history — the history is passed to the LLM on every request, giving the agent context about previous exchanges.
+A plain `@Agent` is a deep agent out of the box: `harness()` defaults to `{Harness.ALL}`, so the full [harness](/docs/agents/harness/) is on by default —
 
-Memory is stored in-memory by default. For durable persistence across restarts, add `atmosphere-durable-sessions-sqlite` or `atmosphere-durable-sessions-redis` to the classpath and a `ConversationPersistence` backend is auto-discovered via `ServiceLoader`.
+- **Conversation memory** — session-scoped conversation history, passed to the LLM on every request.
+- **Long-term memory** — a `LongTermMemoryInterceptor` extracts facts at session close and recalls them on the next connection.
+- **Prompt-cache default** — a `CONSERVATIVE` prompt-cache policy is seeded when the agent declares none.
+
+Opt an agent down to a bare loop with `harness = {}`, or narrow the set (e.g. `harness = {Harness.MEMORY}`). The app-wide `atmosphere.ai.harness.enabled=false` kill switch and `atmosphere.ai.harness.exclude-paths` beat the annotation — see [Harness](/docs/agents/harness/) for the full precedence, configuration keys, and the console runtime-truth block.
+
+Conversation memory is stored in-memory by default. For durable persistence across restarts, add `atmosphere-durable-sessions-sqlite` or `atmosphere-durable-sessions-redis` to the classpath and a `ConversationPersistence` backend is auto-discovered via `ServiceLoader`.
 
 ## Relationship to `@ManagedService`
 
@@ -198,6 +206,7 @@ For multi-agent orchestration, use [`@Coordinator`](/docs/agents/coordinator/) i
 
 ## See Also
 
+- [Harness](/docs/agents/harness/) — the deep-agent harness: defaults, opt-down, app-wide flag, runtime truth
 - [@Coordinator](/docs/agents/coordinator/) — multi-agent orchestration
 - [Skills](/docs/agents/skills/) — skill files and auto-discovery
 - [A2A Protocol](/docs/agents/a2a/) — agent-to-agent communication

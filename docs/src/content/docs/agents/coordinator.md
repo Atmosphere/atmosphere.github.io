@@ -21,7 +21,7 @@ description: "Multi-agent orchestration — @Coordinator, @Fleet, AgentFleet, pa
 
 ## Overview
 
-`@Coordinator` is the entry point for multi-agent orchestration. A coordinator manages a **fleet** of agents — delegating tasks, aggregating results, and streaming a synthesized response to the client. It subsumes `@Agent`: the processor delegates to `AgentProcessor` internally for base agent setup, then adds fleet wiring on top.
+`@Coordinator` is the entry point for multi-agent orchestration. A coordinator manages a **fleet** of agents — delegating tasks, aggregating results, and streaming a synthesized response to the client. It subsumes `@Agent`: the processor delegates to `AgentProcessor` internally for base agent setup, then adds fleet wiring on top. Like `@Agent`, a coordinator is batteries-included by default — its `harness()` attribute defaults to `{Harness.ALL}`, so the built-in `delegate_task` tool is registered and fleet dispatches run through the installed governance policies with no extra wiring (see [Harness](/docs/agents/harness/)).
 
 ```java
 @Coordinator(name = "ceo", skillFile = "prompts/ceo-skill.md")
@@ -74,6 +74,7 @@ The coordinator module transitively pulls in `atmosphere-agent` and `atmosphere-
 | `skillFile` | `String` | `""` | Classpath resource path to the skill file (`.md`). The entire file becomes the system prompt. |
 | `description` | `String` | `""` | Human-readable description for Agent Card metadata. |
 | `version` | `String` | `"1.0.0"` | Coordinator version for Agent Card metadata. |
+| `harness` | `Harness[]` | `{Harness.ALL}` | The [harness](/docs/agents/harness/) features attached to this coordinator. Like the `@Agent` it subsumes, a coordinator is batteries-included by default — a declared fleet almost always wants the `delegate_task` tool and the governed dispatch edge. Opt down with `harness = {}` (bare loop) or narrow to specific features (`harness = {Harness.DELEGATION}`). The app-wide kill switch and `exclude-paths` beat this attribute. |
 | `responseAs` | `Class<?>` | `Void.class` | Target Java type for structured output from the coordinator's LLM synthesis. When set, the framework wraps the session with `StructuredOutputCapturingSession`, parses the LLM JSON response into the type, and emits `EntityStart` / `StructuredField` / `EntityComplete` events. Mirrors `@AiEndpoint#responseAs()`. |
 | `journalFormat` | `Class<? extends JournalFormat>` | `JournalFormat.class` (disabled) | Auto-emit a coordination journal as a tool card after `@Prompt` completes. Use `JournalFormat.Markdown.class` or a custom implementation; the framework emits a `ToolStart` / `ToolResult` event pair. |
 
@@ -442,7 +443,7 @@ if (evals.stream().allMatch(Evaluation::passed)) {
 
 ## Long-Term Memory
 
-Agents remember users across sessions. Configuration-only — no code changes in `@Agent` classes:
+Agents remember users across sessions. The [harness](/docs/agents/harness/) attaches `LongTermMemoryInterceptor` by default on `@Agent` and `@Coordinator` classes (`harness()` defaults to `{Harness.ALL}`) — no code changes needed:
 
 ```java
 // LongTermMemoryInterceptor (pre): injects stored facts into system prompt
@@ -531,6 +532,7 @@ The built-in AI Console renders coordinator activity as **tool cards** — showi
 ## See Also
 
 - [@Agent](/docs/agents/agent/) — single-agent annotation
+- [Harness](/docs/agents/harness/) — the deep-agent harness and the `delegate_task` / governed-dispatch default
 - [A2A Protocol](/docs/agents/a2a/) — agent-to-agent communication protocol
 - [Skills](/docs/agents/skills/) — skill files and auto-discovery
 - [spring-boot-multi-agent-startup-team](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-multi-agent-startup-team) — full working sample
