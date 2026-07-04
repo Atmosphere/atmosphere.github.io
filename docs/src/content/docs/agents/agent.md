@@ -53,7 +53,7 @@ public class MyAgent {
 | `endpoint` | `String` | `""` | Custom endpoint path for the agent's A2A protocol endpoint. Overrides the default `/atmosphere/agent/{name}/a2a`. |
 | `version` | `String` | `"1.0.0"` | Agent version for Agent Card metadata and protocol responses. |
 | `headless` | `boolean` | `false` | When `true`, no WebSocket UI handler is registered — agent operates as a headless A2A/MCP service only. |
-| `harness` | `Harness[]` | `{Harness.ALL}` | The [harness](/docs/agents/harness/) features attached to this agent — batteries-included by default: `ALL` expands to `{MEMORY, CACHE, DELEGATION}`. Narrow the set (e.g. `harness = {Harness.MEMORY}`) or declare `harness = {}` to opt the agent down to a bare loop. The app-wide kill switch and `exclude-paths` beat this attribute. |
+| `harness` | `Harness[]` | `{Harness.ALL}` | The [harness](/docs/agents/harness/) features attached to this agent — batteries-included by default: `ALL` expands to `{MEMORY, CACHE, DELEGATION}`. Narrow the set (e.g. `harness = {Harness.MEMORY}`) or declare `harness = {}` to opt the agent down to a bare loop. The app-wide kill switch and `exclude-paths` beat this attribute. Does not apply to [headless](#full-stack-vs-headless-mode) agents — no prompt loop, nothing to complete. |
 | `responseAs` | `Class<?>` | `Void.class` | Target Java type for structured output from this agent. Mirrors `@AiEndpoint#responseAs()`. |
 
 ## What `@Agent` Wires

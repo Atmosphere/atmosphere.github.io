@@ -47,12 +47,19 @@ An **empty array is an opt-down to a bare loop**: `harness = {}` removes every h
 ### Default-on (`@Agent`, `@Coordinator`)
 
 ```java
-@Agent(name = "research-agent", endpoint = "/atmosphere/a2a/research")
-public class ResearchAgent {
+@Agent(name = "support-agent")
+public class SupportAgent {
     // full harness: conversation + long-term memory, conservative
     // prompt-cache default — no attribute needed
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) { /* ... */ }
 }
 ```
+
+**Headless agents are outside the harness**: an agent with protocol skill
+handlers but no `@Prompt` method (or `headless = true`) has no prompt loop
+for the harness to complete, so `harness()` does not apply there — the boot
+logs an INFO saying so.
 
 ### Opt-down to a bare loop
 
@@ -224,7 +231,7 @@ States reflect what an endpoint *got*, not what was configured — a long-term-m
 
 ## Sample
 
-The `spring-boot-personal-assistant` sample exercises both annotation surfaces: its plain `@AiEndpoint` (`UpstreamMcpAgent`) opts in with `harness = {Harness.ALL}` and gains cross-session long-term memory with no per-class wiring, while its `ResearchAgent` crew member rides the `@Agent` batteries-included default.
+The `spring-boot-personal-assistant` sample exercises the opt-in surface: its plain `@AiEndpoint` (`UpstreamMcpAgent`) opts in with `harness = {Harness.ALL}` and gains cross-session long-term memory with no per-class wiring. (Its `ResearchAgent` crew member is headless — skill handlers, no `@Prompt` — so the harness does not apply to it; the booted default-on truth for a prompt-loop `@Agent` is pinned by the Spring starter's `HarnessRuntimeTruthHttpE2eTest`.)
 
 ## See Also
 
