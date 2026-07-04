@@ -53,7 +53,7 @@ public class MyAgent {
 | `endpoint` | `String` | `""` | Custom endpoint path for the agent's A2A protocol endpoint. Overrides the default `/atmosphere/agent/{name}/a2a`. |
 | `version` | `String` | `"1.0.0"` | Agent version for Agent Card metadata and protocol responses. |
 | `headless` | `boolean` | `false` | When `true`, no WebSocket UI handler is registered — agent operates as a headless A2A/MCP service only. |
-| `harness` | `Harness[]` | `{Harness.ALL}` | The [harness](/docs/agents/harness/) features attached to this agent — batteries-included by default: `ALL` expands to `{MEMORY, CACHE, DELEGATION}`. Narrow the set (e.g. `harness = {Harness.MEMORY}`) or declare `harness = {}` to opt the agent down to a bare loop. The app-wide kill switch and `exclude-paths` beat this attribute. Does not apply to [headless](#full-stack-vs-headless-mode) agents — no prompt loop, nothing to complete. |
+| `harness` | `Harness[]` | `{Harness.ALL}` | The [harness](/docs/agents/harness/) features attached to this agent — batteries-included by default: `ALL` expands to `{MEMORY, CACHE, DELEGATION, PLANNING, FILESYSTEM}`. Narrow the set (e.g. `harness = {Harness.MEMORY}`) or declare `harness = {}` to opt the agent down to a bare loop. The app-wide kill switch and `exclude-paths` beat this attribute. Does not apply to [headless](#full-stack-vs-headless-mode) agents — no prompt loop, nothing to complete. |
 | `responseAs` | `Class<?>` | `Void.class` | Target Java type for structured output from this agent. Mirrors `@AiEndpoint#responseAs()`. |
 
 ## What `@Agent` Wires
@@ -64,7 +64,7 @@ public class MyAgent {
 | **Commands** | Methods annotated with `@Command` become slash commands with type-safe parameters |
 | **Tools** | Methods annotated with `@AiTool` are registered as portable tools, callable by any LLM backend |
 | **Skill file** | Loaded from the `skillFile` path, or auto-discovered at `META-INF/skills/` by convention |
-| **Harness** | The full deep-agent [harness](/docs/agents/harness/) is on by default (`harness()` defaults to `{Harness.ALL}`) — conversation memory, long-term memory, and a conservative prompt-cache default |
+| **Harness** | The full deep-agent [harness](/docs/agents/harness/) is on by default (`harness()` defaults to `{Harness.ALL}`) — conversation memory, long-term memory, a conservative prompt-cache default, the `write_todos` plan tool, and a bounded conversation-scoped file workspace |
 | **Protocol exposure** | MCP, A2A, and AG-UI protocols are auto-registered based on classpath dependencies |
 
 ## Full-Stack vs Headless Mode
@@ -191,6 +191,8 @@ A plain `@Agent` is a deep agent out of the box: `harness()` defaults to `{Harne
 - **Conversation memory** — session-scoped conversation history, passed to the LLM on every request.
 - **Long-term memory** — a `LongTermMemoryInterceptor` extracts facts at session close and recalls them on the next connection.
 - **Prompt-cache default** — a `CONSERVATIVE` prompt-cache policy is seeded when the agent declares none.
+- **Planning** — the agent maintains a plan through the built-in `write_todos` tool (or the runtime's native plan surface), persisted per conversation and streamed as `plan-update` events.
+- **Virtual filesystem** — six built-in file tools (`ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`) over a bounded, conversation-scoped workspace store.
 
 Opt an agent down to a bare loop with `harness = {}`, or narrow the set (e.g. `harness = {Harness.MEMORY}`). The app-wide `atmosphere.ai.harness.enabled=false` kill switch and `atmosphere.ai.harness.exclude-paths` beat the annotation — see [Harness](/docs/agents/harness/) for the full precedence, configuration keys, and the console runtime-truth block.
 

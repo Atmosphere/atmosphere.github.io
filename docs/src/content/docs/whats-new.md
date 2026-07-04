@@ -22,14 +22,28 @@ This page is a highlights reel. For the per-patch history, see the
 
 Atmosphere agents are now **deep agents out of the box**. A new `harness()`
 attribute — typed by the `Harness` enum (`MEMORY`, `CACHE`, `DELEGATION`,
-`ALL`) — lands on `@Agent`, `@Coordinator`, and `@AiEndpoint`:
+`PLANNING`, `FILESYSTEM`, `ALL`) — lands on `@Agent`, `@Coordinator`, and
+`@AiEndpoint`:
 
 - **`@Agent` and `@Coordinator` default to `{Harness.ALL}`** — a plain
   annotation gets conversation memory, long-term memory (facts extracted at
   session close, recalled on the next connection), a conservative
-  prompt-cache default, and — on a coordinator — the built-in `delegate_task`
-  tool plus governed fleet dispatch. `harness = {}` opts a class down to a
-  bare loop.
+  prompt-cache default, a persistent plan surface, a bounded file workspace,
+  and — on a coordinator — the built-in `delegate_task` tool plus governed
+  fleet dispatch. `harness = {}` opts a class down to a bare loop.
+- **Planning and a virtual filesystem** — every tool-calling agent gets the
+  `write_todos` plan tool plus six file tools (`ls`, `read_file`,
+  `write_file`, `edit_file`, `glob`, `grep`) over a bounded (512 KiB per
+  file, 256 files, 16 MiB total), conversation-scoped workspace store.
+  Plans persist per conversation and stream as `plan-update` events.
+  Tri-state knobs — the `atmosphere.ai.planning` / `atmosphere.ai.filesystem`
+  system properties, with `LLM_PLANNING` / `LLM_FILESYSTEM` env fallbacks —
+  pick `auto` (the default: a native surface wins when the runtime declares
+  `AiCapability.PLANNING` / `VIRTUAL_FILESYSTEM` — Embabel, AgentScope, and
+  Spring AI Alibaba plan natively; ADK and Anthropic bridge their own file
+  machinery), `builtin`, or `native`. The console gains a **Workspace tab**
+  — live plan plus file browser — backed by read-only
+  `/api/admin/workspace` discovery and per-agent plan/file endpoints.
 - **`@AiEndpoint` defaults to `{}`** — bare, with per-endpoint opt-in
   (`harness = {Harness.MEMORY}` activates conversation memory even when
   `conversationMemory = false`; an explicit `true` always wins).

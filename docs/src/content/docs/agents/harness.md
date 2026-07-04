@@ -1,6 +1,6 @@
 ---
 title: "Harness"
-description: "The deep-agent harness — default-on memory, prompt caching, and delegation for @Agent, @Coordinator, and @AiEndpoint"
+description: "The deep-agent harness — default-on memory, prompt caching, delegation, planning, and workspace files for @Agent, @Coordinator, and @AiEndpoint"
 ---
 
 <!--
@@ -21,7 +21,7 @@ description: "The deep-agent harness — default-on memory, prompt caching, and 
 
 ## Overview
 
-Atmosphere agents are **deep agents out of the box**. The harness *completes* an agent: on top of whatever endpoint or agent you already have, it adds conversation memory, long-term memory (with a compaction seam), a prompt-cache default, and the fleet delegation primitive — and reports each primitive's *actual* runtime state (never configuration intent) at `/api/console/info`.
+Atmosphere agents are **deep agents out of the box**. The harness *completes* an agent: on top of whatever endpoint or agent you already have, it adds conversation memory, long-term memory (with a compaction seam), a prompt-cache default, the fleet delegation primitive, a persistent plan surface, and a bounded conversation-scoped file workspace — and reports each primitive's *actual* runtime state (never configuration intent) at `/api/console/info`.
 
 The engine is `org.atmosphere.ai.preset.HarnessPreset`, driven by one granular attribute — `harness()` on [`@Agent`](/docs/agents/agent/), [`@Coordinator`](/docs/agents/coordinator/), and [`@AiEndpoint`](/docs/tutorial/09-ai-endpoint/) — typed by the `org.atmosphere.ai.preset.Harness` enum.
 
@@ -32,7 +32,9 @@ The engine is `org.atmosphere.ai.preset.HarnessPreset`, driven by one granular a
 | `Harness.MEMORY` | Conversation memory, the auto-attached long-term-memory interceptor, and the compaction seam on the resolved memory. |
 | `Harness.CACHE` | Prompt-cache default seeding — endpoints whose annotation keeps `promptCache = NONE` are seeded with a `CONSERVATIVE` policy. |
 | `Harness.DELEGATION` | The fleet delegation primitive — the built-in `delegate_task` tool plus the governance wrap on the outbound dispatch edge. |
-| `Harness.ALL` | Sentinel that expands to `{MEMORY, CACHE, DELEGATION}` — the full harness. |
+| `Harness.PLANNING` | The planning primitive — the agent maintains a plan it exposes and updates: the built-in `write_todos` tool floor (or a native plan surface when the resolved runtime advertises `AiCapability.PLANNING` under the `atmosphere.ai.planning` AUTO default), persisted per conversation and streamed as `plan-update` events. |
+| `Harness.FILESYSTEM` | The virtual-filesystem primitive — a bounded, conversation-scoped file store under the agent workspace: the built-in `ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` tool floor (or a native file surface when the resolved runtime advertises `AiCapability.VIRTUAL_FILESYSTEM` under the `atmosphere.ai.filesystem` AUTO default). |
+| `Harness.ALL` | Sentinel that expands to `{MEMORY, CACHE, DELEGATION, PLANNING, FILESYSTEM}` — the full harness. |
 
 ## Annotation Defaults
 
@@ -110,6 +112,76 @@ public class CeoCoordinator {
 | Compaction | `MEMORY` | The conversation-memory compaction seam — sliding-window by default; the harness never forces summarizing. |
 | Prompt-cache default | `CACHE` | Endpoints whose annotation keeps `promptCache = NONE` are seeded with a `CONSERVATIVE` `CacheHint` policy, unless the independent `org.atmosphere.ai.prompt-cache.default` init-param overrides it (an explicit `none` there suppresses the seeding). Wire emission stays gated by the `atmosphere.ai.prompt-cache-key` mode and its default-deny host allow-list. |
 | Delegation | `DELEGATION` | On a `@Coordinator`: registers the built-in `delegate_task` tool and wraps the fleet's outbound dispatch edge with the installed governance policies. A plain `@Agent` or `@AiEndpoint` has no fleet, so the primitive reports `INACTIVE(no-coordinator)` until a coordinator registers. |
+| Planning | `PLANNING` | Binds an `AgentPlanStore` into the endpoint's injectables, then picks *one* plan surface by `atmosphere.ai.planning` mode: the runtime's native plan machinery when it declares `AiCapability.PLANNING`, else the built-in `write_todos` tool. Never both — no duplicate plan tools. A user-registered `write_todos` tool wins over the floor. |
+| Virtual filesystem | `FILESYSTEM` | Binds an `AgentFileSystemProvider` into the endpoint's injectables, then picks *one* file surface by `atmosphere.ai.filesystem` mode: the runtime's native file machinery when it declares `AiCapability.VIRTUAL_FILESYSTEM`, else the built-in six-tool floor (`ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`). Never both — no duplicate file tools. User-registered tools with the same names win over the floor. |
+
+## Planning & Workspace Files
+
+`PLANNING` and `FILESYSTEM` give every tool-calling agent a **plan it maintains** and a **bounded scratch filesystem** — the deepagents-style working surface — with zero extra dependencies. Because `@Agent` and `@Coordinator` default to `{Harness.ALL}`, a plain annotation gets both out of the box: one `write_todos` tool plus six file tools, seven built-in harness tools in total.
+
+### The built-in tool floor
+
+| Tool | Does |
+|------|------|
+| `write_todos` | Creates or replaces the agent's **full** todo list (`{content, status, activeForm}` items; statuses `pending`, `in_progress`, `completed`, `abandoned`, plus an optional one-line `goal`). Persists per conversation, emits a `plan-update` streaming event on every change, and returns the plan as a Markdown checklist so the model sees the state it just wrote. |
+| `ls` | Lists the entries directly under a workspace directory — directories first, then files. |
+| `read_file` | Reads one workspace file's UTF-8 content. |
+| `write_file` | Creates or overwrites a workspace file. |
+| `edit_file` | Exact string replacement inside a workspace file. |
+| `glob` | Matches workspace paths against a glob pattern. |
+| `grep` | Regex search across workspace files, capped at 500 hits. |
+
+### Storage layout
+
+Plans and files persist on disk under the agent workspace root — the `atmosphere.workspace.root` system property, falling back to the `ATMOSPHERE_WORKSPACE_ROOT` environment variable, then to `{user.home}/.atmosphere/workspace`:
+
+```
+{workspace-root}/
+  {agents|coordinators|endpoints}/{owner}/
+    plans/{agentId}/{conversationId}.json    ← write_todos plans
+    files/{conversationId}/                  ← the virtual filesystem
+```
+
+The file store is **conversation-scoped**: each session gets its own `files/{conversationId}/` subtree, so agents never see each other's (or another conversation's) files. Every model-supplied path is validated at the boundary — absolute paths, backslashes, `.`/`..` segments are rejected, and the resolved path is containment-checked against the root.
+
+### Bounds
+
+The store enforces hard limits on every write, with clear rejection messages surfaced to the model instead of stack traces:
+
+| Bound | Default |
+|-------|---------|
+| Per-file size | 512 KiB |
+| File count per store | 256 files |
+| Total bytes per store | 16 MiB |
+| `grep` output | 500 hits |
+
+### Mode knobs (built-in floor vs. native surface)
+
+Two JVM-wide tri-state controls pick the surface per primitive. The system property wins over the environment variable; parsing is lenient and case-insensitive (an unrecognized value collapses to `AUTO`):
+
+| Control | System property | Env fallback | Values |
+|---------|-----------------|--------------|--------|
+| Plan surface | `atmosphere.ai.planning` | `LLM_PLANNING` | `auto` (default), `builtin`, `native` |
+| File surface | `atmosphere.ai.filesystem` | `LLM_FILESYSTEM` | `auto` (default), `builtin`, `native` |
+
+- **`auto`** — native wins when the resolved runtime *declares* the matching capability (`AiCapability.PLANNING` / `AiCapability.VIRTUAL_FILESYSTEM` — themselves runtime-truth contracts); the built-in floor registers otherwise.
+- **`builtin`** — always the built-in tool floor, even on a native-capable runtime.
+- **`native`** — never the built-in floor; when the runtime does not declare the capability the primitive reports `INACTIVE(native-unavailable)` and no surface exists.
+
+Native declarations today (each pinned by the runtime's contract test): **Embabel**, **AgentScope**, and **Spring AI Alibaba** declare `PLANNING`; **ADK** and **Anthropic** declare `VIRTUAL_FILESYSTEM`. All other runtimes get the built-in floors.
+
+### The console Workspace tab and admin surface
+
+The Atmosphere Console gains a **Workspace** tab that renders the live plan (from `plan-update` streaming events) alongside the persisted plan snapshot and a file browser for the conversation workspace. The tab appears once at least one plan or filesystem surface is browsable. It is backed by a read-only admin REST surface (Spring Boot starter) that resolves the *exact* store instances the attach engines registered — never a reconstructed twin:
+
+| Endpoint | Returns |
+|----------|---------|
+| `GET /api/admin/workspace/owners` | The owners with an attached plan store and/or filesystem provider: `[{owner, plan, filesystem}]`. |
+| `GET /api/admin/agents/{name}/plan?sessionId=` | The current plan for one agent × conversation, in the same wire shape as the `plan-update` event. |
+| `GET /api/admin/agents/{name}/files?sessionId=&path=` | Directory listing of the conversation's workspace subtree. |
+| `GET /api/admin/agents/{name}/files/content?sessionId=&path=` | One workspace file's UTF-8 content. |
+
+The endpoints inherit the opt-in `atmosphere.admin.http-read-auth-required` token gate applied to the whole `/api/admin/*` space, answer `404` for owners without a genuinely attached surface, and reject traversal-shaped session ids or paths with `400`.
 
 ## The App-Wide Flag (Tri-State)
 
@@ -212,6 +284,8 @@ The harness never advertises a primitive it did not actually activate. `HarnessP
   "prompt-cache-default": "conservative",
   "compaction": "sliding-window",
   "delegation": "INACTIVE(no-coordinator)",
+  "planning": "ACTIVE(builtin)",
+  "filesystem": "ACTIVE(builtin)",
   "skills": "CONVENTION",
   "durable-runs": "CONTAINER-MANAGED"
 }
@@ -224,6 +298,8 @@ The harness never advertises a primitive it did not actually activate. `HarnessP
 | `prompt-cache-default` | The effective policy — `none`, `conservative`, or `aggressive`. |
 | `compaction` | The resolved strategy — `sliding-window` or `summarizing`. |
 | `delegation` | `ACTIVE` once a `@Coordinator` registers `delegate_task`; `INACTIVE(no-coordinator)` / `INACTIVE(disabled)` otherwise. |
+| `planning` | `ACTIVE(builtin)` once the `write_todos` floor genuinely registers; `ACTIVE(native:<runtime>)` when the resolved runtime's native plan surface wins; `INACTIVE(native-unavailable)` under `native` mode on a runtime without `PLANNING`; `INACTIVE(no-endpoint)` / `INACTIVE(disabled)` otherwise. |
+| `filesystem` | `ACTIVE(builtin)` once all six file tools register (`ACTIVE(builtin,partial)` when user tools shadow some); `ACTIVE(native:<runtime>)` when the resolved runtime's native file surface wins; `INACTIVE(native-unavailable)` under `native` mode on a runtime without `VIRTUAL_FILESYSTEM`; `INACTIVE(no-endpoint)` / `INACTIVE(disabled)` otherwise. |
 | `skills` | `CONVENTION` — skills stay per-agent convention-discovered (`META-INF/skills/`); there is no global switch. |
 | `durable-runs` | `CONTAINER-MANAGED` — the journal spine is installed by the Spring / Quarkus bridge, not by the preset. |
 

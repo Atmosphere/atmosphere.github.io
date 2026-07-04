@@ -95,6 +95,8 @@ This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()`
 | `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |  — |  — |  — |
 | `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |  — |  — |  — |  — | ✅ |
 | `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |  — |  — |  — | ✅ |  — |
+| `PLANNING`            |  — |  — |  — |  — | ✅ |  — |  — | ✅ | ✅ |  — |  — |  — |
+| `VIRTUAL_FILESYSTEM`  |  — |  — |  — | ✅ |  — |  — |  — |  — |  — | ✅ |  — |  — |
 | `MODEL_ENUMERATION`   |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
 | `MULTI_AGENT_HANDOFF` |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
 
@@ -102,7 +104,9 @@ This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()`
 - ✅ Declared in `capabilities()` and honored at runtime
 - — Not declared. Either the framework's native API does not expose the feature, or the bridge has not threaded it through yet.
 
-The full `AiCapability` enum has 21 values. `MODEL_ENUMERATION` and `MULTI_AGENT_HANDOFF` are forward-looking SPI slots — the enum entries exist so callers can probe for them, but no runtime declares them today. `MULTI_AGENT_HANDOFF` is currently surfaced through the coordinator/handoff path (`session.handoff()`, `AiEvent.Handoff`) rather than a per-runtime capability flag.
+The full `AiCapability` enum has 23 values. `MODEL_ENUMERATION` and `MULTI_AGENT_HANDOFF` are forward-looking SPI slots — the enum entries exist so callers can probe for them, but no runtime declares them today. `MULTI_AGENT_HANDOFF` is currently surfaced through the coordinator/handoff path (`session.handoff()`, `AiEvent.Handoff`) rather than a per-runtime capability flag.
+
+`PLANNING` and `VIRTUAL_FILESYSTEM` are [harness](/docs/agents/harness/) integration flags: a runtime declares one only when its adapter genuinely bridges the framework's *native* plan or file machinery to Atmosphere's stores on the dispatch path (Embabel mirrors its GOAP plan events, AgentScope attaches its `PlanNotebook`, Spring AI Alibaba its `TodoListInterceptor`; ADK routes its artifact service and Anthropic its `memory` tool commands through Atmosphere's bounded workspace store). Runtimes without the flag are not missing the feature — under the harness they get the portable built-in `write_todos` / file-tool floors instead.
 
 ### Why the baseline is so high
 

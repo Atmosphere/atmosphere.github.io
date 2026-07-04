@@ -108,6 +108,8 @@ curl http://localhost:8080/api/admin/agents
 curl http://localhost:8080/api/admin/agents/ceo/sessions
 ```
 
+When the [harness](/docs/agents/harness/) planning / filesystem primitives are attached, the Spring Boot starter adds read-only workspace endpoints under the same `/api/admin` space — `workspace/owners`, `agents/{name}/plan`, `agents/{name}/files`, and `agents/{name}/files/content`. See [Planning & Workspace Files](/docs/agents/harness/#planning--workspace-files).
+
 ### Framework Inspection
 
 ```bash
