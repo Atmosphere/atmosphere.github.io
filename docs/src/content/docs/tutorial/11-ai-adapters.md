@@ -95,7 +95,7 @@ This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()`
 | `PROMPT_CACHING`      | ✅ | ✅ | ✅ | ✅ |  — | ✅ |  — |  — |  — |  — |  — |  — |
 | `AGENT_ORCHESTRATION` |  — |  — |  — | ✅ | ✅ | ✅ |  — |  — |  — |  — |  — | ✅ |
 | `TOOL_CALL_DELTA`     | ✅ |  — |  — |  — |  — |  — |  — |  — |  — |  — | ✅ |  — |
-| `PLANNING`            |  — |  — |  — |  — | ✅ |  — |  — | ✅ | ✅ |  — |  — |  — |
+| `PLANNING`            |  — |  — |  — |  — |  — |  — |  — | ✅ | ✅ |  — |  — |  — |
 | `VIRTUAL_FILESYSTEM`  |  — |  — |  — | ✅ |  — |  — |  — |  — |  — | ✅ |  — |  — |
 | `MODEL_ENUMERATION`   |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
 | `MULTI_AGENT_HANDOFF` |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |  — |
@@ -106,7 +106,7 @@ This table mirrors the exact `Set<AiCapability>` each runtime's `capabilities()`
 
 The full `AiCapability` enum has 23 values. `MODEL_ENUMERATION` and `MULTI_AGENT_HANDOFF` are forward-looking SPI slots — the enum entries exist so callers can probe for them, but no runtime declares them today. `MULTI_AGENT_HANDOFF` is currently surfaced through the coordinator/handoff path (`session.handoff()`, `AiEvent.Handoff`) rather than a per-runtime capability flag.
 
-`PLANNING` and `VIRTUAL_FILESYSTEM` are [harness](/docs/agents/harness/) integration flags: a runtime declares one only when its adapter genuinely bridges the framework's *native* plan or file machinery to Atmosphere's stores on the dispatch path (Embabel mirrors its GOAP plan events, AgentScope attaches its `PlanNotebook`, Spring AI Alibaba its `TodoListInterceptor`; ADK routes its artifact service and Anthropic its `memory` tool commands through Atmosphere's bounded workspace store). Runtimes without the flag are not missing the feature — under the harness they get the portable built-in `write_todos` / file-tool floors instead.
+`PLANNING` and `VIRTUAL_FILESYSTEM` are [harness](/docs/agents/harness/) integration flags: a runtime declares one only when its adapter genuinely bridges the framework's *native* plan or file machinery to Atmosphere's stores on the dispatch path (AgentScope attaches its `PlanNotebook`, Spring AI Alibaba its `TodoListInterceptor`; ADK routes its artifact service and Anthropic its `memory` tool commands through Atmosphere's bounded workspace store). A runtime whose native machinery covers only part of its dispatch surface stays undeclared so the portable floor is never suppressed where the native surface can't reach — Embabel's GOAP plan observation and its `FileTools` bridge are therefore explicit opt-ins (`atmosphere.ai.planning=native` / `atmosphere.ai.filesystem=native`), not declared capabilities. Runtimes without the flag are not missing the feature — under the harness they get the portable built-in `write_todos` / file-tool floors instead.
 
 ### Why the baseline is so high
 

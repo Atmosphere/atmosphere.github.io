@@ -168,7 +168,7 @@ Two JVM-wide tri-state controls pick the surface per primitive. The system prope
 - **`builtin`** — always the built-in tool floor, even on a native-capable runtime.
 - **`native`** — never the built-in floor; when the runtime does not declare the capability the primitive reports `INACTIVE(native-unavailable)` and no surface exists.
 
-Native declarations today (each pinned by the runtime's contract test): **Embabel**, **AgentScope**, and **Spring AI Alibaba** declare `PLANNING`; **ADK** and **Anthropic** declare `VIRTUAL_FILESYSTEM`. All other runtimes get the built-in floors.
+Native declarations today (each pinned by the runtime's contract test): **AgentScope** and **Spring AI Alibaba** declare `PLANNING`; **ADK** and **Anthropic** declare `VIRTUAL_FILESYSTEM`. **Embabel**'s native surfaces (GOAP plan observation, `FileTools`) each cover only one of its two dispatch paths, so they are explicit opt-ins (`atmosphere.ai.planning=native` / `atmosphere.ai.filesystem=native`) rather than declared capabilities — a declaration would suppress the portable floor on the path the native surface can't reach. All other runtimes get the built-in floors.
 
 ### The console Workspace tab and admin surface
 
