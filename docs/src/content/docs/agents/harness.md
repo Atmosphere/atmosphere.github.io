@@ -31,7 +31,7 @@ The engine is `org.atmosphere.ai.preset.HarnessPreset`, driven by one granular a
 |-------|------------------|
 | `Harness.MEMORY` | Conversation memory, the auto-attached long-term-memory interceptor, and the compaction seam on the resolved memory. |
 | `Harness.CACHE` | Prompt-cache default seeding — endpoints whose annotation keeps `promptCache = NONE` are seeded with a `CONSERVATIVE` policy. |
-| `Harness.DELEGATION` | The fleet delegation primitive — the built-in `delegate_task` tool plus the governance wrap on the outbound dispatch edge. |
+| `Harness.DELEGATION` | The fleet delegation primitive — on a `@Coordinator`, the built-in `delegate_task` tool (route to a pre-declared fleet member) **and** the `task` tool (spawn an ephemeral, isolated general-purpose sub-agent on demand), plus the governance wrap on the outbound dispatch edge. |
 | `Harness.PLANNING` | The planning primitive — the agent maintains a plan it exposes and updates: the built-in `write_todos` tool floor (or a native plan surface when the resolved runtime advertises `AiCapability.PLANNING` under the `atmosphere.ai.planning` AUTO default), persisted per conversation and streamed as `plan-update` events. |
 | `Harness.FILESYSTEM` | The virtual-filesystem primitive — a bounded, conversation-scoped file store under the agent workspace: the built-in `ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` tool floor (or a native file surface when the resolved runtime advertises `AiCapability.VIRTUAL_FILESYSTEM` under the `atmosphere.ai.filesystem` AUTO default). |
 | `Harness.ALL` | Sentinel that expands to `{MEMORY, CACHE, DELEGATION, PLANNING, FILESYSTEM}` — the full harness. |
@@ -97,11 +97,20 @@ public class Assistant {
 @Coordinator(name = "ceo", skillFile = "prompts/ceo-skill.md")
 @Fleet({ @AgentRef(type = ResearchAgent.class) })
 public class CeoCoordinator {
-    // delegation is on by default: the built-in delegate_task tool is
-    // registered and fleet dispatches run through the installed
+    // delegation is on by default: the built-in delegate_task and task
+    // tools are registered and fleet dispatches run through the installed
     // governance policies
 }
 ```
+
+### Two delegation tools: `delegate_task` and `task`
+
+On a `@Coordinator`, `DELEGATION` registers **two** built-in tools:
+
+- **`delegate_task`** routes a subtask to a **pre-declared** fleet member — the specialists you named in `@Fleet`.
+- **`task`** spawns an **ephemeral, general-purpose** sub-agent on demand (`SpawnSubagentTool`) — the dynamic counterpart, and the parity primitive for LangChain deepagents' `task` tool. Each spawn gets a fresh conversation id, its own plan store, and its own bounded file workspace under a per-spawn temporary root, so the sub-agent's `write_todos` and file tools never touch the parent's. Only the sub-agent's final text report crosses back; the workspace is removed on every exit path.
+
+`task` is governed the same way the fleet edge is — the subtask prompt is evaluated against the installed governance policies (pre-admission, fail-closed) before any dispatch — and it is depth-bounded, spawn-count-bounded, and time-bounded so recursion cannot run away. A sub-agent already at maximum depth is not given the `task` tool.
 
 ## What Each Feature Attaches
 
@@ -111,7 +120,7 @@ public class CeoCoordinator {
 | Long-term memory | `MEMORY` | Appends a framework-built `LongTermMemoryInterceptor` *after* the user's interceptors: facts are extracted at session close and recalled on the next connection. A user-declared `LongTermMemoryInterceptor` is authoritative and suppresses the harness's. Store resolution: a container-bridged `LongTermMemory` → the highest-priority `ServiceLoader` `LongTermMemoryProvider` → the zero-dep `InMemoryLongTermMemory` fallback. |
 | Compaction | `MEMORY` | The conversation-memory compaction seam — sliding-window by default; the harness never forces summarizing. |
 | Prompt-cache default | `CACHE` | Endpoints whose annotation keeps `promptCache = NONE` are seeded with a `CONSERVATIVE` `CacheHint` policy, unless the independent `org.atmosphere.ai.prompt-cache.default` init-param overrides it (an explicit `none` there suppresses the seeding). Wire emission stays gated by the `atmosphere.ai.prompt-cache-key` mode and its default-deny host allow-list. |
-| Delegation | `DELEGATION` | On a `@Coordinator`: registers the built-in `delegate_task` tool and wraps the fleet's outbound dispatch edge with the installed governance policies. A plain `@Agent` or `@AiEndpoint` has no fleet, so the primitive reports `INACTIVE(no-coordinator)` until a coordinator registers. |
+| Delegation | `DELEGATION` | On a `@Coordinator`: registers the built-in `delegate_task` tool (route to a pre-declared fleet member) **and** the `task` tool (spawn an ephemeral general-purpose sub-agent with an isolated context and workspace), and wraps the fleet's outbound dispatch edge with the installed governance policies. A plain `@Agent` or `@AiEndpoint` has no fleet, so the primitive reports `INACTIVE(no-coordinator)` until a coordinator registers. |
 | Planning | `PLANNING` | Binds an `AgentPlanStore` into the endpoint's injectables, then picks *one* plan surface by `atmosphere.ai.planning` mode: the runtime's native plan machinery when it declares `AiCapability.PLANNING`, else the built-in `write_todos` tool. Never both — no duplicate plan tools. A user-registered `write_todos` tool wins over the floor. |
 | Virtual filesystem | `FILESYSTEM` | Binds an `AgentFileSystemProvider` into the endpoint's injectables, then picks *one* file surface by `atmosphere.ai.filesystem` mode: the runtime's native file machinery when it declares `AiCapability.VIRTUAL_FILESYSTEM`, else the built-in six-tool floor (`ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`). Never both — no duplicate file tools. User-registered tools with the same names win over the floor. |
 
@@ -155,6 +164,16 @@ The store enforces hard limits on every write, with clear rejection messages sur
 | Total bytes per store | 16 MiB |
 | `grep` output | 500 hits |
 
+### Tool-output offload
+
+A tool that returns a very large result would flood the model's context window. The harness offloads it to disk instead: when a tool result exceeds a threshold (**8000 characters** by default) **and** a filesystem surface is in scope, the full result is written to a `tool-output/{tool}-{id}.txt` file in the agent workspace and the model receives a truncated **preview** plus a pointer to `read_file` the saved file if it needs the rest — the deepagents-style context-management move. It is **default-on** and threshold-gated:
+
+| Control | System property | Env fallback | Default |
+|---------|-----------------|--------------|---------|
+| Offload threshold (chars) | `org.atmosphere.ai.toolOutputOffloadThreshold` | `LLM_TOOL_OUTPUT_OFFLOAD_THRESHOLD` | `8000` (a value `<= 0` disables offload) |
+
+The offload never loses data and never throws: a disabled threshold, a below-threshold result, no filesystem in scope, or a write failure all fall back to returning the result inline.
+
 ### Mode knobs (built-in floor vs. native surface)
 
 Two JVM-wide tri-state controls pick the surface per primitive. The system property wins over the environment variable; parsing is lenient and case-insensitive (an unrecognized value collapses to `AUTO`):
@@ -169,6 +188,20 @@ Two JVM-wide tri-state controls pick the surface per primitive. The system prope
 - **`native`** — never the built-in floor; when the runtime does not declare the capability the primitive reports `INACTIVE(native-unavailable)` and no surface exists.
 
 Native declarations today (each pinned by the runtime's contract test): **AgentScope** and **Spring AI Alibaba** declare `PLANNING`; **ADK** and **Anthropic** declare `VIRTUAL_FILESYSTEM`. **Embabel**'s native surfaces (GOAP plan observation, `FileTools`) each cover only one of its two dispatch paths, so they are explicit opt-ins (`atmosphere.ai.planning=native` / `atmosphere.ai.filesystem=native`) rather than declared capabilities — a declaration would suppress the portable floor on the path the native surface can't reach. All other runtimes get the built-in floors.
+
+### Composite filesystem routing
+
+By default the file store is a single bounded per-conversation workspace. For agents that need a **durable, shared** slice of the namespace alongside the ephemeral scratch space — deepagents-style composite backend routing — opt in with a comma-separated `prefix=dir` route list. `CompositeAgentFileSystem` then presents one flat namespace to the model but routes each call to the delegate backend whose prefix matches (longest, most-specific prefix wins; the prefix is a routing key, not stripped from the path):
+
+| Control | System property | Env fallback | Default |
+|---------|-----------------|--------------|---------|
+| Composite routes | `org.atmosphere.ai.filesystem.routes` | `LLM_FILESYSTEM_ROUTES` | off (single per-conversation workspace) |
+
+```
+org.atmosphere.ai.filesystem.routes=memory/=/var/agent-memory,shared/=/var/agent-shared
+```
+
+With that set, reads and writes under `memory/` and `shared/` land in durable stores shared across conversations, while everything else stays in the bounded per-conversation workspace. Every routed backend is itself a bounded `WorkspaceAgentFileSystem`, so the per-file / count / total-byte limits and the traversal guards hold on every route — the composite never weakens a delegate's bounds, and a `rename` whose two ends route to different backends fails loud rather than silently losing data.
 
 ### The console Workspace tab and admin surface
 

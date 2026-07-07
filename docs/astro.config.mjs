@@ -50,6 +50,7 @@ export default defineConfig({
                 { label: 'Introduction', slug: 'tutorial/01-introduction' },
                 { label: '@Agent & @Prompt', slug: 'agents/agent' },
                 { label: 'Harness', slug: 'agents/harness' },
+                { label: 'Deep Agents vs LangChain', slug: 'agents/deep-agents-vs-langchain' },
                 { label: '@AiTool & Human-in-the-Loop', slug: 'tutorial/10-ai-tools' },
                 { label: 'Durable HITL Workflows', slug: 'tutorial/24-durable-hitl' },
                 { label: '@Command & Skill Files', slug: 'agents/skills' },

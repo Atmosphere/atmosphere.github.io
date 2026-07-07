@@ -9,6 +9,26 @@ sidebar:
 
 Atmosphere is a transport-agnostic runtime for Java AI agents. You declare **what** your agent does — the framework handles **how** it's delivered. A single `@Agent` class can serve browsers over WebSocket, expose tools via MCP, accept tasks from other agents via A2A, stream state to frontends via AG-UI, and route messages to Slack, Telegram, or Discord — all without changing a line of code.
 
+## Deep Agents, Batteries Included
+
+A plain `@Agent` is a **deep agent out of the box**. You do not opt into memory, planning, or a filesystem — the [harness](/docs/agents/harness/) defaults to the full set, so a bare annotation already has:
+
+- **Long-term & conversation memory** — facts recalled across sessions, with a compaction seam for long histories.
+- **A plan it maintains** — the built-in `write_todos` tool (or a runtime's native plan surface), streamed to the client as it changes.
+- **A bounded virtual filesystem** — six tools (`ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`) over a conversation-scoped workspace.
+- **Sub-agent delegation** — a `@Coordinator` gets `delegate_task` for pre-declared fleet members and `task` to spawn an ephemeral, isolated sub-agent on demand.
+
+```java
+@Agent(name = "support-agent")
+public class SupportAgent {
+    // full harness — memory, planning, files, delegation — with no extra attribute
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) { session.stream(message); }
+}
+```
+
+Narrow it with `@Agent(harness = {Harness.MEMORY})`, or opt down to a bare loop with `@Agent(harness = {})`. This is the same deep-agent capability set as LangChain's deepagents, hosted by a JVM framework instead of a Python library you call — see [Deep Agents vs LangChain](/docs/agents/deep-agents-vs-langchain/) and the [Harness guide](/docs/agents/harness/).
+
 ## The `@Agent` Programming Model
 
 One annotation. The framework wires everything based on what's in the class and what's on the classpath.
