@@ -269,6 +269,45 @@ The `ms-governance` template mirrors `samples/spring-boot-ms-governance-chat/` �
 
 ---
 
+## Governance as a learning signal
+
+Everything above *enforces* — admit, deny, transform. A fourth decision, `Prefer`, is **advisory**:
+it admits the turn but records that a *preferred* path exists, and the `GovernanceFeedbackInterceptor`
+re-injects that advisory into the model's context so the agent follows it — no retraining. (Read
+the motivation in Jason Stanley's *[Governance as a Learning Signal](https://jasonstanley.substack.com/p/governance-as-a-learning-signal)*.)
+
+Author a soft preference with the native `preference` type:
+
+```yaml
+policies:
+  - name: production-release-advisor
+    type: preference
+    config:
+      regex: ["\\bdeploy\\w*\\b.*\\bprod\\w*\\b"]
+      prefer: "open a change ticket and run /release-bot deploy in #prod-releases"
+      reason: "change-management policy requires ticketed, peer-approved releases"
+```
+
+Wire the interceptor on the endpoint, and it recalls recent `deny`/`prefer` decisions for the
+conversation:
+
+```java
+@AiEndpoint(path = "/atmosphere/ai-chat", interceptors = GovernanceFeedbackInterceptor.class)
+```
+
+Ask a production-deploy question and the answer names your org-specific release process — a fact
+the base model can't know, so it appears *only* because the advisory was injected. The console's
+**Decisions** tab shows the `PREFER`. On the streaming path a `Prefer` steers the **same** turn
+(the policy records before the interceptor injects); a hard `Deny` steers the **next** turn from
+the decision-log ring buffer.
+
+Opt into durable recall (persist across restarts, provenance-tagged and expiry-gated) with
+`atmosphere.ai.governance.memory.enabled=true`. See the
+[`spring-boot-ai-chat`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat)
+sample and the [reference](/docs/reference/governance/#governance-as-a-learning-signal).
+
+---
+
 ## Related
 
 - **Reference**: [Governance Policy Plane reference](/docs/reference/governance/) — full SPI catalog, operator semantics, HTTP API schemas.

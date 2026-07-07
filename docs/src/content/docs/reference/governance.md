@@ -47,13 +47,17 @@ sealed interface PolicyDecision {
     record Admit() implements PolicyDecision { }
     record Transform(AiRequest modifiedRequest) implements PolicyDecision { }
     record Deny(String reason) implements PolicyDecision { }
+    record Prefer(String preferred, String reason) implements PolicyDecision { }
     static PolicyDecision admit();
     static PolicyDecision transform(AiRequest r);
     static PolicyDecision deny(String reason);
+    static PolicyDecision prefer(String preferred, String reason);
 }
 ```
 
 `Transform` on the post-response path is non-operational (streamed text is not retroactively rewritable) — the pipeline logs a warning and downgrades to `Admit`.
+
+`Prefer` is a **soft-preference advisory**: it admits the turn unchanged (admission flow is identical to `Admit`) but records that a *preferred* alternative exists — the "soft governance" tier between `Admit` (no opinion) and `Deny` (hard block). It powers the [governance learning-signal loop](#governance-as-a-learning-signal). It is an Atmosphere-native extension with no Microsoft counterpart, so the MS-rules bridge never emits it.
 
 ### `PolicyParser`
 
@@ -87,6 +91,9 @@ Built-in types:
 | `pii-redaction` | `PiiRedactionGuardrail` | `mode: redact \| block` |
 | `cost-ceiling` | `CostCeilingGuardrail` | `budget-usd: <number>` |
 | `output-length-zscore` | `OutputLengthZScoreGuardrail` | `window-size`, `z-threshold`, `min-samples` |
+| `preference` | `PreferencePolicy` (emits a soft `Prefer` advisory) | `phrases`/`regex`, plus `prefer: <text>`, `reason: <text>` |
+
+Twelve built-in types ship in total (`deny-list`, `allow-list`, `preference`, `message-length`, `rate-limit`, `concurrency-limit`, `time-window`, `metadata-presence`, `authorization`, plus the three above); the rows shown are illustrative.
 
 ### `@AgentScope` + `ScopeGuardrail`
 
@@ -419,6 +426,60 @@ Enable for a sample deployment:
 @Bean CommitmentSigner signer() { return Ed25519CommitmentSigner.generate(); }
 @PostConstruct void enable() { CommitmentRecordsFlag.override(Boolean.TRUE); }
 ```
+
+---
+
+## Governance as a learning signal
+
+Governance decisions normally flow one way — into the audit log the agent never sees. The
+learning-signal loop feeds them back into the model's context, with no retraining (the idea from
+Jason Stanley's *[Governance as a Learning Signal](https://jasonstanley.substack.com/p/governance-as-a-learning-signal)*).
+
+**Produce — `PolicyDecision.Prefer` + the `preference` type.** A soft-preference policy admits the
+turn but records that a preferred path exists. Author it in YAML:
+
+```yaml
+policies:
+  - name: least-privilege-advisor
+    type: preference
+    config:
+      phrases: ["standing admin", "full access"]
+      prefer: "request a scoped, time-boxed credential for the single function"
+      reason: "standing admin grants violate least-privilege for this ticket type"
+```
+
+**Carry — `GovernanceFeedbackInterceptor`.** An `AiInterceptor` that re-injects recent `deny` /
+`prefer` decisions for the current subject (scoped `conversation_id` → `session_id` → `user_id`)
+into the next request's system prompt:
+
+```java
+@AiEndpoint(path = "/chat", interceptors = GovernanceFeedbackInterceptor.class)
+```
+
+It reads `GovernanceDecisionLog` (installed out-of-box by `atmosphere-admin`), is bounded and
+deduplicated, and fails open — a feedback error never breaks the turn.
+
+**Timing.** On the `@AiEndpoint` streaming path the guardrail loop (which *records* the `Prefer`)
+runs **before** the interceptor (which *injects*), so a `Prefer` steers the **same** turn that
+triggered it. A hard `Deny` terminates its turn, so a denial is surfaced on the **next** turn from
+the decision-log ring buffer.
+
+**Contain — durable recall (opt-in).** By default the source is the in-memory ring buffer, so
+lessons never touch long-term memory. Opt in to persist them across restarts:
+
+```properties
+atmosphere.ai.governance.memory.enabled        = true
+atmosphere.ai.governance.memory.ttl-seconds    = 0     # 0 = no expiry
+atmosphere.ai.governance.memory.min-confidence = 0.0   # read-gate floor
+```
+
+`GovernanceMemorySink` persists each deny/prefer as a provenance-tagged fact under a per-user
+namespace; `GovernanceProvenanceMemory` drops expired / below-confidence lessons on read, so a
+wrong lesson cannot compound. The primitives are runtime-agnostic (Spring / Quarkus / bare-JVM
+wire identically via `GovernanceMemoryInstaller`).
+
+The [`spring-boot-ai-chat`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ai-chat)
+sample demonstrates the loop end-to-end on a real LLM.
 
 ---
 
