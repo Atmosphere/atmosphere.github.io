@@ -314,7 +314,7 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           a live chat tab plus operational tabs that appear as you wire the matching
           pieces in: the governance policy decisions as they happen, the
           OWASP-agentic-threats matrix, the plan-verifier's verdicts, and the MCP
-          Apps host. It's the same UI the samples run on — roughly two dozen of them,
+          Apps host. It's the same UI the samples run on — about thirty of them,
           mostly Spring Boot and Quarkus, with a few plain embedded-server and gRPC builds.
         </p>
 
@@ -346,7 +346,8 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         <p>
           And if the client is itself a JVM service, <strong>wasync</strong> is the Java
           counterpart to atmosphere.js — a server-to-server client with an ordered
-          WebSocket/SSE/long-polling/gRPC fallback chain.
+          WebSocket → SSE → long-polling fallback chain, with gRPC available as a
+          separate bidirectional transport.
         </p>
 
         <h2>Bring an agent you already have: OpenClaw-compatible</h2>
@@ -399,7 +400,7 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
         <p>
           One principle shaped the whole design: a runtime only advertises a capability
           it actually performs. Each adapter's capability set — drawn from a vocabulary of
-          twenty-one — is pinned by a contract test, so an adapter's <code>capabilities()</code> can't
+          twenty-two — is pinned by a contract test, so an adapter's <code>capabilities()</code> can't
           silently drift from what it declares, and the built-in runtime's native
           paths are checked behaviorally. When I added native structured
           output, the three runtimes whose wire protocol has no schema field simply
