@@ -112,6 +112,10 @@ On a `@Coordinator`, `DELEGATION` registers **two** built-in tools:
 
 `task` is governed the same way the fleet edge is — the subtask prompt is evaluated against the installed governance policies (pre-admission, fail-closed) before any dispatch — and it is depth-bounded, spawn-count-bounded, and time-bounded so recursion cannot run away. A sub-agent already at maximum depth is not given the `task` tool.
 
+:::tip[Try it in a sample]
+Run [`spring-boot-personal-assistant`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-personal-assistant) — its `@Coordinator` registers both `delegate_task` and `task`. Point it at a local Ollama model and, in the console, ask: *"Use the task tool to spawn a general-purpose subagent to brainstorm three team-building activities, then give me its report."* You'll see the `task` tool card fire and the sub-agent run in its own isolated workspace. For the planning and filesystem floors (and tool-output offload + composite routing), see [`spring-boot-coding-agent`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-coding-agent).
+:::
+
 ## What Each Feature Attaches
 
 | Primitive | Feature | What the harness does |
