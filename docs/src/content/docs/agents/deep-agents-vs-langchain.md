@@ -39,14 +39,14 @@ The projects overlap almost completely on the *agent capability surface* — pla
 
 ## Capability parity
 
-Nearly every deep-agent capability deepagents offers has a corresponding Atmosphere primitive, wired by the [harness](/docs/agents/harness/) — a plain `@Agent` / `@Coordinator` gets them with no attribute at all. The one gap today is a language REPL (see the last row); everything else maps directly.
+Every deep-agent capability deepagents offers has a corresponding Atmosphere primitive, wired by the [harness](/docs/agents/harness/) — a plain `@Agent` / `@Coordinator` gets the default-on ones with no attribute at all, and the code-execution surfaces (`code_exec`, `eval`) are one config flag away.
 
 | deepagents capability | Atmosphere primitive | Parity |
 |---|---|:---:|
 | `write_todos` planning tool | `write_todos` built-in floor (`PlanningTools`), or a native plan surface when the runtime declares `AiCapability.PLANNING` | ✅ |
 | Virtual filesystem — `ls` / `read_file` / `write_file` / `edit_file` / `delete` / `glob` / `grep` | The same tools plus `rename` — eight in all (`FileSystemTools`) — over a bounded, conversation-scoped workspace, or a native file surface when the runtime declares `AiCapability.VIRTUAL_FILESYSTEM` | ✅ |
 | `execute` — sandboxed shell / code execution | `code_exec` (`CodeExecTool`) and per-tool `@SandboxTool`, container-isolated and default-deny | ✅ |
-| `eval` — in-process language REPL / interpreter | No dedicated REPL; sandboxed `execute` runs code in a container instead | — |
+| `eval` — in-process language REPL / interpreter | `eval` (`EvalTool`): a sandboxed in-process JavaScript evaluator (Mozilla Rhino) — deny-all class access, CPU/time-bounded, no host/file/network reach. Opt-in, container-free | ✅ |
 | Sub-agents (named specialists) | `@Agent` / `@Coordinator` / `@Fleet` + the built-in `delegate_task` tool | ✅ |
 | `task` — dynamic, ephemeral sub-agent spawn | The `task` tool (`SpawnSubagentTool`): a general-purpose sub-agent with an isolated context and workspace | ✅ |
 | `interrupt_on` — human-in-the-loop tool gates | `ToolApprovalPolicy` / `GatedToolDispatcher` / `@RequiresApproval` | ✅ |

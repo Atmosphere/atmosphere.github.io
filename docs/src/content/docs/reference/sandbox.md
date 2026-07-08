@@ -116,6 +116,58 @@ SPI. Treat `@SandboxTool` as available-but-not-yet-integrated rather than a
 wired runtime path.
 :::
 
+## In-process `eval` — container-free JavaScript
+
+The `Sandbox` SPI above runs code in a **container**. For lightweight
+computation where a container is overkill — arithmetic, data shaping, JSON and
+string work — Atmosphere also ships an in-process `eval` tool: a sandboxed
+JavaScript evaluator backed by Mozilla Rhino. It is the counterpart to
+`code_exec`: no container, no network, instant, and available where Docker is
+not.
+
+**Off by default (opt-in).** Evaluating model-generated code is a deliberate
+choice. Enable it with a system property (or the equivalent
+`ORG_ATMOSPHERE_AI_EVAL_*` environment variable) and add the optional Rhino
+dependency:
+
+```bash
+-Dorg.atmosphere.ai.eval.enabled=true
+```
+
+```xml
+<dependency>
+  <groupId>org.mozilla</groupId>
+  <artifactId>rhino</artifactId>
+</dependency>
+```
+
+| Property | Default | Meaning |
+|---|---|---|
+| `org.atmosphere.ai.eval.enabled` | `false` | Master switch — the tool is not offered unless `true` **and** Rhino is on the classpath. |
+| `org.atmosphere.ai.eval.instructionBudget` | `10000000` | Interpreted-instruction ceiling per call — a runaway loop trips it and aborts. |
+| `org.atmosphere.ai.eval.timeoutMillis` | `5000` | Wall-clock ceiling per call. |
+| `org.atmosphere.ai.eval.maxOutputChars` | `8000` | Cap on the returned text. |
+
+The tool advertises **runtime truth**: when `enabled=true` but Rhino is absent,
+startup logs a warning and the tool reports inactive rather than offering
+something that cannot run.
+
+### Security model
+
+- **No host reach.** The scope is built with Rhino's
+  `initSafeStandardObjects()` — ECMAScript built-ins (`Math`, `JSON`, `Array`)
+  but *none* of the LiveConnect Java bridge (`java`, `Packages`, `getClass`). A
+  deny-all `ClassShutter` is layered on top, so no Java class resolves even via
+  a reflective escape. Rhino JavaScript has no built-in file or network I/O.
+- **Bounded CPU.** Interpreted mode plus an instruction observer enforce the
+  budget on a stock JVM (no GraalVM runtime required). The abort is a Java
+  `Error`, so a script `try/catch` cannot swallow it and keep looping.
+- **No cross-call state.** Every call runs in a fresh scope — one evaluation
+  cannot see or corrupt another's.
+- **Governance-gateable.** The tool is tagged `ToolKind.EXECUTE`, so a
+  `ToolApprovalPolicy` or governance policy gates it like any other
+  code-execution surface.
+
 ## Source and samples
 
 - Module README: [`modules/sandbox/README.md`](https://github.com/Atmosphere/atmosphere/blob/main/modules/sandbox/README.md)
