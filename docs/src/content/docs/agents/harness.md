@@ -25,6 +25,36 @@ Atmosphere agents are **deep agents out of the box**. The harness *completes* an
 
 The engine is `org.atmosphere.ai.preset.HarnessPreset`, driven by one granular attribute — `harness()` on [`@Agent`](/docs/agents/agent/), [`@Coordinator`](/docs/agents/coordinator/), and [`@AiEndpoint`](/docs/tutorial/09-ai-endpoint/) — typed by the `org.atmosphere.ai.preset.Harness` enum.
 
+## Quickstart — a deep agent you deploy
+
+In Atmosphere a deep agent is not a library you call from your own loop — it is an **endpoint the framework hosts**. One dependency and one annotation:
+
+```xml
+<dependency>
+  <groupId>org.atmosphere</groupId>
+  <artifactId>atmosphere-ai-spring-boot-starter</artifactId>
+</dependency>
+```
+
+```java
+@Agent(name = "assistant")
+public class Assistant {
+    @Prompt
+    public void chat(String message, StreamingSession session) {
+        session.stream(message);   // your loop — the harness is already attached
+    }
+}
+```
+
+That is a complete deep agent. With no `harness` attribute it already:
+
+- **remembers** — multi-turn conversation history plus cross-session facts, with a compaction seam for long threads;
+- **plans** — a live `write_todos` plan surface, streamed as it changes;
+- **works with files** — a bounded, conversation-scoped virtual filesystem;
+- **delegates** — as a `@Coordinator`, to a named crew (`delegate_task`) or a fresh sub-agent spawned on demand (`task`).
+
+Run it and open the console at `/atmosphere/console/`. Ask the agent to *"plan a short task and save the result to a file"* — the **Workspace tab** shows the plan ticking and the file appearing, streamed over a live WebSocket. What makes this Atmosphere and not a checklist of tools: the harness *completes* the agent, and the framework then **hosts it over real transports, governs every tool call on the critical path, and reports each primitive's actual runtime state** at `/api/console/info` — never configuration intent. Drive all of it end to end in [`spring-boot-personal-assistant`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-personal-assistant) and [`spring-boot-coding-agent`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-coding-agent).
+
 ## The `Harness` Enum
 
 | Value | What it turns on |
@@ -33,7 +63,7 @@ The engine is `org.atmosphere.ai.preset.HarnessPreset`, driven by one granular a
 | `Harness.CACHE` | Prompt-cache default seeding — endpoints whose annotation keeps `promptCache = NONE` are seeded with a `CONSERVATIVE` policy. |
 | `Harness.DELEGATION` | The fleet delegation primitive — on a `@Coordinator`, the built-in `delegate_task` tool (route to a pre-declared fleet member) **and** the `task` tool (spawn an ephemeral, isolated general-purpose sub-agent on demand), plus the governance wrap on the outbound dispatch edge. |
 | `Harness.PLANNING` | The planning primitive — the agent maintains a plan it exposes and updates: the built-in `write_todos` tool floor (or a native plan surface when the resolved runtime advertises `AiCapability.PLANNING` under the `atmosphere.ai.planning` AUTO default), persisted per conversation and streamed as `plan-update` events. |
-| `Harness.FILESYSTEM` | The virtual-filesystem primitive — a bounded, conversation-scoped file store under the agent workspace: the built-in `ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` tool floor (or a native file surface when the resolved runtime advertises `AiCapability.VIRTUAL_FILESYSTEM` under the `atmosphere.ai.filesystem` AUTO default). |
+| `Harness.FILESYSTEM` | The virtual-filesystem primitive — a bounded, conversation-scoped file store under the agent workspace: the built-in `ls` / `read_file` / `write_file` / `edit_file` / `glob` / `grep` / `delete` / `rename` tool floor (or a native file surface when the resolved runtime advertises `AiCapability.VIRTUAL_FILESYSTEM` under the `atmosphere.ai.filesystem` AUTO default). |
 | `Harness.ALL` | Sentinel that expands to `{MEMORY, CACHE, DELEGATION, PLANNING, FILESYSTEM}` — the full harness. |
 
 ## Annotation Defaults
@@ -130,7 +160,7 @@ Run [`spring-boot-personal-assistant`](https://github.com/Atmosphere/atmosphere/
 
 ## Planning & Workspace Files
 
-`PLANNING` and `FILESYSTEM` give every tool-calling agent a **plan it maintains** and a **bounded scratch filesystem** — the deepagents-style working surface — with zero extra dependencies. Because `@Agent` and `@Coordinator` default to `{Harness.ALL}`, a plain annotation gets both out of the box: one `write_todos` tool plus six file tools, seven built-in harness tools in total.
+`PLANNING` and `FILESYSTEM` give every tool-calling agent a **plan it maintains** and a **bounded working filesystem** — a real scratch surface to decompose and stage multi-step work — with zero extra dependencies. Because `@Agent` and `@Coordinator` default to `{Harness.ALL}`, a plain annotation gets both out of the box: one `write_todos` tool plus eight file tools, nine built-in harness tools in total.
 
 ### The built-in tool floor
 
@@ -143,6 +173,8 @@ Run [`spring-boot-personal-assistant`](https://github.com/Atmosphere/atmosphere/
 | `edit_file` | Exact string replacement inside a workspace file. |
 | `glob` | Matches workspace paths against a glob pattern. |
 | `grep` | Regex search across workspace files, capped at 500 hits. |
+| `delete` | Removes a workspace file. Tagged `ToolKind.DELETE` so a `ToolApprovalPolicy` can require approval — the blast radius is the conversation workspace, but deletion is destructive. |
+| `rename` | Moves or renames a workspace file; both paths are boundary-validated. |
 
 ### Storage layout
 
@@ -170,7 +202,7 @@ The store enforces hard limits on every write, with clear rejection messages sur
 
 ### Tool-output offload
 
-A tool that returns a very large result would flood the model's context window. The harness offloads it to disk instead: when a tool result exceeds a threshold (**8000 characters** by default) **and** a filesystem surface is in scope, the full result is written to a `tool-output/{tool}-{id}.txt` file in the agent workspace and the model receives a truncated **preview** plus a pointer to `read_file` the saved file if it needs the rest — the deepagents-style context-management move. It is **default-on** and threshold-gated:
+A tool that returns a very large result would flood the model's context window. The harness offloads it to disk instead: when a tool result exceeds a threshold (**8000 characters** by default) **and** a filesystem surface is in scope, the full result is written to a `tool-output/{tool}-{id}.txt` file in the agent workspace and the model receives a truncated **preview** plus a pointer to `read_file` the saved file if it needs the rest — so a multi-kilobyte result never floods the context window. It is **default-on** and threshold-gated:
 
 | Control | System property | Env fallback | Default |
 |---------|-----------------|--------------|---------|
@@ -195,7 +227,7 @@ Native declarations today (each pinned by the runtime's contract test): **AgentS
 
 ### Composite filesystem routing
 
-By default the file store is a single bounded per-conversation workspace. For agents that need a **durable, shared** slice of the namespace alongside the ephemeral scratch space — deepagents-style composite backend routing — opt in with a comma-separated `prefix=dir` route list. `CompositeAgentFileSystem` then presents one flat namespace to the model but routes each call to the delegate backend whose prefix matches (longest, most-specific prefix wins; the prefix is a routing key, not stripped from the path):
+By default the file store is a single bounded per-conversation workspace. For agents that need a **durable, shared** slice of the namespace alongside the ephemeral scratch space — opt in with a comma-separated `prefix=dir` route list. `CompositeAgentFileSystem` then presents one flat namespace to the model but routes each call to the delegate backend whose prefix matches (longest, most-specific prefix wins; the prefix is a routing key, not stripped from the path):
 
 | Control | System property | Env fallback | Default |
 |---------|-----------------|--------------|---------|
@@ -336,7 +368,7 @@ The harness never advertises a primitive it did not actually activate. `HarnessP
 | `compaction` | The resolved strategy — `sliding-window` or `summarizing`. |
 | `delegation` | `ACTIVE` once a `@Coordinator` registers `delegate_task`; `INACTIVE(no-coordinator)` / `INACTIVE(disabled)` otherwise. |
 | `planning` | `ACTIVE(builtin)` once the `write_todos` floor genuinely registers; `ACTIVE(native:<runtime>)` when the resolved runtime's native plan surface wins; `INACTIVE(native-unavailable)` under `native` mode on a runtime without `PLANNING`; `INACTIVE(no-endpoint)` / `INACTIVE(disabled)` otherwise. |
-| `filesystem` | `ACTIVE(builtin)` once all six file tools register (`ACTIVE(builtin,partial)` when user tools shadow some); `ACTIVE(native:<runtime>)` when the resolved runtime's native file surface wins; `INACTIVE(native-unavailable)` under `native` mode on a runtime without `VIRTUAL_FILESYSTEM`; `INACTIVE(no-endpoint)` / `INACTIVE(disabled)` otherwise. |
+| `filesystem` | `ACTIVE(builtin)` once all eight file tools register (`ACTIVE(builtin,partial)` when user tools shadow some); `ACTIVE(native:<runtime>)` when the resolved runtime's native file surface wins; `INACTIVE(native-unavailable)` under `native` mode on a runtime without `VIRTUAL_FILESYSTEM`; `INACTIVE(no-endpoint)` / `INACTIVE(disabled)` otherwise. |
 | `skills` | `CONVENTION` — skills stay per-agent convention-discovered (`META-INF/skills/`); there is no global switch. |
 | `durable-runs` | `CONTAINER-MANAGED` — the journal spine is installed by the Spring / Quarkus bridge, not by the preset. |
 
