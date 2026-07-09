@@ -121,9 +121,25 @@ wired runtime path.
 The `Sandbox` SPI above runs code in a **container**. For lightweight
 computation where a container is overkill — arithmetic, data shaping, JSON and
 string work — Atmosphere also ships an in-process `eval` tool: a sandboxed
-JavaScript evaluator backed by Mozilla Rhino. It is the counterpart to
-`code_exec`: no container, no network, instant, and available where Docker is
-not.
+interpreter for model-authored code. It is the counterpart to `code_exec`: no
+container, no network, instant, and available where Docker is not.
+
+The interpreter is pluggable via the **`EvalEngine` SPI** (`ServiceLoader`,
+highest-`priority()`-available wins — the same pattern as `AgentRuntime` and
+`SandboxProvider`). **JavaScript via Mozilla Rhino ships as the default engine**;
+an alternative — GraalJS, a Python interpreter, a WASM runtime — plugs in by
+adding its jar with a `META-INF/services/org.atmosphere.ai.code.EvalEngine`
+entry, no Atmosphere change required. Every engine must honour the same isolation
+contract and `EvalLimits` (below).
+
+> **Why an interpreter, not "pure Java"?** Two reasons. The model authors
+> computation as *code strings at runtime*, and it writes JavaScript/Python, not
+> Java. More fundamentally, arbitrary Java **cannot be sandboxed in-process**:
+> JShell / the Compiler API produce bytecode with full JVM authority, and the
+> only in-process containment mechanism — `SecurityManager` — is disabled from
+> JDK 24 on. In-process *and* sandboxed therefore requires a language with a
+> language-level sandbox (Rhino's `ClassShutter` + no built-in I/O); for
+> OS-level isolation of arbitrary code, use the container `code_exec` instead.
 
 **Off by default (opt-in).** Evaluating model-generated code is a deliberate
 choice. Enable it with a system property (or the equivalent
