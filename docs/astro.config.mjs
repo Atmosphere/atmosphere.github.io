@@ -56,6 +56,7 @@ export default defineConfig({
                 { label: '@Command & Skill Files', slug: 'agents/skills' },
                 { label: '@Coordinator & Multi-Agent', slug: 'agents/coordinator' },
                 { label: 'Stateful Interactions', slug: 'tutorial/35-interactions' },
+                { label: 'Session Tape & Replay', slug: 'tutorial/36-session-tape' },
                 { label: 'AI Adapters', slug: 'tutorial/11-ai-adapters' },
                 { label: 'AI Filters & Routing', slug: 'tutorial/12-ai-filters' },
                 { label: 'Channels', slug: 'tutorial/23-channels' },
@@ -108,6 +109,7 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'AI / LLM', slug: 'reference/ai' },
+            { label: 'Session Tape', slug: 'reference/tape' },
             { label: 'Interactions API', slug: 'reference/interactions' },
             { label: 'Runtime Selection', slug: 'reference/runtime-selection' },
             { label: 'RAG', slug: 'reference/rag' },
