@@ -5,14 +5,15 @@ description: "Record every AI turn as a durable, typed event stream — then det
 
 # Session Tape & Replay
 
-Every AI turn in Atmosphere crosses a `StreamingSession` as a stream of typed
+A streaming AI turn crosses a `StreamingSession` as a stream of typed
 `AiEvent`s — the input prompt, streamed text, tool calls, structured output, and
-a terminal. The **session tape** persists that stream as a durable, append-only,
-per-run artifact: one ordered list of typed steps per run. Because the tape is a
-faithful record of what actually happened, it doubles as an **observability**
-surface, a **test oracle**, a **training set**, and — with replay — a way to
-reconstruct a past session (or a whole team of agents) exactly, with no model
-call.
+a terminal. When the **session tape** is enabled, it records that
+session-boundary stream as an append-only, per-run artifact: one ordered list of
+typed steps per run (crash-durable with the SQLite store). Because the tape is a
+faithful record of what was produced at the session boundary, it doubles as an
+**observability** surface, a **test oracle**, a **training set**, and — with
+replay — a way to reconstruct a recorded session (or a team of agents) exactly,
+with no model call.
 
 The tape is **off by default** framework-wide. Turn it on with one flag.
 
@@ -64,6 +65,17 @@ and the channel/`AiPipeline` path (including cache hit and miss) — so a run
 looks the same however it was invoked (Mode Parity). The writer is a bounded
 single-consumer queue: a full queue drops a step and counts it (never blocking
 the streaming path), and terminals are non-droppable.
+
+:::note[What's *not* taped]
+The tape captures events **as produced at the session boundary**, not delivery —
+a disconnect can leave trailing steps produced-but-undelivered (status
+`CANCELLED`). By design it also skips: synchronous `generate` / `generateResult`
+turns, pipeline-internal `StructuredOutputRetry` attempts, in-process coordinator
+fan-out *branch* sessions (the root endpoint session is taped; A2A-dispatched
+children get their own runs — see the tree replay below), reattach replay
+(already recorded at production time), and `modules/interactions` runs (persisted
+separately as `InteractionStep`s).
+:::
 
 ## See it in the Console
 
@@ -166,3 +178,12 @@ java -cp <classpath> org.atmosphere.checkpoint.TapeDatasetCli \
 See the [Session Tape reference](/docs/reference/tape/) for the full `TapeStore` SPI,
 config keys, and admin API, and [@Coordinator & Multi-Agent](/docs/agents/coordinator/)
 for the fleet APIs the tree replay builds on.
+
+:::note[Prior art]
+The *tape* idea comes from ServiceNow Research's
+[TapeAgents](https://www.servicenow.com/workflow/ai/tapeagents-framework-agentic-workflows.html),
+which framed a typed, append-only log of an agent's steps as one artifact that
+serves at once as state, observability, replayable history, and training data.
+Atmosphere's session tape is an independent implementation of that idea at the
+`StreamingSession` boundary.
+:::

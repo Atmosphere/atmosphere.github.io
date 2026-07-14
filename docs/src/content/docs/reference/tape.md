@@ -5,10 +5,16 @@ description: "TapeStore SPI, TapeReplay reconstruction, config keys, and the gat
 
 # Session Tape
 
-The session tape persists each AI run's typed `AiEvent` stream as a durable,
-append-only, per-run artifact in the `org.atmosphere.ai.tape` package. It is
-**off by default**. See the [Session Tape & Replay tutorial](/docs/tutorial/36-session-tape/)
-for the narrative walkthrough.
+The session tape records a streaming run's typed `AiEvent` stream — **as produced
+at the session boundary** — as an append-only, per-run artifact in the
+`org.atmosphere.ai.tape` package. It is **off by default**, and crash-durable
+only with the SQLite store. It intentionally excludes synchronous
+`generate` / `generateResult` turns, in-process coordinator fan-out *branch*
+sessions (the root endpoint session is taped; A2A-dispatched children get their
+own runs), pipeline-internal `StructuredOutputRetry` attempts, reattach replay,
+and `modules/interactions` runs (persisted separately as `InteractionStep`s).
+See the [Session Tape & Replay tutorial](/docs/tutorial/36-session-tape/) for the
+narrative walkthrough.
 
 ## Configuration
 
