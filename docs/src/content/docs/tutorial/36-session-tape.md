@@ -149,9 +149,11 @@ or **tool-agents** (an `@AgentSkillHandler` that returns directly — those are
 recorded as a single completed dispatch so the tree is complete either way).
 
 In the Console, the **Tape** tab's **▶ Replay** button on a coordinator run
-renders the reconstructed tree: one *coordinator* node plus one *agent* node per
-specialist, each showing its input and reconstructed output — all from the tape,
-no model.
+renders the reconstructed tree as an **interactive node-graph**: one *coordinator*
+node fanning out to one *agent* node per specialist, edges drawn by `parentRunId`,
+each node showing its input, reconstructed output, and tool calls — all from the
+tape, no model. Pan and zoom the canvas, or click a node to drill into that run's
+ordered step stream.
 
 ## The tape as a training set
 

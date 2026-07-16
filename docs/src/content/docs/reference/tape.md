@@ -95,7 +95,9 @@ GET /api/admin/tape/runs/{runId}/replay          # reconstructed coordination tr
 
 The console reports `hasTape` on `/api/console/info` only when a recorder is
 actually installed at runtime (not merely on the classpath), which gates the
-Console **Tape** tab and its **▶ Replay** affordance.
+Console **Tape** tab and its **▶ Replay** affordance. Replaying a coordinator run
+renders the `/replay` tree as an interactive node-graph (coordinator → agents,
+edges by `parentRunId`); clicking a node opens that run's `/steps` stream.
 
 ## Distillation
 
