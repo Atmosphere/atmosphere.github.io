@@ -127,6 +127,33 @@ const depSnippet = `&lt;!-- The workflow above does not change. This line is the
           the terminal result. The first live run completed in 243&nbsp;ms, and the
           history reads exactly like the unit tests said it would.
         </p>
+        <h2>The agent side of the story: the session tape</h2>
+        <p>
+          Temporal's UI answers "what did the <em>engine</em> do" — retries, timeouts,
+          history. For AI agents there is a second question: what did the
+          <em>model</em> see and say? Atmosphere records that separately. Flip
+          <code>atmosphere.ai.tape.enabled</code> (off by default) and every streaming
+          AI session records its typed event stream — prompts, completions, tool
+          calls — as an append-only, per-run <strong>tape</strong>, bounded in memory
+          or crash-durable on SQLite.
+        </p>
+        <p>
+          A recorded run can be reconstructed after the fact <em>with no model
+          call</em> — including a whole multi-agent coordination tree, linked
+          run-to-run. And the Atmosphere Console makes it visual: a
+          <strong>Tape tab</strong> lists recorded runs and their step streams, and
+          replaying a coordinator run draws the coordination tree as an interactive
+          node graph — coordinator to agents — where clicking a node opens that run's
+          steps. The tab only appears when a recorder is actually installed at
+          runtime, the read endpoints are admin-gated and default-deny, and because
+          each completed run is a (prompt → completion) record, the tape doubles as
+          chat-format training data for distilling a smaller model.
+        </p>
+        <p>
+          Engine history in Temporal's UI, agent history in Atmosphere's Console —
+          both from the same one-dependency posture.
+        </p>
+
         <p>
           The same seam is open for DBOS and Restate adapters — same interface, same
           contract, same parity tests to pass.
@@ -135,6 +162,8 @@ const depSnippet = `&lt;!-- The workflow above does not change. This line is the
         <ul class="links">
           <li><a href="https://github.com/Atmosphere/atmosphere/blob/main/modules/checkpoint-temporal/README.md">atmosphere-checkpoint-temporal — module README</a></li>
           <li><a href="https://atmosphere.github.io/docs/reference/checkpoint/">Durable Checkpoints reference</a></li>
+          <li><a href="https://atmosphere.github.io/docs/reference/tape/">Session Tape reference</a></li>
+          <li><a href="https://atmosphere.github.io/docs/tutorial/36-session-tape/">Session Tape &amp; Replay tutorial</a></li>
           <li><a href="https://github.com/Atmosphere/atmosphere">github.com/Atmosphere/atmosphere</a></li>
         </ul>
         <p class="sign">— JFA</p>

@@ -36,6 +36,30 @@ and a Playwright lane that asserts the run — type, task queue, per-step
 activities, terminal result — in Temporal's own Web UI. See the
 [Durable Checkpoints reference](reference/checkpoint.md).
 
+## 4.0.62 — Session tape: record agent runs, replay them, watch them in the Console
+
+Flip `atmosphere.ai.tape.enabled` (off by default) and every streaming AI
+session records its typed `AiEvent` stream — as produced at the session
+boundary — as an append-only, per-run **tape**: prompts, completions, tool
+calls, with a late-bound run id and crash-resume segments. The bundled store
+is bounded in-memory or SQLite-durable; a `TapeStore` SPI accepts your own.
+
+A recorded run can be **reconstructed after the fact with no model call** —
+including a whole multi-agent coordination tree, linked run-to-run by
+`parentRunId`. The read surface is admin-gated (`REQUIRE_PRINCIPAL`,
+content-read default-deny), and the Atmosphere Console makes it visual: a
+**Tape tab** lists recorded runs and their step streams, and replaying a
+coordinator run renders the coordination tree as an **interactive node
+graph** (coordinator → agents; click a node to open that run's steps). The
+tab appears only when a recorder is actually installed at runtime — runtime
+truth, not classpath detection.
+
+Because each completed run is a `(prompt → completion)` record, the tape
+doubles as training data: `TapeDatasetCli` extracts chat-format JSONL for
+distilling a smaller model. See the
+[Session Tape reference](reference/tape.md) and the
+[Session Tape & Replay tutorial](tutorial/36-session-tape.md).
+
 ## 4.0.60-SNAPSHOT — Deep-agent harness on by default
 
 Atmosphere agents are now **deep agents out of the box**. A new `harness()`

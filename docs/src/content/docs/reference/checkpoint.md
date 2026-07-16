@@ -201,5 +201,6 @@ See the [`atmosphere-checkpoint` module README](https://github.com/Atmosphere/at
 ## See Also
 
 - [Durable Sessions](durable-sessions.md)
+- [Session Tape](tape.md) — the per-run `AiEvent` record; the Console's Tape tab replays it as an interactive coordination graph
 - [AI / LLM Reference](ai.md)
 - [Core Runtime](core.md)
