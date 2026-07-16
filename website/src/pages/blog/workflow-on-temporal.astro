@@ -1,0 +1,241 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+// Code blocks are rendered via set:html so Astro never tries to interpret the
+// Java/XML braces or angle brackets as markup. Angle brackets are pre-escaped.
+const workflowSnippet = `var workflow = new Workflow&lt;&gt;(
+        "doc-pipeline", "coord-123",
+        List.of(
+                step("ingest",  s -&gt; StepOutcome.advance(s + ":ingested")),
+                step("review",  s -&gt; StepOutcome.hibernate(s)),    // wait for a human
+                step("publish", s -&gt; StepOutcome.done(s + ":published"))),
+        store);
+
+var result = workflow.run("doc-42");
+// → WorkflowResult.Hibernated — no thread held while we wait for the human.
+
+// Later — same JVM or a fresh one, same store + coordinationId:
+var resumed = workflow.run(null);
+// → WorkflowResult.Completed; only 'publish' runs.`;
+
+const depSnippet = `&lt;!-- The workflow above does not change. This line is the whole migration: --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.atmosphere&lt;/groupId&gt;
+  &lt;artifactId&gt;atmosphere-checkpoint-temporal&lt;/artifactId&gt;
+&lt;/dependency&gt;`;
+---
+
+<Layout
+  title="Run Atmosphere workflows on Temporal — by swapping one dependency"
+  description="Atmosphere's durable Workflow<S> primitive now resolves its execution engine through a ServiceLoader seam. The first external engine behind it: Temporal."
+>
+  <Header />
+  <main class="blog">
+    <article class="post">
+      <header class="post-header">
+        <p class="eyebrow">Engineering · Jean-François Arcand</p>
+        <h1>Run Atmosphere workflows on Temporal, by swapping one dependency</h1>
+        <p class="lede">
+          The durable-execution engine behind <code>Workflow.run()</code> is now a
+          ServiceLoader seam. The first external engine to plug into it: Temporal.
+        </p>
+      </header>
+
+      <div class="post-body">
+        <p>
+          Atmosphere ships a small durable-workflow primitive: an ordered list of named
+          steps over an application-owned state type, checkpointed after every step
+          through the <code>CheckpointStore</code> SPI. Its signature move is
+          hibernation as a <em>return</em>, not a parked thread — a step that needs a
+          human returns <code>hibernate(state)</code>, the call returns, and a later
+          <code>run()</code> picks up at the step after the last completed one, even in
+          a different JVM when the store is persistent:
+        </p>
+        <pre class="code"><code set:html={workflowSnippet}></code></pre>
+        <p>
+          That in-tree step engine is deliberately boring: a loop, a retry budget per
+          step, a snapshot per step. But plenty of teams already operate a durable
+          execution platform — Temporal most commonly — and asking them to run a second
+          workflow engine next to it is a hard sell. So the engine behind
+          <code>Workflow.run()</code> is now a seam. Every call resolves a
+          <code>DurableExecutionProvider</code> via <code>ServiceLoader</code>; the
+          in-tree engine is the always-on fallback, and an external adapter takes over
+          when one is registered <em>and actually reachable</em>:
+        </p>
+        <pre class="code"><code set:html={depSnippet}></code></pre>
+
+        <h2>Who owns what</h2>
+        <p>
+          With the adapter on the classpath, Temporal owns what Temporal is good at:
+          per-step retries (your step's <code>maxRetries()</code> and
+          <code>retryDelay()</code> translate to Temporal retry policies with fixed
+          backoff), step timeouts, and the execution history — every run shows up in
+          the Temporal Web UI with its input, its per-step activities, and its terminal
+          result, next to whatever else your organization already runs there.
+        </p>
+        <p>
+          Atmosphere keeps what Atmosphere promised: the <code>CheckpointStore</code>
+          snapshot trail, hibernation, and cross-restart resume. The adapter writes the
+          <em>exact</em> trail the in-tree engine writes — same metadata keys, same
+          seed snapshot, same resume rule — so the two engines are interchangeable
+          mid-flight: hibernate on one, resume on the other. A test pins the trails as
+          byte-identical.
+        </p>
+        <p>
+          One design choice does most of the work here: your steps execute as Temporal
+          <strong>activities in the JVM that called <code>run()</code></strong>,
+          against the live step lambdas. Application state never crosses the Temporal
+          payload boundary — which means adding the adapter imposes
+          <strong>no serialization constraints on your state type</strong>. Nothing
+          about <code>S</code> needs to become a DTO.
+        </p>
+
+        <h2>What it deliberately does not do</h2>
+        <p>
+          Honesty section. Because steps run against live lambdas, a run orphaned by a
+          JVM restart fails its next activity fast (<code>SessionNotFound</code>)
+          rather than hanging — and the application resumes by calling
+          <code>run()</code> again, which continues after the last checkpointed step.
+          That is the same restart contract as the in-tree engine, deliberately. What
+          the adapter does <em>not</em> give you is cross-JVM continuation of an
+          in-flight run — a worker fleet picking up mid-run — and it does not do
+          wall-clock scheduling: firing <code>run()</code> on a schedule remains your
+          host's job. Availability is runtime truth, too: the Temporal provider is
+          selected only after a health-checked connection succeeds, so an unreachable
+          server means the in-tree engine runs, automatically, with no configuration.
+        </p>
+
+        <h2>Proof, not promises</h2>
+        <p>
+          The adapter's test suite drives <code>Workflow.run()</code> end-to-end on
+          Temporal's in-process test service: completion, hibernate-and-resume with
+          exact step-execution counts, retry budgets honored to the attempt, explicit
+          failures propagated verbatim, snapshot-trail parity with the in-tree engine,
+          and fallback when no server is reachable. One assertion is worth calling
+          out: a step calls <code>Activity.getExecutionContext()</code> — which throws
+          anywhere except inside a real Temporal activity — so the suite can't pass on
+          a silent fallback.
+        </p>
+        <p>
+          On top of that sits a Playwright lane in CI that boots an actual
+          <code>temporal server start-dev</code>, runs a workflow through the adapter,
+          then opens Temporal's own Web UI and asserts what an operator would see: the
+          execution row, the <code>AtmosphereTemporalWorkflow</code> type, the
+          <code>atmosphere-workflow</code> task queue, the per-step activities, and
+          the terminal result. The first live run completed in 243&nbsp;ms, and the
+          history reads exactly like the unit tests said it would.
+        </p>
+        <p>
+          The same seam is open for DBOS and Restate adapters — same interface, same
+          contract, same parity tests to pass.
+        </p>
+
+        <ul class="links">
+          <li><a href="https://github.com/Atmosphere/atmosphere/blob/main/modules/checkpoint-temporal/README.md">atmosphere-checkpoint-temporal — module README</a></li>
+          <li><a href="https://atmosphere.github.io/docs/reference/checkpoint/">Durable Checkpoints reference</a></li>
+          <li><a href="https://github.com/Atmosphere/atmosphere">github.com/Atmosphere/atmosphere</a></li>
+        </ul>
+        <p class="sign">— JFA</p>
+      </div>
+    </article>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .blog {
+    background: var(--color-bg-primary);
+    min-height: 100vh;
+    padding: calc(var(--space-4xl) + 2rem) var(--space-lg) var(--space-4xl);
+  }
+  .post {
+    max-width: 46rem;
+    margin: 0 auto;
+  }
+  .post-header {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-xl);
+    margin-bottom: var(--space-2xl);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    margin: 0 0 var(--space-md);
+  }
+  .post h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.1;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-md);
+    font-weight: 400;
+  }
+  .lede {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.3rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+  .post-body {
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--color-text-primary);
+  }
+  .post-body h2 {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 400;
+    color: var(--color-text-primary);
+    margin: var(--space-3xl) 0 var(--space-md);
+  }
+  .post-body p {
+    margin: 0 0 var(--space-lg);
+    color: var(--color-text-secondary);
+  }
+  .post-body strong { color: var(--color-text-primary); }
+  .post-body em { color: var(--color-text-primary); font-style: italic; }
+  .post-body code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-bg-tertiary);
+    color: var(--color-accent);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  .post-body a {
+    color: var(--color-accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-accent-dim);
+  }
+  .post-body a:hover { border-bottom-color: var(--color-accent); }
+  pre.code {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: var(--space-lg);
+    overflow-x: auto;
+    margin: 0 0 var(--space-xl);
+  }
+  pre.code code {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    background: none;
+    color: var(--color-text-primary);
+    padding: 0;
+  }
+  .links { list-style: none; padding: 0; margin: 0 0 var(--space-xl); }
+  .links li { margin-bottom: var(--space-sm); }
+  .sign {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+</style>

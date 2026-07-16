@@ -58,6 +58,97 @@ Application code owns the workflow state type `S` and its serialization. The in-
 | `InMemoryCheckpointStore` | Default in-memory implementation, thread-safe, with eviction |
 | `SqliteCheckpointStore` | Durable single-file SQLite store (`atmosphere-checkpoint`) — survives JVM restart |
 | `PostgresCheckpointStore` | JDBC store (`atmosphere-checkpoint-postgres`); targets Postgres, works with any JSR-221 `DataSource` (operator supplies driver + pooling) |
+| `Workflow<S>` / `WorkflowStep<S>` | Multi-step workflow runner over the store — see [Workflow Primitive](#workflow-primitive-durable-hibernation) |
+| `DurableExecutionProvider` | ServiceLoader SPI resolving the engine behind `Workflow.run()` — in-tree step engine by default, [Temporal via `atmosphere-checkpoint-temporal`](#pluggable-durable-execution--run-the-same-workflow-on-temporal) |
+
+## Workflow Primitive (durable hibernation)
+
+`Workflow<S>` composes the `CheckpointStore` SPI into a multi-step workflow
+runner with first-class hibernation and resume. A workflow is an ordered list
+of named `WorkflowStep<S>` instances over an application-owned state `S`; each
+step returns a sealed `StepOutcome` — `Advance(next)`, `Hibernate(saved)`,
+`Done(final)`, or `Fail(reason)` — and a snapshot is persisted after every
+completed step.
+
+```java
+var workflow = new Workflow<>(
+        "doc-pipeline", "coord-123",
+        List.of(
+                step("ingest",  s -> StepOutcome.advance(s + ":ingested")),
+                step("review",  s -> StepOutcome.hibernate(s)),    // wait for a human
+                step("publish", s -> StepOutcome.done(s + ":published"))),
+        store);
+
+var result = workflow.run("doc-42");
+// → WorkflowResult.Hibernated; no thread held while we wait.
+
+// Later — same JVM or a fresh one, same store + coordinationId:
+var resumed = workflow.run(null);
+// → WorkflowResult.Completed; only `publish` runs.
+```
+
+Hibernation is a return-not-park primitive: no platform thread is held while
+the workflow is dormant, and a later `run()` resumes at the step *after* the
+last completed one — including across JVM restarts when the store is
+persistent. Step names are the resume key (stable and unique), steps must be
+idempotent, and each step carries its own retry budget (`maxRetries()`,
+`retryDelay()`).
+
+## Pluggable Durable Execution — run the same workflow on Temporal
+
+Every `Workflow.run()` call resolves its execution backend through the
+`DurableExecutionProvider` SPI (`ServiceLoader`): an external engine adapter
+takes over when one is registered *and actually reachable*; the in-tree step
+engine is the always-on fallback. The `atmosphere-checkpoint-temporal` module
+ships the [Temporal](https://temporal.io) adapter — add the dependency and the
+workflow above runs on a Temporal service with **no caller changes**:
+
+```xml
+<dependency>
+    <groupId>org.atmosphere</groupId>
+    <artifactId>atmosphere-checkpoint-temporal</artifactId>
+    <version>${project.version}</version>
+</dependency>
+```
+
+| Concern | Owner |
+|---------|-------|
+| Per-step retries (translated from `maxRetries()` / `retryDelay()`, fixed backoff) | Temporal |
+| Step timeouts (start-to-close) | Temporal |
+| Execution history + operational visibility (Temporal UI / CLI) | Temporal |
+| Snapshot trail, hibernation, cross-restart resume (`CheckpointStore`) | Atmosphere |
+| Step code + application state `S` | Your JVM |
+
+Each step executes as a Temporal **activity in the JVM that called `run()`**,
+against the live step lambdas — application state never crosses the Temporal
+payload boundary, so the adapter adds **no serialization constraints on `S`**.
+The adapter writes the exact snapshot trail the in-tree engine writes (same
+metadata keys, same seed snapshot, same resume rule), so the two engines are
+interchangeable mid-flight: hibernate on one, resume on the other.
+
+Availability is runtime truth: the provider is selected only after a
+health-checked connection succeeds; an unreachable server means the in-tree
+engine runs, automatically. Configuration (system property, or the equivalent
+`ATMOSPHERE_TEMPORAL_*` environment variable):
+
+| Property | Default | Purpose |
+|----------|---------|---------|
+| `atmosphere.temporal.target` | `127.0.0.1:7233` | Temporal frontend host:port |
+| `atmosphere.temporal.namespace` | `default` | Temporal namespace |
+| `atmosphere.temporal.task-queue` | `atmosphere-workflow` | Task queue the embedded worker polls |
+| `atmosphere.temporal.connect-timeout-ms` | `2000` | Connection probe timeout |
+| `atmosphere.temporal.step-timeout-ms` | `3600000` | Per-step start-to-close timeout |
+
+**Restart contract:** steps need the live session, so a run orphaned by a JVM
+restart fails its next activity fast (`SessionNotFound`) instead of hanging;
+the application resumes by calling `Workflow.run()` again, which picks up
+after the last checkpointed step — the same restart contract as the in-tree
+engine. Cross-JVM continuation of an *in-flight* run (a worker fleet picking
+up mid-run) is not provided. DBOS/Restate adapters implement the same SPI.
+
+See the [`atmosphere-checkpoint-temporal` module README](https://github.com/Atmosphere/atmosphere/blob/main/modules/checkpoint-temporal/README.md)
+for the execution model and the end-to-end proof (unit tests on the Temporal
+test service, plus a Playwright lane asserting the run in Temporal's own Web UI).
 
 ## CoordinationJournal Bridge
 

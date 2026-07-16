@@ -12,11 +12,29 @@ line has grown into a full multi-agent runtime — unified agent annotations, tw
 pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Native
 support, and major compatibility refreshes.
 
-The latest build tracks **Spring Boot 4.0.6**, **Quarkus 3.36.0**,
-**Jackson 3.1.1**, and **atmosphere.js 5.0.24**, and requires **JDK 21** as a minimum.
+The latest build tracks **Spring Boot 4.0.7**, **Quarkus 3.36.0**,
+**Jackson 3.2.0**, and **atmosphere.js 5.0.38**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
+
+## 4.0.63-SNAPSHOT — Run `Workflow<S>` on Temporal
+
+`Workflow.run()` now resolves its durable-execution backend through the
+`DurableExecutionProvider` ServiceLoader SPI — the in-tree step engine is the
+always-on fallback, and the new **`atmosphere-checkpoint-temporal`** module
+ships a [Temporal](https://temporal.io) adapter behind that seam. Add one
+dependency and the same workflow runs on a Temporal service: Temporal owns
+per-step retries, timeouts, and execution history/visibility (your runs appear
+in the Temporal UI), while Atmosphere keeps the `CheckpointStore` snapshot
+trail, hibernation, and cross-restart resume — the two engines write an
+identical trail and are interchangeable mid-flight. Steps execute as Temporal
+activities in the calling JVM, so nothing about your state type `S` needs to
+become serializable. Availability is runtime truth: an unreachable server is
+never selected. Proven end-to-end by unit tests on the Temporal test service
+and a Playwright lane that asserts the run — type, task queue, per-step
+activities, terminal result — in Temporal's own Web UI. See the
+[Durable Checkpoints reference](reference/checkpoint.md).
 
 ## 4.0.60-SNAPSHOT — Deep-agent harness on by default
 
