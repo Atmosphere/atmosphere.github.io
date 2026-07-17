@@ -1,0 +1,184 @@
+---
+// What shipped in the 4.0.x line, as of 4.0.63 (2026-07-17).
+//
+// Every card here maps to code in the Atmosphere repo. The `badge` is a
+// truth-marker, not decoration: a feature that is off by default reads
+// `opt-in`, and a feature that lands on a subset of runtimes says so. Do not
+// normalise these to `shipped` for visual consistency — the badge is the
+// honesty contract with the reader.
+const shipped = [
+  {
+    badge: 'shipped',
+    title: 'One Console for every agent',
+    body: `The Atmosphere Console ships inside the starter and serves every sample:
+           chat, sessions, workspace, checkpoints, rooms, observability, policies,
+           decisions and OWASP posture — fourteen tabs, no frontend to write.`,
+  },
+  {
+    badge: 'shipped',
+    title: 'Agents that survive a restart',
+    body: `Durable runs record each step and replay deterministically. Kill the JVM
+           mid-turn; the client reconnects with its run id and the agent picks up
+           where it stopped. Snapshots persist to in-memory, SQLite or Postgres.`,
+  },
+  {
+    badge: 'opt-in',
+    title: 'Session tape + replay',
+    body: `Turn on the tape and every typed event on a session is recorded durably.
+           Replay a whole run — or a multi-agent coordination tree — with no model in
+           the loop, then fold the tape into training data. Off by default.`,
+  },
+  {
+    badge: 'add a dependency',
+    title: 'Workflows on Temporal',
+    body: `Add atmosphere-checkpoint-temporal and your existing Workflow&lt;S&gt; runs its
+           steps as Temporal activities, with the same checkpoint semantics. The
+           workflow code does not change.`,
+  },
+  {
+    badge: 'shipped',
+    title: 'Multi-agent fleets, visible live',
+    body: `Declare a @Coordinator and its fleet is real: the Console renders the
+           runtime-truth roster from the admin API and streams each agent's step as
+           the coordination fans out.`,
+  },
+  {
+    badge: '9 of 12 runtimes',
+    title: 'Provider-native structured output',
+    body: `Ask for a typed result and the adapter uses the provider's native
+           structured-output mode where it exists, falling back automatically where it
+           does not — same contract either way.`,
+  },
+];
+---
+
+<section class="shipped" id="shipped">
+  <div class="shipped-container">
+    <div class="section-header">
+      <span class="section-label">What shipped</span>
+      <h2 class="section-title">This is not the Atmosphere you remember</h2>
+      <p class="section-description">
+        Atmosphere 4.0.63 is on Maven Central &mdash; the 58th release of the 4.x line
+        since February 2026. If you last looked when it was a transport library, the
+        platform underneath your agents has changed.
+      </p>
+    </div>
+
+    <div class="shipped-grid">
+      {shipped.map((item, i) => (
+        <article class="shipped-card" style={`--delay: ${i * 0.06}s`}>
+          <span class="shipped-badge">{item.badge}</span>
+          <h3 class="shipped-title">{item.title}</h3>
+          <p class="shipped-body" set:html={item.body} />
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .shipped {
+    padding: var(--space-4xl) var(--space-xl);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .shipped-container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto var(--space-3xl);
+  }
+
+  .section-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-md);
+  }
+
+  .section-description {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .shipped-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+  }
+
+  .shipped-card {
+    position: relative;
+    padding: var(--space-xl);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    transition: transform 0.2s var(--ease-out-quad), border-color 0.2s var(--ease-out-quad);
+    animation: fadeInUp 0.6s var(--ease-out-expo) var(--delay) both;
+  }
+
+  .shipped-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-border-accent);
+  }
+
+  .shipped-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-border-accent);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-bottom: var(--space-md);
+  }
+
+  .shipped-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+    color: var(--color-text-primary);
+  }
+
+  .shipped-body {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 900px) {
+    .shipped-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .shipped {
+      padding: var(--space-4xl) var(--space-md);
+    }
+
+    .shipped-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
