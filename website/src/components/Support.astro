@@ -31,6 +31,19 @@ const severities = [
 // (Red Hat JBoss EAP, Grafana Enterprise, Temporal, Confluent).
 const plans = [
   {
+    name: 'Community',
+    from: 'Free',
+    period: 'open source, forever',
+    bestFor: 'Everyone. Apache-2.0, public issue tracker, and the same framework we support.',
+    coverage: 'Community',
+    responseS1: 'Best effort',
+    responseS2: 'Best effort',
+    incidents: 'GitHub issues',
+    phone: false,
+    email: false,
+    patches: false,
+  },
+  {
     name: 'Developer',
     from: '$2,000',
     period: '/ org / year',
@@ -193,12 +206,23 @@ const plans = [
             </li>
           </ul>
 
-          <a
-            href={`/contact/?plan=${encodeURIComponent(plan.name)}`}
-            class={`plan-cta ${plan.highlight ? 'plan-cta-highlight' : ''}`}
-          >
-            {plan.from && plan.from.startsWith('$') ? 'Get Started' : 'Get a Quote'}
-          </a>
+          {plan.from === 'Free' ? (
+            <a
+              href="https://github.com/Atmosphere/atmosphere"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="plan-cta"
+            >
+              View on GitHub
+            </a>
+          ) : (
+            <a
+              href={`/contact/?plan=${encodeURIComponent(plan.name)}`}
+              class={`plan-cta ${plan.highlight ? 'plan-cta-highlight' : ''}`}
+            >
+              {plan.from.startsWith('$') ? 'Get Started' : 'Get a Quote'}
+            </a>
+          )}
         </div>
       ))}
     </div>
@@ -212,7 +236,7 @@ const plans = [
         <p class="legacy-description">
           Still running Atmosphere 2.x or 3.x in production? We provide long-term support,
           security patches, and migration guidance for legacy deployments. Includes a
-          migration path to Atmosphere 4.x when you are ready.
+          migration path to current Atmosphere when you are ready.
         </p>
       </div>
       <a
