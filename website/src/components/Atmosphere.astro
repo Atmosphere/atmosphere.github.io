@@ -3,11 +3,11 @@ const pillars = [
   {
     label: 'Transports',
     title: '5 transports, one API',
-    description: 'Your application code declares what it does. Atmosphere handles how it is delivered &mdash; and falls back automatically when a transport is unavailable.',
+    description: 'Your application code declares what it does. Atmosphere handles how it is delivered — and falls back automatically when a transport is unavailable.',
     items: [
       { name: 'WebSocket', detail: 'Full-duplex communication over a single TCP connection. The standard for real-time web applications since 2011.', url: 'https://datatracker.ietf.org/doc/html/rfc6455', urlLabel: 'RFC 6455' },
       { name: 'SSE', detail: 'Server-Sent Events. A simple HTTP-based protocol for server-to-client streaming with automatic reconnection built into the browser.', url: 'https://html.spec.whatwg.org/multipage/server-sent-events.html', urlLabel: 'WHATWG Spec' },
-      { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC with native WebTransport support &mdash; auto-detected via AsyncSupport with zero-config Jetty 12 QUIC or Reactor Netty sidecar.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
+      { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC with native WebTransport support — auto-detected via AsyncSupport with zero-config Jetty 12 QUIC or Reactor Netty sidecar.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
       { name: 'Long-Polling', detail: 'HTTP long-polling with automatic reconnection. Works everywhere, even behind the most restrictive corporate firewalls and proxies.', url: 'https://datatracker.ietf.org/doc/html/rfc6202', urlLabel: 'RFC 6202' },
       { name: 'gRPC', detail: 'High-performance RPC framework with bidirectional streaming over HTTP/2. Atmosphere exposes your agents as gRPC services alongside HTTP transports.', url: 'https://grpc.io', urlLabel: 'grpc.io' },
     ],
@@ -25,24 +25,17 @@ const pillars = [
     extras: ['Auto-registered from classpath', 'Multi-channel: Slack, Telegram, Discord, WhatsApp, Messenger'],
   },
   {
-    label: 'AI Runtimes',
-    title: '12 backends, swap by dependency',
-    description: 'Atmosphere is the infrastructure layer underneath your LLM library. Your @Agent and @AiTool annotations work across every backend; capability flags are pinned by AbstractAgentRuntimeContractTest so adapter rows cannot drift from the running code.',
+    label: 'Extensions',
+    title: 'Pluggable by design',
+    description: 'The backends Atmosphere runs on are SPI seams, not hard-wired dependencies. Ship on the in-tree defaults, or plug in the platform you already operate — no code change.',
     items: [
-      { name: 'Built-in', detail: 'Atmosphere\'s zero-dependency OpenAI-compatible client. Function calling (up to 5 rounds), JSON mode, vision, audio, prompt caching, native retry. Works against OpenAI, Gemini, Ollama, or any OpenAI-compatible endpoint.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
-      { name: 'Spring AI', detail: 'Spring\'s official AI framework. ChatClient, RAG, VectorStore, auto-configuration. Atmosphere bridges @AiTool to Spring AI\'s function calling system.', url: 'https://spring.io/projects/spring-ai', urlLabel: 'spring.io' },
-      { name: 'LangChain4j', detail: 'Java port of the LangChain ecosystem. Chains, AI services, streaming chat models, tool bridging. Atmosphere auto-detects LangChain4j on the classpath and registers tools.', url: 'https://docs.langchain4j.dev', urlLabel: 'langchain4j.dev' },
-      { name: 'Google ADK', detail: 'Google\'s Agent Development Kit. Multi-agent orchestration, sessions, the Runner execution engine. Atmosphere is the transport and protocol layer for ADK agents.', url: 'https://google.github.io/adk-docs/', urlLabel: 'Google ADK Docs' },
-      { name: 'JetBrains Koog', detail: 'Kotlin-native AI framework by JetBrains. Structured concurrency, typed tools, multi-agent orchestration, Bedrock cache control.', url: 'https://github.com/JetBrains/koog', urlLabel: 'GitHub' },
-      { name: 'Semantic Kernel', detail: 'Microsoft\'s enterprise-grade AI orchestration SDK. ChatCompletionService, kernel plugins, memory, planners. Tool calling, structured output, token usage.', url: 'https://learn.microsoft.com/en-us/semantic-kernel/', urlLabel: 'Microsoft Docs' },
-      { name: 'Alibaba AgentScope', detail: 'Alibaba\'s multi-agent framework. Structured output, conversation memory, token usage; agents are first-class with explicit tool dispatch managed by your code.', url: 'https://github.com/agentscope-ai/agentscope-java', urlLabel: 'GitHub' },
-      { name: 'Embabel', detail: 'Goal-driven agent framework by Rod Johnson, the creator of Spring. Declarative goals, planned execution, native PromptRunner; agent orchestration, tool calling, vision.', url: 'https://embabel.com', urlLabel: 'embabel.com' },
-      { name: 'Spring AI Alibaba', detail: 'Spring AI Alibaba ReactAgent. Structured output, conversation memory, prompt-driven tool selection through Spring AI\'s ChatClient surface.', url: 'https://java2ai.com', urlLabel: 'java2ai.com' },
-      { name: 'Anthropic', detail: 'Native Anthropic Messages API client — no third-party SDK. Direct HTTP+SSE with a tool loop (up to 5 rounds), structured output, conversation memory, token usage, and Helicone-style header passthrough.', url: 'https://docs.anthropic.com/en/api/messages', urlLabel: 'Anthropic API' },
-      { name: 'Cohere', detail: 'Native Cohere v2 Chat API client — no third-party SDK. HTTP+SSE against POST /v2/chat with content-delta, tool-call, and citation events surfaced verbatim; vision and multi-modal supported. Sovereign-endpoint override via cohere.base.url.', url: 'https://docs.cohere.com/reference/chat', urlLabel: 'Cohere API' },
-      { name: 'CrewAI', detail: 'The first non-Java runtime — Java owns transport and @AiTool execution; an out-of-process Python sidecar (FastAPI + crewai 1.14) owns the multi-agent crew graph. Availability is gated by a live /health probe.', url: 'https://www.crewai.com', urlLabel: 'crewai.com' },
+      { name: 'Durable execution', detail: 'Workflows run on a built-in, dependency-free step engine out of the box. Add atmosphere-checkpoint-temporal and, with a Temporal server, the same steps run as Temporal activities — the workflow code does not change.', url: 'https://temporal.io', urlLabel: 'temporal.io' },
+      { name: 'Checkpoint stores', detail: 'Snapshot a paused agent\'s whole conversation and resume it later, even in a different JVM. In-memory, SQLite, and Postgres stores ship in-tree behind the CheckpointStore SPI.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
+      { name: 'Session stores', detail: 'A durable session token re-attaches a dropped client to its rooms and broadcasters. In-memory, SQLite, and Redis backends ship in-tree behind the SessionStore SPI.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
+      { name: 'Agent import', detail: 'Point Atmosphere at an OpenClaw workspace — AGENTS.md plus its extension files — and it reads them with no conversion: persona, model config, governance policies, skills, and channels.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
+      { name: 'Broadcast backplane', detail: 'When one node is not enough, a Redis or Kafka backplane relays an agent\'s streams across the cluster, so a session opened on one JVM is reachable from any of them.', url: 'https://github.com/Atmosphere/atmosphere', urlLabel: 'GitHub' },
     ],
-    extras: ['Portable @AiTool across all backends', 'Capability matrix CI-pinned', 'No code change to swap runtime'],
+    extras: ['ServiceLoader seams', 'In-tree defaults, zero config', 'No vendor lock-in'],
   },
 ];
 ---
@@ -51,9 +44,9 @@ const pillars = [
   <div class="pillars-container">
     <div class="section-header">
       <span class="section-label">The Platform</span>
-      <h2 class="section-title">Transports. Protocols. Runtimes.</h2>
+      <h2 class="section-title">Transports. Protocols. Extensions.</h2>
       <p class="section-description">
-        Build once with <code>@Agent</code> &mdash; deliver over any transport and any protocol.
+        Build once with <code>@Agent</code> — deliver over any transport and any protocol.
         Three distinct layers, each independently extensible.
       </p>
     </div>
