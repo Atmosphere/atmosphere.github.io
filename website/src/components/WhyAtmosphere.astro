@@ -197,48 +197,6 @@ const frameworks = [
       ))}
     </div>
 
-    <div class="matrix-wrapper">
-      <table class="matrix">
-        <caption class="matrix-caption">
-          At-a-glance: twelve runtimes, one bridge layer, one support contract.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" class="col-framework">Framework</th>
-            <th scope="col">Language</th>
-            <th scope="col">Vendor</th>
-            <th scope="col">Atmosphere bridge</th>
-            <th scope="col" class="col-sla">Atmosphere support</th>
-          </tr>
-        </thead>
-        <tbody>
-          {frameworks.map((fw) => (
-            <tr>
-              <th scope="row" class="row-name">{fw.name}</th>
-              <td class="row-language">{fw.language}</td>
-              <td class="row-vendor">{fw.vendor}</td>
-              <td class="row-bridge">
-                <span class="bridge-artifact">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  {fw.bridge}
-                </span>
-              </td>
-              <td class="row-sla">
-                <span class="sla-badge">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Included
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-
     <div class="valueadd-intro">
       <h3 class="valueadd-title">Abstracted, portable, and then some</h3>
       <p class="valueadd-lead">
