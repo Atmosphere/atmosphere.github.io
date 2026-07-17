@@ -1,0 +1,189 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+// Post index. Dates are the real first-commit dates of each post file; excerpts
+// are drawn from the post's own lede. Newest first. When a post is added under
+// pages/blog/, add its entry here.
+const posts = [
+  {
+    slug: 'atmosphere-4x-ai',
+    title: 'Atmosphere 4 released, now shipping a portable AI agent component',
+    date: '2026-07-17',
+    dateLabel: 'July 17, 2026',
+    excerpt:
+      `I added an AI agent layer to Atmosphere. Wiring up the LLM was the easy
+       part — the streaming was already done. One @Agent class, twelve
+       interchangeable runtimes behind one SPI, and durable workflows that now
+       run on Temporal by swapping a dependency.`,
+    tag: 'Engineering',
+  },
+  {
+    slug: 'workflow-on-temporal',
+    title: 'Run Atmosphere workflows on Temporal, by swapping one dependency',
+    date: '2026-07-16',
+    dateLabel: 'July 16, 2026',
+    excerpt:
+      `The durable-execution engine behind Workflow.run() is now a ServiceLoader
+       seam. The first external engine to plug into it: Temporal. The workflow
+       code does not change — one dependency does.`,
+    tag: 'Engineering',
+  },
+];
+---
+
+<Layout
+  title="Blog — Async IO"
+  description="Engineering notes from the team behind Atmosphere — the open-source real-time agent platform for the JVM."
+>
+  <Header />
+  <main class="blog-index">
+    <div class="blog-index-container">
+      <header class="blog-index-header">
+        <span class="section-label">Blog</span>
+        <h1 class="blog-index-title">Notes from the people who build it</h1>
+        <p class="blog-index-lede">
+          Engineering write-ups on how Atmosphere works and where it is going.
+          No cadence, no filler &mdash; posts land when there is something real to say.
+        </p>
+      </header>
+
+      <ul class="post-list">
+        {posts.map((post) => (
+          <li class="post-item">
+            <a href={`/blog/${post.slug}/`} class="post-link">
+              <div class="post-meta">
+                <span class="post-tag">{post.tag}</span>
+                <time datetime={post.date} class="post-date">{post.dateLabel}</time>
+              </div>
+              <h2 class="post-title">{post.title}</h2>
+              <p class="post-excerpt">{post.excerpt}</p>
+              <span class="post-more">
+                Read
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .blog-index {
+    padding: calc(var(--space-4xl) + 60px) var(--space-xl) var(--space-4xl);
+    min-height: 100vh;
+  }
+
+  .blog-index-container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .blog-index-header {
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+  }
+
+  .blog-index-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-md);
+  }
+
+  .blog-index-lede {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    max-width: 560px;
+  }
+
+  .post-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .post-link {
+    display: block;
+    padding: var(--space-xl);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    transition: transform 0.2s var(--ease-out-quad), border-color 0.2s var(--ease-out-quad);
+  }
+
+  .post-link:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-border-accent);
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
+
+  .post-tag {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-border-accent);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  .post-date {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .post-title {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 400;
+    line-height: 1.3;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-sm);
+  }
+
+  .post-excerpt {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-md);
+  }
+
+  .post-more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 640px) {
+    .blog-index {
+      padding: calc(var(--space-4xl) + 40px) var(--space-md) var(--space-4xl);
+    }
+  }
+</style>

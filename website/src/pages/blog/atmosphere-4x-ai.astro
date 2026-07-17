@@ -35,6 +35,12 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
        atmosphere-agentscope         atmosphere-crewai --&gt;
 &lt;/dependency&gt;`;
 
+const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not change. This line is the whole migration: --&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.atmosphere&lt;/groupId&gt;
+  &lt;artifactId&gt;atmosphere-checkpoint-temporal&lt;/artifactId&gt;
+&lt;/dependency&gt;`;
+
 ---
 
 <Layout
@@ -45,7 +51,7 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
   <main class="blog">
     <article class="post">
       <header class="post-header">
-        <p class="eyebrow">Engineering · Jean-François Arcand</p>
+        <p class="eyebrow">Engineering · Jean-François Arcand · <time datetime="2026-07-17">July 17, 2026</time></p>
         <h1>Atmosphere 4 released, now shipping a portable AI agent component</h1>
         <p class="lede">
           I added an AI agent layer to Atmosphere. Wiring up the LLM was the easy
@@ -266,6 +272,41 @@ const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no
           a live socket. And when one node isn't enough, a Redis or Kafka broadcast
           backplane relays an agent's streams across the cluster, so a session opened on one
           JVM is reachable from any of them.
+        </p>
+
+        <h2>Workflows, now portable to Temporal</h2>
+        <p>
+          For work that has to survive across steps — not just across a dropped
+          connection — Atmosphere ships a small durable-<strong>workflow</strong> primitive:
+          an ordered list of named steps over an application-owned state type,
+          checkpointed after every step through the same <code>CheckpointStore</code> SPI.
+          A step that needs a human returns <code>hibernate(state)</code>; the call
+          returns, and a later <code>run()</code> resumes at the step after the last
+          completed one — even in a different JVM when the store is persistent.
+        </p>
+        <p>
+          That in-tree engine is deliberately boring: a loop, a retry budget per step, a
+          snapshot per step. But plenty of teams already run a durable-execution
+          platform — Temporal most often — and asking them to stand up a second engine
+          next to it is a hard sell. So as of 4.0.63 the engine behind
+          <code>Workflow.run()</code> is a seam: every call resolves a
+          <code>DurableExecutionProvider</code> through <code>ServiceLoader</code>, the
+          in-tree engine is the always-on fallback, and an external adapter takes over
+          when one is registered and reachable. The first such adapter,
+          <code>atmosphere-checkpoint-temporal</code>, is one dependency — the workflow
+          code does not change:
+        </p>
+        <pre class="code"><code set:html={temporalDepSnippet}></code></pre>
+        <p>
+          With the adapter on the classpath, Temporal owns what Temporal is good at —
+          per-step retries, timeouts, and an execution history visible in the Temporal
+          Web UI. Atmosphere keeps what it promised: the <code>CheckpointStore</code>
+          snapshot trail, hibernation, and cross-restart resume. Your steps execute as
+          Temporal activities <em>in the JVM that called <code>run()</code></em>, against
+          the live step lambdas, so application state never crosses the Temporal payload
+          boundary — adding the adapter imposes no serialization constraints on your
+          state type. A test pins the two engines' snapshot trails as byte-identical, so
+          you can hibernate on one and resume on the other.
         </p>
 
         <h2>Beyond chat</h2>
