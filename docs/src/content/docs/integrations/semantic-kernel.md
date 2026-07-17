@@ -25,12 +25,12 @@ You will also need Semantic Kernel's own dependencies (kernel core + the aiservi
 <dependency>
     <groupId>com.microsoft.semantic-kernel</groupId>
     <artifactId>semantickernel-api</artifactId>
-    <version>4.0.62</version>
+    <version>4.0.63</version>
 </dependency>
 <dependency>
     <groupId>com.microsoft.semantic-kernel</groupId>
     <artifactId>semantickernel-aiservices-openai</artifactId>
-    <version>4.0.62</version>
+    <version>4.0.63</version>
 </dependency>
 ```
 
