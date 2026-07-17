@@ -305,8 +305,9 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           Temporal activities <em>in the JVM that called <code>run()</code></em>, against
           the live step lambdas, so application state never crosses the Temporal payload
           boundary — adding the adapter imposes no serialization constraints on your
-          state type. A test pins the two engines' snapshot trails as byte-identical, so
-          you can hibernate on one and resume on the other.
+          state type. A test pins the two engines' snapshot trails as equivalent — the
+          same ordered sequence of (last-completed-step, done) entries — so both read
+          the same checkpoint contract.
         </p>
 
         <h2>Beyond chat</h2>
@@ -396,7 +397,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           An agent's persona doesn't have to be written in Java. Atmosphere treats an
           agent as an artifact — a directory of Markdown — that a small Java
           <code>@Agent</code> host loads, reading the
-          <strong>OpenClaw</strong> canonical workspace layout directly:
+          <a href="https://docs.openclaw.ai" target="_blank" rel="noopener"><strong>OpenClaw</strong></a> canonical workspace layout directly:
           <code>AGENTS.md</code>, <code>SOUL.md</code>, <code>USER.md</code>,
           <code>IDENTITY.md</code>, and the <code>skills/</code> tree. Point Atmosphere at an
           OpenClaw workspace authored
@@ -444,8 +445,8 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           twenty-two — is pinned by a contract test, so an adapter's <code>capabilities()</code> can't
           silently drift from what it declares, and the built-in runtime's native
           paths are checked behaviorally. When I added native structured
-          output, the three runtimes whose wire protocol has no schema field simply
-          don't declare it. If
+          output, the three runtimes whose adapter path doesn't thread a schema into the
+          provider call simply don't declare it. If
           you've been burned by frameworks that promise more than they deliver,
           that's the part I cared about most.
         </p>
@@ -460,10 +461,10 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           <code>atmosphere-spring-boot-starter</code>.)
           Prefer to scaffold? The CLI does it in one line —
           <code>atmosphere new my-app --template ai-chat</code>, then
-          <code>./mvnw spring-boot:run</code>. The CLI exposes thirteen starters —
-          chat, AI chat, tools, RAG, MCP, multi-agent, classroom, governance, coding,
-          guarded-agent, assistant, browser-agent, and a dentist agent — all sparse-cloned
-          from the real sample applications. Kotlin is a first-class option too — there's a small DSL and
+          <code>./mvnw spring-boot:run</code>. The CLI exposes fourteen starters —
+          chat, a one-dependency agent, AI chat, tools, RAG, MCP, multi-agent, classroom,
+          governance, coding, guarded-agent, assistant, browser-agent, and a dentist agent —
+          all sparse-cloned from the real sample applications. Kotlin is a first-class option too — there's a small DSL and
           coroutine extensions — and for an enterprise console you can pull a single
           <code>atmosphere-admin-bundle</code> that wires the runtime, AI, coordinator,
           RAG, checkpoints, and durable sessions together.

@@ -79,9 +79,9 @@ const depSnippet = `&lt;!-- The workflow above does not change. This line is the
           Atmosphere keeps what Atmosphere promised: the <code>CheckpointStore</code>
           snapshot trail, hibernation, and cross-restart resume. The adapter writes the
           <em>exact</em> trail the in-tree engine writes — same metadata keys, same
-          seed snapshot, same resume rule — so the two engines are interchangeable
-          mid-flight: hibernate on one, resume on the other. A test pins the trails as
-          byte-identical.
+          seed snapshot, same resume rule — so the two engines share one checkpoint
+          contract. A test pins the two trails as equivalent — the same ordered sequence
+          of (last-completed-step, done) entries the resume rule reads.
         </p>
         <p>
           One design choice does most of the work here: your steps execute as Temporal
