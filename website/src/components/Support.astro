@@ -25,59 +25,50 @@ const severities = [
 // PRICING: `from` is null for every tier until Async-IO publishes figures. A
 // null renders "Pricing on request". Never invent a number here: a plausible
 // anchor that turns out to be wrong is worse than no anchor at all.
+// 2026 ladder. Response times are FIRST-RESPONSE commitments, never
+// resolution — a promise a focused team can keep. See the owner-facing pricing
+// note in the vault for how each figure is anchored to a published comparable
+// (Red Hat JBoss EAP, Grafana Enterprise, Temporal, Confluent).
 const plans = [
   {
-    name: 'Bronze',
-    from: null,
-    bestFor: 'A team running Atmosphere in production that wants a name to call.',
+    name: 'Developer',
+    from: '$2,000',
+    period: '/ org / year',
+    bestFor: 'Dev, staging and evaluation. Get the team unblocked without a production promise.',
     coverage: 'Business Hours',
-    responseS1: '7 Business Days',
-    responseS2: '10 Business Days',
-    incidents: '2 / year',
-    phone: false,
-    email: true,
-    patches: false,
-    email_address: 'bronze@async-io.org',
-  },
-  {
-    name: 'Silver',
-    from: null,
-    bestFor: 'Agents on the critical path, where a day of downtime is a real cost.',
-    coverage: 'Business Hours',
-    responseS1: '1 Business Day',
+    responseS1: 'Next business day',
     responseS2: '2 Business Days',
-    incidents: '10 / year',
+    incidents: '5 / year',
     phone: false,
     email: true,
     patches: false,
-    email_address: 'silver@async-io.org',
   },
   {
-    name: 'Gold',
-    from: null,
-    bestFor: 'Customer-facing agents. Same-day answers and emergency patches.',
+    name: 'Production',
+    from: '$9,000',
+    period: '/ org / year',
+    bestFor: 'Atmosphere on the critical path. A four-hour answer during your working day.',
     coverage: 'Business Hours',
-    responseS1: '4 hours',
+    responseS1: '4 Business Hours',
     responseS2: '1 Business Day',
-    incidents: '15 / year',
-    phone: true,
-    email: true,
-    patches: true,
-    highlight: true,
-    email_address: 'gold@async-io.org',
-  },
-  {
-    name: 'Platinum',
-    from: null,
-    bestFor: 'Revenue depends on it at 3am. Round-the-clock cover, unlimited incidents.',
-    coverage: '24x7',
-    responseS1: '1 hour',
-    responseS2: '4 hours',
     incidents: 'Unlimited',
     phone: true,
     email: true,
     patches: true,
-    email_address: 'platinum@async-io.org',
+    highlight: true,
+  },
+  {
+    name: 'Mission-Critical',
+    from: 'from $25,000',
+    period: '/ org / year · quoted',
+    bestFor: 'Revenue depends on it around the clock. 24×7 cover on a named contact.',
+    coverage: '24×7 (S1 / S2)',
+    responseS1: '1 Hour · 24×7',
+    responseS2: '4 Hours · 24×7',
+    incidents: 'Unlimited',
+    phone: true,
+    email: true,
+    patches: true,
   },
 ];
 ---
@@ -159,7 +150,10 @@ const plans = [
         <div class={`plan-card ${plan.highlight ? 'plan-highlight' : ''}`}>
           <h3 class="plan-name">{plan.name}</h3>
 
-          <p class="plan-price">{plan.from ?? 'Pricing on request'}</p>
+          <p class="plan-price">
+            {plan.from ?? 'Pricing on request'}
+            {plan.from && plan.period && <span class="plan-period">{plan.period}</span>}
+          </p>
           <p class="plan-best-for">{plan.bestFor}</p>
 
           <ul class="plan-features">
@@ -203,7 +197,7 @@ const plans = [
             href={`/contact/?plan=${encodeURIComponent(plan.name)}`}
             class={`plan-cta ${plan.highlight ? 'plan-cta-highlight' : ''}`}
           >
-            Get a Quote
+            {plan.from && plan.from.startsWith('$') ? 'Get Started' : 'Get a Quote'}
           </a>
         </div>
       ))}
@@ -385,10 +379,17 @@ const plans = [
 
   .plan-price {
     font-family: var(--font-mono);
-    font-size: 0.9375rem;
-    color: var(--color-accent);
+    font-size: 1.375rem;
+    color: var(--color-text-primary);
     text-align: center;
     margin-bottom: var(--space-sm);
+  }
+
+  .plan-period {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
   }
 
   .plan-best-for {
