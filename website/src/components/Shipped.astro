@@ -1,5 +1,5 @@
 ---
-// What shipped in the 4.0.x line, as of 4.0.63 (2026-07-17).
+// What Atmosphere ships today.
 //
 // Every card here maps to code in the Atmosphere repo. The `badge` is a
 // truth-marker, not decoration: a feature that is off by default reads
@@ -22,6 +22,62 @@ const shipped = [
            where it stopped. Snapshots persist to in-memory, SQLite or Postgres.`,
   },
   {
+    badge: 'shipped',
+    title: 'Multi-agent fleets, visible live',
+    body: `Declare a @Coordinator and its fleet is real: the Console renders the
+           runtime-truth roster from the admin API and streams each agent's step as
+           the coordination fans out.`,
+  },
+  {
+    badge: 'shipped',
+    title: 'Human approval, built in',
+    body: `Mark a tool @RequiresApproval and the call parks at a human gate — the
+           agent suspends until a reviewer approves (optionally editing the arguments),
+           denies, or it times out, then resumes without running what it should not.`,
+  },
+  {
+    badge: 'install a policy',
+    title: 'Governance every runtime honors',
+    body: `Install a governance policy and it runs before the model does — a denial
+           blocks the call. That "a deny blocks execution" rule is pinned by a contract
+           test all twelve runtimes must pass, so none can quietly skip it.`,
+  },
+  {
+    badge: 'opt-in',
+    title: 'Verify the plan before it runs',
+    body: `Put the agent in plan-mode and it emits a plan instead of calling tools. A
+           static verifier checks that plan against your policy — taint, allowlist,
+           capability, structure — and only a verified plan is allowed to execute.`,
+  },
+  {
+    badge: 'CI-pinned evidence',
+    title: 'Compliance evidence, in the build',
+    body: `Control-to-primitive matrices for the OWASP Agentic Top 10, the EU AI Act,
+           HIPAA and SOC 2 ship in-tree and are pinned by a test that breaks the build
+           on drift — an artifact your auditors can read, not a slide deck.`,
+  },
+  {
+    badge: 'default-on',
+    title: 'A deep-agent harness, batteries in',
+    body: `Every @Agent and @Coordinator comes with long-term memory, a write_todos
+           planner, and a bounded sandboxed filesystem by default; a coordinator can
+           spawn isolated subagents for sub-tasks. Turn any of it off per class or app-wide.`,
+  },
+  {
+    badge: 'shipped',
+    title: 'Skills — an agent you can share',
+    body: `An agent's persona and guardrails live in a plain SKILL.md, resolved from a
+           jar, a local cache, or a GitHub skills repo with SHA-256 integrity checking —
+           a portable artifact you drop in a dependency or fetch by name.`,
+  },
+  {
+    badge: 'shipped',
+    title: 'Bring an agent you already have',
+    body: `Point Atmosphere at an OpenClaw workspace — AGENTS.md plus its extension
+           files — and it reads them with no conversion: the persona augments the prompt,
+           and RUNTIME, PERMISSIONS, SKILLS, CHANNELS and MCP drive config, policy and tools.`,
+  },
+  {
     badge: 'opt-in',
     title: 'Session tape + replay',
     body: `Turn on the tape and every typed event on a session is recorded durably.
@@ -31,23 +87,9 @@ const shipped = [
   {
     badge: 'add a dependency',
     title: 'Workflows on Temporal',
-    body: `Add atmosphere-checkpoint-temporal and your existing Workflow&lt;S&gt; runs its
-           steps as Temporal activities, with the same checkpoint semantics. The
-           workflow code does not change.`,
-  },
-  {
-    badge: 'shipped',
-    title: 'Multi-agent fleets, visible live',
-    body: `Declare a @Coordinator and its fleet is real: the Console renders the
-           runtime-truth roster from the admin API and streams each agent's step as
-           the coordination fans out.`,
-  },
-  {
-    badge: '9 of 12 runtimes',
-    title: 'Provider-native structured output',
-    body: `Ask for a typed result and the adapter uses the provider's native
-           structured-output mode where it exists, falling back automatically where it
-           does not — same contract either way.`,
+    body: `Your Workflow&lt;S&gt; runs on a built-in step engine out of the box. Add
+           atmosphere-checkpoint-temporal and, with a Temporal server, the same steps run
+           as Temporal activities — the workflow code does not change.`,
   },
 ];
 ---
@@ -56,11 +98,11 @@ const shipped = [
   <div class="shipped-container">
     <div class="section-header">
       <span class="section-label">What shipped</span>
-      <h2 class="section-title">This is not the Atmosphere you remember</h2>
+      <h2 class="section-title">A full agent platform on the transport you trust</h2>
       <p class="section-description">
-        Atmosphere 4.0.63 is on Maven Central &mdash; the 58th release of the 4.x line
-        since February 2026. If you last looked when it was a transport library, the
-        platform underneath your agents has changed.
+        On top of the same real-time transport that has run in production for years,
+        Atmosphere carries everything an AI agent needs to be safe, durable and
+        accountable in production &mdash; here is what that includes.
       </p>
     </div>
 
