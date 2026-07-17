@@ -1,7 +1,35 @@
 ---
+// Severity levels referenced by the tier grid. The response times below are
+// contractual promises — they are defined here so a buyer can tell what they
+// are actually paying for instead of guessing at "S1".
+const severities = [
+  {
+    key: 'S1',
+    label: 'Production down',
+    text: `A production system is unusable — agents not responding, transport
+           dead, data at risk. Response means an engineer who can act, not an
+           autoresponder.`,
+  },
+  {
+    key: 'S2',
+    label: 'Production degraded',
+    text: `Production is running but impaired — a transport falling back, a
+           runtime failing intermittently, elevated errors under load. A
+           workaround may exist.`,
+  },
+];
+
+// An "incident" is one reported problem, worked until resolved or until a
+// workaround is agreed — not one email and not one hour of engineering.
+//
+// PRICING: `from` is null for every tier until Async-IO publishes figures. A
+// null renders "Pricing on request". Never invent a number here: a plausible
+// anchor that turns out to be wrong is worse than no anchor at all.
 const plans = [
   {
     name: 'Bronze',
+    from: null,
+    bestFor: 'A team running Atmosphere in production that wants a name to call.',
     coverage: 'Business Hours',
     responseS1: '7 Business Days',
     responseS2: '10 Business Days',
@@ -13,6 +41,8 @@ const plans = [
   },
   {
     name: 'Silver',
+    from: null,
+    bestFor: 'Agents on the critical path, where a day of downtime is a real cost.',
     coverage: 'Business Hours',
     responseS1: '1 Business Day',
     responseS2: '2 Business Days',
@@ -24,6 +54,8 @@ const plans = [
   },
   {
     name: 'Gold',
+    from: null,
+    bestFor: 'Customer-facing agents. Same-day answers and emergency patches.',
     coverage: 'Business Hours',
     responseS1: '4 hours',
     responseS2: '1 Business Day',
@@ -36,6 +68,8 @@ const plans = [
   },
   {
     name: 'Platinum',
+    from: null,
+    bestFor: 'Revenue depends on it at 3am. Round-the-clock cover, unlimited incidents.',
     coverage: '24x7',
     responseS1: '1 hour',
     responseS2: '4 hours',
@@ -103,10 +137,30 @@ const plans = [
       </li>
     </ul>
 
+    <div class="severity-defs">
+      {severities.map((s) => (
+        <div class="severity-item">
+          <span class="severity-key">{s.key}</span>
+          <div>
+            <span class="severity-label">{s.label}</span>
+            <p class="severity-text">{s.text}</p>
+          </div>
+        </div>
+      ))}
+      <p class="severity-note">
+        An <strong>incident</strong> is one reported problem, worked until it is
+        resolved or until we agree a workaround &mdash; not one email, and not one
+        hour of engineering.
+      </p>
+    </div>
+
     <div class="plans-grid">
       {plans.map((plan) => (
         <div class={`plan-card ${plan.highlight ? 'plan-highlight' : ''}`}>
           <h3 class="plan-name">{plan.name}</h3>
+
+          <p class="plan-price">{plan.from ?? 'Pricing on request'}</p>
+          <p class="plan-best-for">{plan.bestFor}</p>
 
           <ul class="plan-features">
             <li>
@@ -146,7 +200,7 @@ const plans = [
           </ul>
 
           <a
-            href={`mailto:${plan.email_address}?subject=Quote%20for%20${plan.name}%20Subscription`}
+            href={`/contact/?plan=${encodeURIComponent(plan.name)}`}
             class={`plan-cta ${plan.highlight ? 'plan-cta-highlight' : ''}`}
           >
             Get a Quote
@@ -168,17 +222,17 @@ const plans = [
         </p>
       </div>
       <a
-        href="mailto:support@async-io.org?subject=Legacy%20Atmosphere%20Support%20Inquiry"
+        href="/contact/?plan=Legacy"
         class="legacy-cta"
       >
-        Contact Us
+        Talk to Us
       </a>
     </div>
 
     <div class="support-footer">
       <p>
         Need professional services on a per-hour basis?
-        <a href="mailto:support@async-io.org?subject=Professional%20Services%20Inquiry">Contact us</a> for a custom quote.
+        <a href="/contact/?plan=Services">Talk to us</a> for a custom quote.
       </p>
     </div>
   </div>
@@ -325,8 +379,77 @@ const plans = [
     font-family: var(--font-display);
     font-size: 1.5rem;
     font-weight: 400;
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-xs);
     text-align: center;
+  }
+
+  .plan-price {
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    color: var(--color-accent);
+    text-align: center;
+    margin-bottom: var(--space-sm);
+  }
+
+  .plan-best-for {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-bottom: var(--space-lg);
+    min-height: 2.4em;
+  }
+
+  .severity-defs {
+    max-width: 900px;
+    margin: 0 auto var(--space-3xl);
+    padding: var(--space-xl);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-bg-tertiary);
+  }
+
+  .severity-item {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+  }
+
+  .severity-key {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-accent);
+    border: 1px solid var(--color-border-accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+    height: fit-content;
+  }
+
+  .severity-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin-bottom: 2px;
+    color: var(--color-text-primary);
+  }
+
+  .severity-text {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+
+  .severity-note {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .severity-note strong {
+    color: var(--color-text-secondary);
   }
 
   .plan-features {

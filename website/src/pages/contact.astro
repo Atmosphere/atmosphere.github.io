@@ -3,8 +3,12 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
-// Replace this with your actual Calendly URL
 const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
+
+// Tier names the Support section can hand over via ?plan=. This is an
+// allowlist, not a hint: the value arrives from the URL and is echoed into the
+// page, so anything not on this list is ignored rather than rendered.
+const planNames = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Legacy', 'Services'];
 ---
 
 <Layout title="Contact — Async IO">
@@ -18,6 +22,10 @@ const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
           <p class="contact-description">
             Book a call with the Async-IO team to discuss enterprise support,
             migration planning, or how Atmosphere fits your architecture.
+            You talk to the engineers who wrote the framework.
+          </p>
+          <p class="plan-context" id="planContext" hidden>
+            About the <strong id="planName"></strong> plan.
           </p>
         </div>
 
@@ -25,6 +33,8 @@ const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
           <div
             class="calendly-inline-widget"
             data-url={calendlyUrl}
+            data-base-url={calendlyUrl}
+            id="calendlyWidget"
             style="min-width:320px;height:700px;"
           ></div>
         </div>
@@ -32,8 +42,16 @@ const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
         <div class="contact-alt">
           <p>
             Prefer email? Reach us at
-            <a href="mailto:support@async-io.org">support@async-io.org</a>
+            <a href="mailto:support@async-io.org" id="emailFallback">support@async-io.org</a>
+            &mdash; we answer every message ourselves.
           </p>
+          <noscript>
+            <p class="contact-noscript">
+              The scheduler needs JavaScript. Email
+              <a href="mailto:support@async-io.org">support@async-io.org</a>
+              and we will send you times.
+            </p>
+          </noscript>
         </div>
       </div>
     </section>
@@ -42,6 +60,61 @@ const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
 </Layout>
 
 <script is:inline src="https://assets.calendly.com/assets/external/widget.js" async></script>
+
+<script is:inline define:vars={{ planNames }}>
+  // Carry the tier the buyer clicked in Support across to this page: name it
+  // back to them, tag the booking, and preload the email fallback's subject.
+  // The value comes from the URL, so it is matched against the allowlist and
+  // never interpolated as markup.
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('plan');
+    const plan = planNames.find((p) => p.toLowerCase() === (requested || '').toLowerCase());
+    if (!plan) return;
+
+    const context = document.getElementById('planContext');
+    const name = document.getElementById('planName');
+    if (context && name) {
+      name.textContent = plan;
+      context.hidden = false;
+    }
+
+    // utm_content rides through to the Calendly booking so an inbound call is
+    // already attributed to a tier before it starts.
+    const widget = document.getElementById('calendlyWidget');
+    if (widget) {
+      const base = widget.getAttribute('data-base-url');
+      widget.setAttribute('data-url', base + '?utm_content=' + encodeURIComponent(plan));
+    }
+
+    const email = document.getElementById('emailFallback');
+    if (email) {
+      email.setAttribute(
+        'href',
+        'mailto:support@async-io.org?subject=' +
+          encodeURIComponent(plan + ' plan — Atmosphere support enquiry')
+      );
+    }
+  })();
+</script>
+
+<script is:inline>
+  // The scheduler is a third-party script on a domain corporate blockers eat.
+  // If it has not painted an iframe shortly after load, say so in the page
+  // instead of leaving an empty bordered box as the only purchase path.
+  window.addEventListener('load', function () {
+    window.setTimeout(function () {
+      const widget = document.getElementById('calendlyWidget');
+      if (!widget || widget.querySelector('iframe')) return;
+      const fallback = document.createElement('p');
+      fallback.className = 'contact-noscript';
+      fallback.innerHTML =
+        'The scheduler could not load &mdash; it is likely blocked here. Email ' +
+        '<a href="mailto:support@async-io.org">support@async-io.org</a> and we will send you times.';
+      widget.replaceChildren(fallback);
+    }, 4000);
+  });
+</script>
 
 <style>
   .contact {
@@ -102,6 +175,21 @@ const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
   .contact-alt p {
     font-size: 0.9375rem;
     color: var(--color-text-muted);
+  }
+
+  .plan-context {
+    margin-top: var(--space-md);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--color-accent);
+  }
+
+  .contact-noscript {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    padding: var(--space-xl);
+    text-align: center;
   }
 
   .contact-alt a {
