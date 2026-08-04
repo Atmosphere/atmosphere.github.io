@@ -77,7 +77,7 @@ Write your agent once. The execution engine is determined by what's on the class
 
 | Runtime | Dependency |
 |---------|-----------|
-| Built-in | `atmosphere-ai` — OpenAI-compatible client (Gemini, OpenAI, Ollama). Zero framework overhead. |
+| Built-in | `atmosphere-ai` — OpenAI-compatible client (Gemini, OpenAI, Ollama, LiteLLM proxy). Zero framework overhead. |
 | LangChain4j | `atmosphere-langchain4j` — ReAct tool loops, `StreamingChatModel` |
 | Spring AI | `atmosphere-spring-ai` — `ChatClient`, function calling, RAG advisors |
 | Google ADK | `atmosphere-adk` — `LlmAgent`, function tools, session management |

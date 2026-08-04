@@ -5,7 +5,7 @@ description: "@AiEndpoint, StreamingSession, AgentRuntime SPI, tool calling, fil
 
 # AI / LLM Integration
 
-AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `StreamingSession`, the `AgentRuntime` SPI for auto-detected AI framework adapters, and a built-in `OpenAiCompatibleClient` that works with Gemini, OpenAI, Ollama, and any OpenAI-compatible API.
+AI/LLM streaming module for Atmosphere. Provides `@AiEndpoint`, `@Prompt`, `StreamingSession`, the `AgentRuntime` SPI for auto-detected AI framework adapters, and a built-in `OpenAiCompatibleClient` that works with Gemini, OpenAI, Ollama, a LiteLLM proxy, and any OpenAI-compatible API.
 
 ## Maven Coordinates
 
@@ -69,7 +69,7 @@ public interface AgentRuntime {
 
 | Classpath JAR | Auto-detected `AgentRuntime` | Priority |
 |---------------|------------------------------|----------|
-| `atmosphere-ai` (default) | Built-in `OpenAiCompatibleClient` (Gemini, OpenAI, Ollama) | 0 |
+| `atmosphere-ai` (default) | Built-in `OpenAiCompatibleClient` (Gemini, OpenAI, Ollama, LiteLLM proxy) | 0 |
 | `atmosphere-spring-ai` | Spring AI `ChatClient` | 100 |
 | `atmosphere-langchain4j` | LangChain4j `StreamingChatLanguageModel` | 100 |
 | `atmosphere-adk` | Google ADK `Runner` | 100 |
