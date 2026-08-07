@@ -18,8 +18,8 @@ native image has no `.class` files to scan — so the binary answered a health U
 every annotated endpoint was dead. The 4.0.65-SNAPSHOT section below covers the fix and
 states exactly which path CI drives and which paths it leaves unproven.
 
-The latest build tracks **Spring Boot 4.0.7**, **Quarkus 3.36.0**,
-**Jackson 3.2.0**, and **atmosphere.js 5.0.38**, and requires **JDK 21** as a minimum.
+The latest build tracks **Spring Boot 4.0.7**, **Quarkus 3.36.3**,
+**Jackson 3.2.1**, and **atmosphere.js 5.0.41**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
@@ -97,7 +97,9 @@ Spring AOT writes the same file through `AtmosphereAnnotationScanAotProcessor`
 (registered in the starter's `META-INF/spring/aot.factories`); Quarkus builds its map
 from Jandex instead. `atmosphere-runtime` itself compiles with `<proc>none</proc>` —
 the processor is defined there, so javac cannot run it against that module — and ships a
-committed index of its own 22 annotated classes.
+committed index of its own annotation processors, regenerated from
+`AtmosphereReflectiveTypes.annotationProcessors()` and pinned byte-for-byte by
+`AtmosphereRuntimeIndexTest`.
 
 At runtime, discovery is the **union** of the classpath scan and every index found via
 `classpath*:` — deliberately not "index wins". An index is per-artifact, and letting one
