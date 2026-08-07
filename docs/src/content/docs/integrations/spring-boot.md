@@ -5,7 +5,7 @@ description: "Auto-configuration for Spring Boot 4.0+"
 
 # Spring Boot Integration
 
-Auto-configuration for running Atmosphere on Spring Boot 4.0.6. Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
+Auto-configuration for running Atmosphere on Spring Boot 4.0.7. Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
 
 ## Maven Coordinates
 
@@ -168,14 +168,54 @@ When `micrometer-core` and `MeterRegistry` are on the classpath, the starter reg
 
 ## GraalVM Native Image
 
-The starter includes `AtmosphereRuntimeHints` for native image support:
+**What CI asserts.** `.github/workflows/native-image-ci.yml` builds `samples/spring-boot-chat` with `-Pnative`, starts the resulting binary, opens a long-polling connection to `/atmosphere/chat`, and fails the run unless the annotated `@Ready` method actually ran. That single log line can only appear if the `@ManagedService` class was discovered, its handler registered, its `Broadcaster` and the by-name-loaded broadcaster cache created, `@Inject` resolved, and the lifecycle fired. The second job in the same workflow asserts the identical path on the Quarkus extension, so the `@ManagedService` long-polling path is proven under Native Image on both runtimes.
+
+**What CI does not assert, and is therefore not proven:** WebSocket under Native Image, SSE, transport negotiation and fallback, `@Message` encoder/decoder round-trips, `@RoomService` / presence / broadcast fan-out, and injection beyond what `@Ready` requires. No job in the repository builds `samples/spring-boot-ai-chat` with `-Pnative` or `-Dnative`, so `@AiEndpoint` and `@Agent` under Native Image are unproven. Read a green run as "the long-polling `@ManagedService` path works", not as "Atmosphere supports GraalVM Native Image".
+
+### Building the sample
 
 ```bash
 cd samples/spring-boot-chat && ../../mvnw -Pnative package
 ./target/atmosphere-spring-boot-chat-*
 ```
 
-Requires GraalVM JDK 21+ (Spring Boot 4.0.6 baseline).
+The sample's `native` profile binds `spring-boot-maven-plugin:process-aot` (which is what runs the AOT processor described below) and `org.graalvm.buildtools:native-maven-plugin`. Atmosphere's source floor is JDK 21 (`<release>21</release>` in the root POM); the CI lane that proves the path above runs on GraalVM 25, and no job proves this build on GraalVM 21.
+
+### How endpoints are discovered
+
+A native image has no `.class` files to scan, so the runtime classpath scan the starter uses on the JVM finds nothing: every annotated user class went undetected, and the failure was silent. Two build-time mechanisms replace it, both writing `META-INF/atmosphere/annotated-classes.txt`:
+
+- `AtmosphereAnnotationScanAotProcessor` -- registered in the starter's `META-INF/spring/aot.factories`. It runs the scan during Spring AOT processing, while a real classpath still exists, records the class list, and registers each class for reflection. It also walks every `Class`-valued annotation attribute (`@Message(encoders = …, decoders = …)` most visibly, but also broadcasters, filters and interceptors), because registering only the annotated class leaves the collaborators out and the handler then fails on the first message.
+- `org.atmosphere.nativeimage.AtmosphereAnnotationIndexProcessor` -- a javac annotation processor shipped in `atmosphere-runtime` and auto-discovered from the compile classpath. It writes the same file per artifact, so the index exists in builds that never run Spring AOT.
+
+At runtime, discovery is the **union** of the classpath scan and every index found via `classpath*:` — deliberately not "prefer the index". An index is per-artifact; letting one short-circuit the scan lets a single jar's partial index hide every class in jars that have none. An index you generate yourself therefore augments discovery, it never replaces it.
+
+**AOT gotcha:** the AOT processor reads `atmosphere.packages` from the `Environment` at build time. A value supplied only at runtime (a container environment variable, a late-bound config server) is invisible then, so the recorded index comes out empty — and in a native image, where the scan finds nothing, that means no endpoints. Keep `atmosphere.packages` in `application.yml` or another build-visible source.
+
+### Reflection metadata
+
+`atmosphere-runtime.jar` ships `META-INF/native-image/org.atmosphere/atmosphere-runtime/reachability-metadata.json` -- 77 reflection entries and 3 resource globs, generated from the `org.atmosphere.nativeimage.NativeImageMetadataProvider` SPI. GraalVM reads it automatically, so a plain-servlet or embedded-Jetty deployment needs no integration module and no configuration. This starter feeds the same aggregated metadata into Spring's `RuntimeHints` through `AtmosphereRuntimeHints` (registered with `@ImportRuntimeHints` on `AtmosphereAutoConfiguration`), adding only the Spring-specific `SpringAtmosphereObjectFactory`; `AtmosphereRuntimeHints` no longer carries a type list of its own.
+
+That metadata is load-bearing rather than cosmetic. Broadcaster caches are selected by init-param and loaded by name, so while they were unregistered no `Broadcaster` could be created, `ManagedServiceProcessor` swallowed the failure, and every `@ManagedService` silently failed to register (fixed in `48e666310a`, pinned by `BroadcasterCacheRegisteredForNativeImageTest`). That is why the CI job drives a real connection instead of curling a health endpoint.
+
+To declare types your own module loads by name, implement the SPI and list the implementation in `META-INF/services/org.atmosphere.nativeimage.NativeImageMetadataProvider`:
+
+```java
+public final class MyMetadataProvider implements NativeImageMetadataProvider {
+
+    @Override
+    public String name() {
+        return "my-module";
+    }
+
+    @Override
+    public Collection<String> reflectiveTypes() {
+        return List.of("com.example.LoadedByName");
+    }
+}
+```
+
+`NativeImageMetadata.collect()` merges every provider on the classpath and feeds all three integrations -- this starter, the Spring Boot 3 starter, and the Quarkus deployment processor -- each of which previously carried its own transcription of one hardcoded list. `atmosphere-runtime` is currently the only module that ships a provider service file; the SPI is the extension point for modules and applications, not a set of per-module providers that already exist.
 
 ## `@AiEndpoint` annotation surfaces (new in 4.0.36)
 

@@ -78,8 +78,28 @@ The following have been removed or replaced in 4.0:
 | **RoomMember** | Application-level member ID (stable across reconnects) |
 | **RoomAuthorizer** | Authorization for room operations |
 | **Framework hooks** | React `useRoom`, Vue `useRoom`, Svelte `createRoomStore` |
-| **Spring Boot 4.0 starter** | Auto-configuration, health, metrics |
-| **Quarkus extension** | Build-time processing, native image support |
+| **Spring Boot 4.0 starter** | Auto-configuration, health, metrics, `@ManagedService` under Native Image ([scope](#native-image)) |
+| **Quarkus extension** | Build-time processing, `@ManagedService` under Native Image ([scope](#native-image)) |
+
+### Native Image
+
+Both integrations are covered by a GraalVM Native Image job that runs on every change to the runtime, the starters or the extension. That job asserts exactly one thing, on both runtimes: a `@ManagedService` serves a real long-polling connection from a native binary. It builds `samples/spring-boot-chat` with `-Pnative` and `samples/quarkus-chat` with `-Dnative`, starts each binary, opens a long-polling connection to `/atmosphere/chat`, and fails unless the annotated `@Ready` method actually ran.
+
+:::caution[What that job does not cover]
+Everything below is untested under Native Image, so none of it is claimed to work there:
+
+- WebSocket, SSE, and transport negotiation/fallback
+- `@Message` encoder/decoder round-trips
+- Rooms, `@RoomService`, presence, broadcast fan-out
+- `@AiEndpoint` and `@Agent` — no native job builds the AI sample
+- Injection beyond what `@Ready` requires
+
+If you depend on any of these, verify them against your own native build before migrating.
+:::
+
+The migration itself requires no native-specific configuration. `atmosphere-runtime` ships `META-INF/native-image/org.atmosphere/atmosphere-runtime/reachability-metadata.json`, which GraalVM reads automatically, so a plain-servlet or embedded deployment needs no integration module. Your own annotated classes are indexed at compile time by `org.atmosphere.nativeimage.AtmosphereAnnotationIndexProcessor`, an annotation processor auto-discovered from `atmosphere-runtime` on the compile classpath. At runtime, discovery is the union of that index and the classpath scan — the index does not replace the scan.
+
+If a module of your own loads classes by name, declare them by implementing `org.atmosphere.nativeimage.NativeImageMetadataProvider` and registering the implementation under `META-INF/services/`. `NativeImageMetadata.collect()` merges every provider on the classpath and feeds both Spring Boot starters and the Quarkus deployment processor; `atmosphere-runtime` is currently the only Atmosphere module that ships one.
 
 ## Client Migration
 

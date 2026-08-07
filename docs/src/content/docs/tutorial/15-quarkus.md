@@ -127,7 +127,7 @@ The `AtmosphereProcessor` (in the deployment module) runs `@BuildStep` methods d
 
 6. **WebSocket endpoint registration**: Registers JSR-356 WebSocket endpoints with the Quarkus-managed `ServerWebSocketContainer` at `STATIC_INIT` time. This must happen before deployment is marked complete, since Quarkus's Undertow fork rejects `addEndpoint()` after deployment.
 
-7. **Reflection registration**: Registers all discovered annotated classes plus Atmosphere core classes for reflection (required for GraalVM native image support).
+7. **Reflection registration**: Registers all discovered annotated classes for reflection, plus every type declared by a `NativeImageMetadataProvider` found on the build classpath — `AtmosphereProcessor` calls `org.atmosphere.nativeimage.NativeImageMetadata.collect(...)` and merges the providers instead of carrying its own transcription of a core-types list. The same step produces a `NativeImageResourceBuildItem` for each declared resource pattern, and logs the type and resource counts plus the contributing provider names at `INFO`. See [Native Image](#native-image) for what a native build of the sample is actually asserted to do, and what it is not.
 
 8. **Encoder/Decoder registration**: Scans `@Message` and `@Ready` annotations for `encoders()` and `decoders()` arrays and registers those classes for reflection.
 
@@ -160,7 +160,7 @@ The extension supports Quarkus dev mode (`quarkus:dev`) with live reload. The `A
 
 | Aspect | Spring Boot | Quarkus |
 |--------|------------|---------|
-| Annotation scanning | Runtime (Spring `ClassPathScanner`) | Build time (Jandex) |
+| Annotation scanning | Union of a runtime scan and a build-time index (Spring AOT / javac processor) | Build time (Jandex) — the index is not read |
 | Config prefix | `atmosphere.*` | `quarkus.atmosphere.*` |
 | Config binding | `@ConfigurationProperties` | `@ConfigMapping` + `@ConfigRoot` |
 | Object factory | `SpringAtmosphereObjectFactory` | `QuarkusAtmosphereObjectFactory` |
@@ -168,6 +168,127 @@ The extension supports Quarkus dev mode (`quarkus:dev`) with live reload. The `A
 | loadOnStartup | `0` works (Servlet spec) | Must be `> 0` (Quarkus quirk) |
 | Config phase | Runtime | `BUILD_AND_RUN_TIME_FIXED` |
 | SCI handling | Overridden via servlet context attribute | Suppressed via `IgnoredServletContainerInitializerBuildItem` |
+
+## Native Image
+
+Atmosphere resolves much of its own machinery by name — broadcaster caches,
+interceptors, annotation processors, encoders — so ahead-of-time compilation
+drops classes that nothing statically references. The extension registers those
+classes at build time from three sources: the Jandex index (annotated classes,
+plus any class named inside `@Message(encoders/decoders)` or `@Ready(encoders)`),
+a short list of Quarkus-specific runtime classes
+(`QuarkusAtmosphereObjectFactory`, `QuarkusAtmosphereServlet`,
+`QuarkusJSR356AsyncSupport`, `LazyAtmosphereConfigurator`), and the
+`NativeImageMetadataProvider` SPI described below.
+
+Failures in this area are quiet rather than loud. A missing broadcaster-cache
+hint makes `createBroadcaster` throw `ClassNotFoundException`, which
+`ManagedServiceProcessor` catches and logs before carrying on — the process
+starts, serves static content and answers a health probe, and every
+`@ManagedService` endpoint simply never exists. That was a real bug:
+`org.atmosphere.cache.UUIDBroadcasterCache`, `DefaultBroadcasterCache`,
+`SessionBroadcasterCache` and `BoundedMemoryCache` are loaded by name and were
+unregistered, which silently unregistered every annotated endpoint. Native
+coverage claims therefore have to name the request that was driven and the
+assertion that was made.
+
+### What CI proves
+
+Job `quarkus-native` in `.github/workflows/native-image-ci.yml` builds
+`samples/quarkus-chat` into a native binary (Mandrel, container build), starts
+it, and drives a single request:
+
+```bash
+curl "http://localhost:8080/atmosphere/chat?X-Atmosphere-tracking-id=0&X-Atmosphere-Framework=2.3&X-Atmosphere-Transport=long-polling&X-Cache-Date=0"
+```
+
+The job fails unless the application log then contains `connected (broadcaster:`,
+a line only `Chat.onReady()` writes. Passing establishes, under a real native
+image: `@ManagedService` discovery from the Jandex index, handler registration,
+`Broadcaster` construction and therefore its by-name-loaded cache class,
+`@Inject` of `AtmosphereResource` and a `@Named` `Broadcaster`, and `@Ready`
+firing — over **long-polling**. A sibling job in the same workflow makes the
+identical assertion against `samples/spring-boot-chat` on the Spring Boot 4
+starter.
+
+### What CI does not prove
+
+No native lane covers anything below. None of it should be described as
+native-verified until one does:
+
+- **WebSocket** — the smoke test pins the transport to long-polling by hand.
+- **SSE, transport negotiation and fallback.**
+- **`@Message` round-trip.** Build step 8 above does register the sample's
+  `JacksonEncoder` / `JacksonDecoder`, but the lane never POSTs a message, so
+  the encode/decode path is compiled and never exercised.
+- **Rooms / `@RoomService`, presence, broadcast fan-out, `@Disconnect`,
+  `@Heartbeat`.**
+- **The AI stack.** `samples/quarkus-ai-chat` has no native job and is not in
+  the workflow's path filters, so `@AiEndpoint` and `@Agent` under Native Image
+  are unproven.
+- **Injection beyond what `@Ready` needs.**
+
+### Contributing your own reflective types
+
+`registerReflection` merges every `NativeImageMetadataProvider` found on the
+build classpath, so a module — including an application module — declares the
+classes it loads by name next to the code that loads them, instead of needing an
+entry in a central list:
+
+```java
+package com.example.chat;
+
+import java.util.Collection;
+import java.util.List;
+import org.atmosphere.nativeimage.NativeImageMetadataProvider;
+
+public final class ExampleMetadataProvider implements NativeImageMetadataProvider {
+
+    @Override
+    public String name() {
+        return "example-app";
+    }
+
+    @Override
+    public Collection<String> reflectiveTypes() {
+        return List.of("com.example.chat.CustomBroadcasterCache");
+    }
+
+    @Override
+    public Collection<String> resourcePatterns() {
+        return List.of("META-INF/services/com.example.chat.Plugin");
+    }
+}
+```
+
+Registered in
+`src/main/resources/META-INF/services/org.atmosphere.nativeimage.NativeImageMetadataProvider`:
+
+```
+com.example.chat.ExampleMetadataProvider
+```
+
+`isAvailable()` (default `true`) lets a provider covering an optional dependency
+exclude itself when that dependency is absent; `priority()` only orders the
+emitted output. Collection is a union, so no provider can suppress another's
+types. In this repository `atmosphere-runtime` is currently the only artifact
+shipping providers (`CoreNativeImageMetadataProvider` and
+`PoolNativeImageMetadataProvider`) — the SPI exists so that other modules and
+applications can contribute without a change to this build step.
+
+Those same providers generate
+`META-INF/native-image/org.atmosphere/atmosphere-runtime/reachability-metadata.json`
+inside `atmosphere-runtime`, which GraalVM reads on its own. That file is what a
+plain-servlet or embedded deployment relies on, with no integration module and
+no configuration; the Quarkus build step exists because Quarkus consumes build
+items rather than that file.
+
+Quarkus does not consume the `META-INF/atmosphere/annotated-classes.txt` index
+that `atmosphere-runtime`'s annotation processor
+(`org.atmosphere.nativeimage.AtmosphereAnnotationIndexProcessor`) writes. That
+index serves runtimes which would otherwise scan the classpath at runtime —
+something a native image makes impossible — and Jandex already indexes
+annotations at build time here.
 
 ## Admin extension
 
@@ -205,9 +326,10 @@ Beyond the admin surface, you can run a full MCP **server** on Quarkus: add
 `quarkus.atmosphere.packages` to your `@Agent` package. The Quarkus build step
 recognizes `@Agent` and registers the MCP endpoint, tools, and OAuth
 authorization exactly as on Spring Boot — see the
-[MCP reference](/docs/reference/mcp/#running-on-quarkus). **JVM only**: native
-image is not yet supported for `@Agent`-based MCP, and no Quarkus MCP sample
-ships today (the capability is covered by the extension's test suite).
+[MCP reference](/docs/reference/mcp/#running-on-quarkus). **JVM only**: no
+native lane covers `@Agent`-based MCP (see [Native Image](#native-image)), and
+no Quarkus MCP sample ships today (the capability is covered by the extension's
+test suite).
 
 ## Running the sample
 

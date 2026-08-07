@@ -6,17 +6,102 @@ description: "Highlights from the Atmosphere 4.0.x release line"
 # What's New in Atmosphere 4.0
 
 Atmosphere 4.0 is the JDK 21+ rewrite of the framework. The 4.0.0 release shipped the
-core platform migration (Jakarta EE 10, virtual threads, Jetty 12 / Tomcat 11, native
-image support, rooms, AI streaming SPI, MCP, TypeScript client). Since then the 4.0.x
-line has grown into a full multi-agent runtime — unified agent annotations, twelve
-pluggable AI runtimes, orchestration primitives, WebTransport/HTTP3, React Native
-support, and major compatibility refreshes.
+core platform migration (Jakarta EE 10, virtual threads, Jetty 12 / Tomcat 11, rooms,
+AI streaming SPI, MCP, TypeScript client). Since then the 4.0.x line has grown into a
+full multi-agent runtime — unified agent annotations, twelve pluggable AI runtimes,
+orchestration primitives, WebTransport/HTTP3, React Native support, and major
+compatibility refreshes.
+
+GraalVM Native Image is deliberately **not** in that list. 4.0.0 produced a native
+binary that booted, but annotation discovery ran as a classpath scan at startup and a
+native image has no `.class` files to scan — so the binary answered a health URL while
+every annotated endpoint was dead. The 4.0.65-SNAPSHOT section below covers the fix and
+states exactly which path CI drives and which paths it leaves unproven.
 
 The latest build tracks **Spring Boot 4.0.7**, **Quarkus 3.36.0**,
 **Jackson 3.2.0**, and **atmosphere.js 5.0.38**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
+
+## 4.0.65-SNAPSHOT — `@ManagedService` under GraalVM Native Image
+
+**What CI asserts.** `.github/workflows/native-image-ci.yml` builds two real native
+binaries — `samples/spring-boot-chat` on the Spring Boot 4 starter and
+`samples/quarkus-chat` on the Quarkus extension — starts each one, opens a
+**long-polling** connection to `/atmosphere/chat`, and fails unless the application log
+contains `connected (broadcaster:`, the line only the annotated `@Ready` method emits.
+That one line can appear only if the class was discovered, the handler registered, the
+broadcaster and its by-name-loaded cache created, injection resolved, and the lifecycle
+fired. Registration itself is silent, so the lane asserts behaviour rather than a
+startup message.
+
+**What CI does not assert — and what is therefore not claimed here:** WebSocket under
+Native Image, SSE, transport negotiation and fallback, `@Message` encoder/decoder
+round-trips, rooms / `@RoomService` / presence / broadcast fan-out, and injection beyond
+what `@Ready` requires. Nor the AI stack: no job in the repository builds
+`samples/spring-boot-ai-chat` with `-Pnative` or `-Dnative`, so `@AiEndpoint` and
+`@Agent` under Native Image remain unproven. A green run on this lane is not
+"Atmosphere supports GraalVM Native Image" — it is the long-polling `@ManagedService`
+path on two runtimes, and nothing more.
+
+### Three silent failures, fixed
+
+Each of these failed quietly. The binary started, a liveness URL answered, and the
+annotated endpoints were gone:
+
+- **Discovery found nothing.** The Spring Boot starter resolved `@ManagedService` /
+  `@AiEndpoint` / `@Agent` with a runtime classpath scan, and a native image has no
+  `.class` files to scan.
+- **Broadcaster caches were unregistered for reflection.**
+  `org.atmosphere.cache.UUIDBroadcasterCache` and three siblings are loaded by name, so
+  creating *any* `Broadcaster` failed — and the failure was logged and swallowed, which
+  silently unregistered every `@ManagedService` on **both** runtimes.
+- **`@Message(encoders = …, decoders = …)` classes were unregistered.** A class named
+  only inside an annotation does not survive the image on its own.
+
+### `NativeImageMetadataProvider` — declare what you load by name
+
+`org.atmosphere.nativeimage.NativeImageMetadataProvider` is a new public ServiceLoader
+SPI in `atmosphere-runtime`: `name()`, `reflectiveTypes()`, `resourcePatterns()`,
+`isAvailable()`, `priority()`. Implement it, list it in
+`META-INF/services/org.atmosphere.nativeimage.NativeImageMetadataProvider`, and every
+integration picks it up. `NativeImageMetadata.collect()` merges every provider on the
+classpath and feeds all three consumers — `AtmosphereRuntimeHints` in the Spring Boot 4
+starter, its counterpart in the Spring Boot 3 starter, and the Quarkus deployment
+processor — each of which previously carried its own transcription of one hardcoded
+list.
+
+Today `atmosphere-runtime` is the only module that ships a provider service file
+(`CoreNativeImageMetadataProvider` and `PoolNativeImageMetadataProvider`). The SPI
+exists so that your modules — and further Atmosphere modules later — can contribute
+without any integration being edited.
+
+### The runtime jar carries its own GraalVM metadata
+
+`atmosphere-runtime.jar` now ships
+`META-INF/native-image/org.atmosphere/atmosphere-runtime/reachability-metadata.json`,
+generated from that SPI: 77 reflection entries and 3 resource globs. GraalVM reads the
+file automatically, so a plain-servlet or embedded-Jetty native build needs **no
+integration module and no configuration** to get the runtime's reflective surface. (No
+CI lane builds a plain-servlet native binary — that is a property of the jar, not a
+tested deployment.)
+
+### A build-time annotation index, in any build tool
+
+`org.atmosphere.nativeimage.AtmosphereAnnotationIndexProcessor` is a javac annotation
+processor auto-discovered from `atmosphere-runtime` on the compile classpath: depending
+on the jar is the whole setup. It writes `META-INF/atmosphere/annotated-classes.txt` per
+artifact, so build-time discovery is not tied to Spring AOT or Quarkus augmentation.
+Spring AOT writes the same file through `AtmosphereAnnotationScanAotProcessor`
+(registered in the starter's `META-INF/spring/aot.factories`); Quarkus builds its map
+from Jandex instead. `atmosphere-runtime` itself compiles with `<proc>none</proc>` —
+the processor is defined there, so javac cannot run it against that module — and ships a
+committed index of its own 22 annotated classes.
+
+At runtime, discovery is the **union** of the classpath scan and every index found via
+`classpath*:` — deliberately not "index wins". An index is per-artifact, and letting one
+short-circuit the scan let a single jar hide every other jar's classes.
 
 ## 4.0.63-SNAPSHOT — Run `Workflow<S>` on Temporal
 
@@ -599,16 +684,29 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
 
 ## Integrations
 
-- **Spring Boot 4.0.6** — auto-configuration, Actuator
-  health indicator (`AtmosphereHealthIndicator`), and GraalVM AOT runtime hints
-  (`AtmosphereRuntimeHints`). Spring Boot 4.0 is modularized, so the starter now
+- **Spring Boot 4.0.7** — auto-configuration, Actuator
+  health indicator (`AtmosphereHealthIndicator`), and two separate pieces of native
+  image support: `AtmosphereRuntimeHints` registers reflection and resource hints
+  sourced from `NativeImageMetadata.collect(…)` rather than a hand-maintained list, and
+  `AtmosphereAnnotationScanAotProcessor` (registered in `META-INF/spring/aot.factories`)
+  resolves Atmosphere's annotations during AOT and records them for the runtime to read.
+  Hints alone are not enough — without the AOT scan every annotated endpoint goes
+  undiscovered in a native image. Scope of what is verified is in the 4.0.65-SNAPSHOT
+  section above. Spring Boot 4.0 is modularized, so the starter now
   depends explicitly on `spring-boot-servlet`, `spring-boot-web-server`, and
   `spring-boot-health` where needed. The starter overrides the parent POM's old
   SLF4J 1.x/Logback 1.2.x pins in `<dependencies>` so upgrades don't regress.
   See [Spring Boot Reference](/docs/integrations/spring-boot/).
 - **Quarkus 3.36.0** — build-time Jandex annotation scanning, Arc CDI
   integration, custom `QuarkusJSR356AsyncSupport`, and `@BuildStep`-driven native
-  image registration via `quarkus.atmosphere.*` properties. See
+  image registration. Registration is driven by the Jandex index plus
+  `NativeImageMetadata.collect(…)`, not by configuration: `registerReflection`,
+  `registerPoolReflection` and `registerServiceResources` produce the reflective
+  classes and resources, and `registerEncoderDecoderClasses` walks the index for
+  `@Message(encoders/decoders)` and `@Ready(encoders)` so classes named only inside an
+  annotation survive the image. `quarkus.atmosphere.*` configures the extension itself
+  (servlet mapping, `loadOnStartup`). Scope of what is verified is in the
+  4.0.65-SNAPSHOT section above. See
   [Quarkus Reference](/docs/integrations/quarkus/).
 - **Kotlin DSL** — `atmosphere { ... }` builder and coroutine extensions
   (`broadcastSuspend`, `writeSuspend`). Requires Kotlin 2.1+.
