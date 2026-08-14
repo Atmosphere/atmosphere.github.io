@@ -57,13 +57,13 @@ Atmosphere ships **twelve** `AgentRuntime` implementations — one built-in and 
 |---------|------------------|-------------|---------|
 | Built-in | `atmosphere-ai` (OpenAI-compatible client) | OpenAI, Gemini, Ollama, Azure OpenAI | shipped |
 | Spring AI | `atmosphere-spring-ai` | Spring AI (`ChatClient`) | 2.0.0 |
-| LangChain4j | `atmosphere-langchain4j` | LangChain4j (`StreamingChatLanguageModel`) | 1.15.0 |
-| Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) | 1.2.0 |
-| Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) | 0.3.5 |
+| LangChain4j | `atmosphere-langchain4j` | LangChain4j (`StreamingChatLanguageModel`) | 1.17.0 |
+| Google ADK | `atmosphere-adk` | Google Agent Development Kit (`Runner`) | 1.5.0 |
+| Embabel | `atmosphere-embabel` | Embabel Agent Framework (`AgentPlatform`) | 1.5.0 |
 | Koog | `atmosphere-koog` | Koog (Kotlin agent framework) | 1.0.0 |
 | Semantic Kernel | `atmosphere-semantic-kernel` | Microsoft Semantic Kernel (`ChatCompletionService`) | 1.5.0 |
 | AgentScope | `atmosphere-agentscope` | Alibaba AgentScope (`ReActAgent`) | 1.0.12 |
-| Spring AI Alibaba | `atmosphere-spring-ai-alibaba` | Spring AI Alibaba (`ReactAgent`, **Spring Boot 3.5 only** today) | 1.1.2.2 |
+| Spring AI Alibaba | `atmosphere-spring-ai-alibaba` | Spring AI Alibaba (`ReactAgent`, **Spring Boot 3.5 only** today) | 1.1.2.3 |
 | Anthropic | `atmosphere-anthropic` | Native Anthropic Messages API (HTTP+SSE, no third-party SDK) | shipped |
 | Cohere | `atmosphere-cohere` | Native Cohere v2 Chat API (HTTP+SSE, no third-party SDK) | shipped |
 | CrewAI | `atmosphere-crewai` | CrewAI (Python sidecar `atmosphere-crewai-bridge`, FastAPI + crewai 1.14) | shipped |

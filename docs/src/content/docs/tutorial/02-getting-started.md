@@ -370,7 +370,7 @@ public class AiChat {
 }
 ```
 
-That's it. `@AiEndpoint` handles connection lifecycle, transport negotiation, and virtual thread dispatch automatically. `session.stream(message)` auto-detects the selected `AgentRuntime` on the classpath — Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, or Spring AI Alibaba — and the same code works with a different backend. Without `LLM_API_KEY`, the sample runs in demo mode with simulated streaming. Embabel and Spring AI Alibaba currently use the Spring Boot 3.5 profile.
+That's it. `@AiEndpoint` handles connection lifecycle, transport negotiation, and virtual thread dispatch automatically. `session.stream(message)` auto-detects the selected `AgentRuntime` on the classpath — Built-in, Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, or Spring AI Alibaba — and the same code works with a different backend. Without `LLM_API_KEY`, the sample runs in demo mode with simulated streaming. Spring AI Alibaba currently uses the Spring Boot 3.5 profile.
 
 On the client side, connect with `atmosphere.js`:
 
