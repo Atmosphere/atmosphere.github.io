@@ -23,14 +23,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:url" content={canonicalUrl.href} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL('/logo.svg', Astro.site).href} />
+    <meta property="og:image" content={new URL('/AsyncIO.png', Astro.site).href} />
     <meta property="og:site_name" content="Async IO" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={new URL('/logo.svg', Astro.site).href} />
+    <meta name="twitter:image" content={new URL('/AsyncIO.png', Astro.site).href} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -42,7 +42,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "Async IO",
-      "url": "https://async-io.org",
+      "url": "https://async-io.live",
       "description": description,
       "foundingDate": "2008",
       "makesOffer": [
