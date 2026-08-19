@@ -134,7 +134,7 @@ const plans = [
       <li class="coverage-item">
         <span class="coverage-label">One contract, twelve runtimes</span>
         <p class="coverage-text">
-          <code>policyDenyBlocksRuntimeExecute</code> is a build-time
+          <code>policyDeny<wbr />Blocks<wbr />Runtime<wbr />Execute</code> is a build-time
           invariant for every adapter &mdash; you can't add a runtime
           without proving it honours your governance chain.
         </p>
@@ -323,6 +323,10 @@ const plans = [
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: 10px;
+    /* Grid items default to min-width:auto, which lets a long identifier such
+       as `policyDenyBlocksRuntimeExecute` push its own card wider than the
+       track and spill over the border. */
+    min-width: 0;
     transition: border-color 0.2s var(--ease-out-quad);
   }
 
@@ -355,6 +359,7 @@ const plans = [
     line-height: 1.55;
     color: var(--color-text-secondary);
     margin: 0;
+    overflow-wrap: anywhere;
   }
 
   .coverage-text code {
@@ -365,6 +370,11 @@ const plans = [
     border: 1px solid var(--color-border);
     border-radius: 3px;
     color: var(--color-accent);
+    overflow-wrap: anywhere;
+    /* Wrap the chip's background/border with the text instead of drawing one
+       long box that escapes the card. */
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
   }
 
   .plans-grid {

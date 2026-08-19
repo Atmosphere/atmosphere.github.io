@@ -163,16 +163,18 @@ const frameworks = [
       <span class="section-label">Framework Support</span>
       <h2 class="section-title">One support contract. Every Java AI framework.</h2>
       <p class="section-description">
-        The Java AI ecosystem has eleven third-party agent frameworks. Each
-        one is moving fast, each one has its own release cadence, and each
-        one could change direction tomorrow. Atmosphere is the
+        You are not shopping between Spring AI and LangChain4j — you want an
+        agent stack that does not lock you into one framework, one LLM
+        provider, or one vendor. The Java AI ecosystem has eleven third-party
+        agent frameworks: each is moving fast, each has its own release
+        cadence, and each could change direction tomorrow. Atmosphere is the
         <strong>runtime-abstraction layer</strong> that makes your
         <code>@Agent</code>, <code>@AiEndpoint</code>, and <code>@AiTool</code>
         code portable across all of them — twelve total runtimes counting
         Atmosphere's own Built-in OpenAI-compatible client. Swap the
-        dependency, keep the code. Async IO maintains the abstraction and the
-        bridges; our support contract is the insurance policy against vendor
-        lock-in.
+        dependency, keep the code. Async IO maintains the abstraction and every
+        bridge on this page, and has been selling the support contract that
+        covers the swap since 2013.
       </p>
     </div>
 
@@ -251,16 +253,7 @@ const frameworks = [
     </div>
 
     <div class="lockin-block">
-      <div class="lockin-intro">
-        <h3 class="lockin-title">No vendor lock-in. One support contract.</h3>
-        <p class="lockin-lead">
-          You are not shopping between Spring AI and LangChain4j — you
-          already want an agent stack that does not lock you into one
-          framework, one LLM provider, or one vendor. Atmosphere is that
-          stack. Async IO has been selling the support contract that
-          covers the abstraction and the swap since 2013.
-        </p>
-      </div>
+      <h3 class="lockin-title">The swap, side by side</h3>
 
       <div class="lockin-compare">
         <div class="lockin-col lockin-without">
@@ -687,26 +680,14 @@ const frameworks = [
     box-shadow: 0 0 0 1px var(--color-accent-glow), 0 24px 48px -24px rgba(0, 0, 0, 0.5);
   }
 
-  .lockin-intro {
-    text-align: center;
-    max-width: 720px;
-    margin: 0 auto var(--space-2xl);
-  }
-
   .lockin-title {
     font-family: var(--font-display);
     font-size: clamp(1.75rem, 4vw, 2.25rem);
     font-weight: 400;
     letter-spacing: -0.01em;
     color: var(--color-text-primary);
-    margin: 0 0 var(--space-md) 0;
-  }
-
-  .lockin-lead {
-    font-size: 1rem;
-    line-height: 1.7;
-    color: var(--color-text-secondary);
-    margin: 0;
+    text-align: center;
+    margin: 0 0 var(--space-2xl) 0;
   }
 
   .lockin-compare {
