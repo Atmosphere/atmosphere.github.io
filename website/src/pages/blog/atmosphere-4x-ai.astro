@@ -10,6 +10,8 @@ const agentSnippet = `@Agent(name = "support",
        description = "Billing and refund support")
 public class SupportAgent {
 
+    @Inject BillingService billing;   // ordinary DI — your own service, nothing Atmosphere
+
     @AiTool(name = "issue_refund", description = "Refund a customer order")
     @RequiresApproval("This refund posts immediately. Approve?")
     public String issueRefund(@Param(value = "orderId", description = "Order to refund") String orderId) {
@@ -21,6 +23,24 @@ public class SupportAgent {
         session.stream(message);   // streams the reply to this client, token by token
     }
 }`;
+
+const clientSnippet = `import &#123; useChat &#125; from 'atmosphere.js/react';
+
+function SupportChat() &#123;
+  // Opens the transport, streams the agent's reply token by token,
+  // and keeps the message list for you.
+  const &#123; messages, input, setInput, handleSubmit, isLoading &#125; = useChat(&#123;
+    request: &#123; url: '/atmosphere/agent/support', transport: 'websocket' &#125;,
+  &#125;);
+
+  return (
+    &lt;form onSubmit=&#123;handleSubmit&#125;&gt;
+      &#123;messages.map((m) =&gt; &lt;p key=&#123;m.id&#125; data-role=&#123;m.role&#125;&gt;&#123;m.content&#125;&lt;/p&gt;)&#125;
+      &lt;input value=&#123;input&#125; onChange=&#123;(e) =&gt; setInput(e.target.value)&#125; /&gt;
+      &lt;button disabled=&#123;isLoading&#125;&gt;Send&lt;/button&gt;
+    &lt;/form&gt;
+  );
+&#125;`;
 
 const swapSnippet = `&lt;!-- Built-in OpenAI-compatible client by default — no dependency.
      Swap the runtime without touching a line of the code above: --&gt;
@@ -51,7 +71,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
   <main class="blog">
     <article class="post">
       <header class="post-header">
-        <p class="eyebrow">Engineering · Jean-François Arcand · <time datetime="2026-07-17">July 17, 2026</time></p>
+        <p class="eyebrow">Engineering · Jean-François Arcand · <time datetime="2026-08-19">August 19, 2026</time></p>
         <h1>Atmosphere 4 released, now shipping a portable AI agent component</h1>
         <p class="lede">
           I added an AI agent layer to Atmosphere. Wiring up the LLM was the easy
@@ -60,6 +80,24 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
       </header>
 
       <div class="post-body">
+        <nav class="summary" aria-label="What's in this post">
+          <p class="summary-title">What's in here</p>
+          <ol>
+            <li><a href="#runtimes">One annotation, twelve runtimes</a><span> — the <code>@Agent</code> class, and the SPI that lets you swap the AI framework under it</span></li>
+            <li><a href="#not-another-llm-library">Why this isn't another LLM library</a><span> — what Atmosphere adds on top of Spring AI and LangChain4j instead of replacing them</span></li>
+            <li><a href="#governance">Governance in the box</a><span> — policy admission, scope confinement, prompt-injection screens, Cedar/Rego, audit sinks</span></li>
+            <li><a href="#verifier">Guardians of the Agents</a><span> — proving the whole tool-call plan safe before any of it executes</span></li>
+            <li><a href="#durable-state">State that outlives the request</a><span> — durable sessions, checkpoints, and a run you can drop off from and rejoin</span></li>
+            <li><a href="#workflows">Workflows, now portable to Temporal</a><span> — the durable-execution engine became a seam; Temporal is one dependency</span></li>
+            <li><a href="#beyond-chat">Beyond chat</a><span> — tools, typed output, multi-agent, A2A / MCP / AG-UI, RAG, and the admin Console</span></li>
+            <li><a href="#clients">Reachable from anywhere</a><span> — atmosphere.js and its React/Vue/Svelte bindings, plus the messaging-channel bridges</span></li>
+            <li><a href="#openclaw">Bring an agent you already have</a><span> — run an OpenClaw workspace as-is, no conversion step</span></li>
+            <li><a href="#skills">Skills: an agent you can share</a><span> — the agent as a <code>SKILL.md</code> file you can version and hand to someone</span></li>
+            <li><a href="#runtime-truth">Runtime truth, not classpath truth</a><span> — why a runtime only advertises what it actually performs</span></li>
+            <li><a href="#try-it">Try it</a><span> — one dependency, or one CLI command</span></li>
+          </ol>
+        </nav>
+
         <p>
           I've worked on Atmosphere for years — a real-time transport for the JVM.
           It streams events from the server to connected clients, auto-negotiating
@@ -79,18 +117,21 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           layer that was already there instead of building a new framework around the LLM.
         </p>
 
-        <h2>One annotation, twelve runtimes</h2>
+        <h2 id="runtimes">One annotation, twelve runtimes</h2>
         <p>
           The annotation that matters is <code>@Agent</code> — drop it on a class and that
           class is an agent. Its persona and instructions live in a skill file, it keeps
-          track of the conversation for you, and it shows up over A2A, MCP, and AG-UI without
-          a line of plumbing. So, not a hello-world — here's one worth looking at: a
+          track of the conversation for you, and — with the matching optional module on the
+          classpath — it shows up over A2A, MCP, and AG-UI without a line of plumbing.
+          So, not a hello-world — here's one worth looking at: a
           billing-support agent that streams its reply and gates a money-moving tool behind a
           human:
         </p>
         <pre class="code"><code set:html={agentSnippet}></code></pre>
         <p>
-          That's the whole class. The persona lives in <code>skill:support-agent</code> —
+          That's the Atmosphere-specific part of the class — the rest is the ordinary
+          dependency injection you already write. The persona lives in
+          <code>skill:support-agent</code> —
           the same <code>SKILL.md</code> format from the Skills section, so the agent stays a
           shareable artifact. <code>@RequiresApproval</code> parks the refund tool — the
           pipeline suspends the virtual thread and sends an approval request to the client;
@@ -118,8 +159,8 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
         </p>
         <pre class="code"><code set:html={swapSnippet}></code></pre>
         <p>
-          And this is the part that matters most: that dependency line is the
-          <em>only</em> thing that changes. Look back at the agent — it imports
+          And this is the part that matters most: the agent class does not change. Look
+          back at it — it imports
           <code>@Agent</code>, <code>@AiTool</code>, <code>@RequiresApproval</code>,
           <code>StreamingSession</code>: all <code>org.atmosphere</code> types. It never
           imports a Spring AI <code>ChatClient</code> or a LangChain4j
@@ -127,8 +168,13 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           framework underneath it</strong> — which runtime you pick is a deployment detail
           behind the <code>AgentRuntime</code> SPI, not something woven through your code. That's what
           makes an agent portable: you can move it from LangChain4j to Spring AI to the
-          built-in client, or hand it to someone running a different stack, and the class
-          doesn't change. It's the same bet Atmosphere has made from the start. Its transport
+          built-in client, or hand it to someone running a different stack. The dependency
+          is what makes a runtime <em>eligible</em>, not what
+          selects it: each adapter reports its own <code>isAvailable()</code>, and the
+          highest-priority runtime that actually answers wins — so credentials, an
+          explicitly bound client, or a reachable CrewAI sidecar still decide who serves the
+          call, with the built-in client as the always-there fallback.
+          It's the same bet Atmosphere has made from the start. Its transport
           layer carried application code across WebSocket, Server-Sent Events, and
           long-polling before the Java WebSocket spec existed — and to this day it does more
           than the spec, with the transport fallback and reconnect the standard never
@@ -150,7 +196,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           you opt into a broadcaster and one reply fans out to every subscriber.
         </p>
 
-        <h2>Why this isn't another LLM library</h2>
+        <h2 id="not-another-llm-library">Why this isn't another LLM library</h2>
         <p>
           Spring AI and LangChain4j are excellent abstractions over model APIs — very good
           at "talk to a model." Atmosphere isn't trying to compete with them on how many
@@ -180,17 +226,19 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           want it and the framework's own features when you don't.
         </p>
 
-        <h2>Governance in the box</h2>
+        <h2 id="governance">Governance in the box</h2>
         <p>
           Governance is the part I care about most. Atmosphere ships a composable
           governance layer that runs at the agent's entry point, before the model is
           called. You compose a policy-admission chain
           — allow/deny lists, authorization, rate-limit, concurrency-limit,
           message-length, time-window, a kill switch — and a denied request is
-          rejected and recorded to a decision audit log. It's opt-in: out of the box
-          the gateway is permissive and logs a warning on the first call telling you to
-          install an enforcing one for production, so you turn governance <em>on</em> rather
-          than discovering it was off.
+          rejected and recorded to a decision audit log. Enforcement is opt-in: the default
+          gateway admits unauthenticated callers, but it is not a no-op — it still applies
+          baseline per-principal and shared-anonymous rate caps that bound a runaway tool
+          loop, and it logs a warning on the first call telling you to install a production
+          profile. A floor, not a posture — so you turn governance <em>on</em> deliberately
+          rather than discovering it was off.
         </p>
         <p>
           Scope confinement rides the same layer: you pin an agent to a declared purpose,
@@ -223,7 +271,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           audit trail.
         </p>
 
-        <h2>Guardians of the Agents: verify the plan before it runs</h2>
+        <h2 id="verifier">Guardians of the Agents: verify the plan before it runs</h2>
         <p>
           Governance gates a single request. The verifier goes a step further and
           checks the agent's <em>whole plan</em> before any tool executes. Atmosphere
@@ -250,7 +298,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           Validation tab shows the verdicts on demand.
         </p>
 
-        <h2>State that outlives the request</h2>
+        <h2 id="durable-state">State that outlives the request</h2>
         <p>
           Agents aren't always stateless request/response. When a connection drops or a
           process restarts, the session isn't lost — a durable session token re-attaches
@@ -274,7 +322,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           JVM is reachable from any of them.
         </p>
 
-        <h2>Workflows, now portable to Temporal</h2>
+        <h2 id="workflows">Workflows, now portable to Temporal</h2>
         <p>
           For work that has to survive across steps — not just across a dropped
           connection — Atmosphere ships a small durable-<strong>workflow</strong> primitive:
@@ -294,7 +342,8 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           in-tree engine is the always-on fallback, and an external adapter takes over
           when one is registered and reachable. The first such adapter,
           <code>atmosphere-checkpoint-temporal</code>, is one dependency — the workflow
-          code does not change:
+          code does not change (there's a
+          <a href="/blog/workflow-on-temporal/">separate post</a> on how that seam works):
         </p>
         <pre class="code"><code set:html={temporalDepSnippet}></code></pre>
         <p>
@@ -310,7 +359,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           the same checkpoint contract.
         </p>
 
-        <h2>Beyond chat</h2>
+        <h2 id="beyond-chat">Beyond chat</h2>
         <p>
           The endpoint model scales up from there. You already saw an <code>@AiTool</code>
           method in the first example — each one becomes a function the model can call
@@ -323,8 +372,10 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           and so on), with a graceful fallback to system-prompt schema instructions when
           one can't.
           <code>@Coordinator</code> and <code>@Fleet</code> compose multiple agents. And
-          because agents rarely live alone, Atmosphere speaks the open interop
-          protocols. It's an MCP server and an MCP client. It talks
+          because agents rarely live alone, Atmosphere speaks the open interop protocols —
+          each one its own optional module, added when you want that surface rather than
+          pulled in by the starter, and detected on the classpath at startup. It's an MCP
+          server and an MCP client. It talks
           <strong>A2A</strong> (Agent-to-Agent, v1.0.0) — an Atmosphere agent publishes
           an <code>AgentCard</code> — optionally Ed25519-signed — and can call other A2A
           agents over JSON-RPC.
@@ -356,23 +407,33 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           a live chat tab plus operational tabs that appear as you wire the matching
           pieces in: the governance policy decisions as they happen, the
           OWASP-agentic-threats matrix, the plan-verifier's verdicts, and the MCP
-          Apps host. It's the same UI the samples run on — about thirty of them,
+          Apps host. It's the same UI the samples run on — thirty-one of them,
           mostly Spring Boot and Quarkus, with a few plain embedded-server and gRPC builds.
         </p>
 
-        <h2>Reachable from anywhere</h2>
+        <h2 id="clients">Reachable from anywhere</h2>
         <p>
           An agent is only useful if clients can reach it. For the browser and mobile
-          there's <strong>atmosphere.js</strong>, a TypeScript client that does much more
-          than open a socket. It speaks WebSocket, SSE, long-polling, chunked streaming, or
+          there's <strong>atmosphere.js</strong> — <code>npm install atmosphere.js</code> —
+          a TypeScript client that is the other half of the <code>@Agent</code> above. The
+          entire browser end of that streaming billing-support agent is one hook:
+        </p>
+        <pre class="code"><code set:html={clientSnippet}></code></pre>
+        <p>
+          That's the same shape as the server side: no transport code, no reconnect
+          bookkeeping, no message-list plumbing. And the client does much more than open a
+          socket. It speaks WebSocket, SSE, long-polling, chunked streaming, or
           WebTransport/HTTP3, and falls back to a configured secondary transport if the
-          primary one fails. When the network drops, an <strong>offline queue</strong>
-          holds outbound messages and drains them on reconnect, while
-          <strong>history sync</strong> replays exactly the messages you missed using a
-          persisted <code>sinceId</code> cursor. There's a rooms-and-<strong>presence</strong>
-          API, <strong>optimistic updates</strong> so a sent message renders instantly and
-          reconciles when the server confirms, and a connection-status state machine you can
-          bind to a badge.
+          primary one fails. Around that core sit the pieces that make a flaky network
+          survivable, each an opt-in helper you reach for rather than magic that happens to
+          you: an <strong>offline queue</strong> that holds outbound messages while the
+          connection is down and drains them on reconnect; <strong>history sync</strong>,
+          which tracks the largest message id it has seen so your reconnect
+          <code>join</code> frame can carry <code>sinceId</code> and the server replays only
+          what you missed — hand it a storage adapter and that cursor survives a page
+          reload; a rooms-and-<strong>presence</strong> API; <strong>optimistic
+          updates</strong> so a sent message renders instantly and reconciles when the
+          server confirms; and a connection-status state machine you can bind to a badge.
         </p>
         <p>
           All of that ships as idiomatic bindings for <strong>React, React Native, Vue, and
@@ -392,7 +453,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           separate bidirectional transport.
         </p>
 
-        <h2>Bring an agent you already have: OpenClaw-compatible</h2>
+        <h2 id="openclaw">Bring an agent you already have: OpenClaw-compatible</h2>
         <p>
           An agent's persona doesn't have to be written in Java. Atmosphere treats an
           agent as an artifact — a directory of Markdown — that a small Java
@@ -414,7 +475,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           to pick up. Your agent stays portable; Atmosphere just reads more of the directory.
         </p>
 
-        <h2>Skills: an agent you can share</h2>
+        <h2 id="skills">Skills: an agent you can share</h2>
         <p>
           The same artifact thinking shows up one level down, at the level of a single
           agent's personality and tools. A <strong>skill</strong> is a
@@ -438,7 +499,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           and becomes a file you can pull, version, and share.
         </p>
 
-        <h2>Runtime truth, not classpath truth</h2>
+        <h2 id="runtime-truth">Runtime truth, not classpath truth</h2>
         <p>
           One principle shaped the whole design: a runtime only advertises a capability
           it actually performs. Each adapter's capability set — drawn from a vocabulary of
@@ -451,7 +512,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           that's the part I cared about most.
         </p>
 
-        <h2>Try it</h2>
+        <h2 id="try-it">Try it</h2>
         <p>
           Getting started is one dependency. Add
           <code>atmosphere-ai-spring-boot-starter</code> and a single
@@ -542,6 +603,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
     color: var(--color-text-primary);
   }
   .post-body h2 {
+    scroll-margin-top: 5rem;
     font-family: var(--font-display);
     font-size: 1.7rem;
     font-weight: 400;
@@ -568,6 +630,51 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
     border-bottom: 1px solid var(--color-accent-dim);
   }
   .post-body a:hover { border-bottom-color: var(--color-accent); }
+  .summary {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: var(--space-lg) var(--space-lg) var(--space-md);
+    margin: 0 0 var(--space-2xl);
+  }
+  .summary-title {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    margin: 0 0 var(--space-md);
+  }
+  .summary ol {
+    margin: 0;
+    padding-left: 1.4em;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .summary li {
+    margin-bottom: var(--space-sm);
+    color: var(--color-text-muted);
+  }
+  .summary li a {
+    color: var(--color-text-primary);
+    border-bottom: 1px solid transparent;
+  }
+  .summary li a:hover {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+  }
+  .summary li span { color: var(--color-text-muted); }
+  .summary li code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--color-bg-tertiary);
+    color: var(--color-accent);
+    padding: 0.05em 0.3em;
+    border-radius: 3px;
+  }
+  @media (max-width: 600px) {
+    .summary li span { display: none; }
+  }
   pre.code {
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
