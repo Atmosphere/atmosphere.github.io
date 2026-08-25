@@ -84,7 +84,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           <p class="summary-title">What's in here</p>
           <ol>
             <li><a href="#runtimes">One annotation, twelve runtimes</a><span> — the <code>@Agent</code> class, and the SPI that lets you swap the AI framework under it</span></li>
-            <li><a href="#why-a-seam">Why a seam at all</a><span> — what a base URL reaches, what it structurally cannot, and why the layer above it is shared</span></li>
+            <li><a href="#why-a-seam">Why a seam at all</a><span> — what a base URL reaches, what it cannot, and why abstracting the features — not just the call — is what makes an agent portable</span></li>
             <li><a href="#not-another-llm-library">Why this isn't another LLM library</a><span> — what Atmosphere adds on top of Spring AI and LangChain4j instead of replacing them</span></li>
             <li><a href="#governance">Governance in the box</a><span> — policy admission, scope confinement, prompt-injection screens, Cedar/Rego, audit sinks</span></li>
             <li><a href="#verifier">Guardians of the Agents</a><span> — proving the whole tool-call plan safe before any of it executes</span></li>
@@ -229,50 +229,50 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
         <p>
           Then there is what a base URL cannot address at all, because it is not at an
           endpoint. It cannot reach an object that lives in your process — the client your
-          platform group already configured, credentials and observability and all. Both
-          framework runtimes take one by binding instead, and a bound client serves
-          without Atmosphere ever seeing an API key. It cannot reach the CrewAI sidecar
+          platform group already configured, observability and all. The Spring AI and
+          LangChain4j runtimes take one by explicit binding instead. It cannot reach the CrewAI sidecar
           above at all, because the thing you want there is the agent stack, not the
           model. And where a framework does something natively, the adapter bridges to
-          <em>that</em> machinery rather than papering over it: the two runtimes with
-          their own native file tools keep those on their own path, and Atmosphere's
-          built-in tool floor stands down rather than competing with them.
+          <em>that</em> machinery rather than papering over it: a runtime that
+          advertises its own native file surface keeps it on its own path, and
+          Atmosphere's built-in file tools are not registered alongside it.
         </p>
         <p>
-          That is the case for a seam. The case for a <em>common</em> one is the opposite
-          of what you would guess: the adapter is the expensive part, and the interface it
-          has to satisfy is five methods wide — everything else on it is a default.
-          Everything you would otherwise re-derive per provider sits above that line and
-          is written once. All twelve runtimes funnel every invocation of a tool you
-          declared into one method that validates the model's arguments against your
-          declared parameters, puts the call to whatever governance policy chain you
-          installed, enforces any <code>@Authorize</code> the tool declares, and runs your
-          method under a deadline. Every dispatch runs through one nine-layer decorator
-          chain — memory, lineage, metrics, cost, budget, a dev inspector, guardrails,
-          structured output, confidence — each layer applied when it is configured, and
-          composed at exactly two call sites in the codebase, neither of which is an
-          adapter. Adapters emit into one session sink with a nineteen-variant event
-          vocabulary behind it, so a tool start, a tool result, and an approval request
-          each have one wire shape no matter which runtime produced them. A2A, AG-UI, and
-          the five messaging-channel bridges target that pipeline rather than a runtime,
-          which is why adding Slack does not multiply by the number of providers you
-          support.
+          That is the case for a seam. The case for a <em>common</em> one is what makes
+          the agent portable, and it is worth saying plainly: Atmosphere did not abstract
+          the model call and stop. It abstracted the <em>features</em>. Tool calling,
+          human approval, structured output, conversation memory, retrieval, guardrails,
+          cancellation, token accounting, and the streaming itself are each defined once,
+          as Atmosphere types — <code>@AiTool</code>, <code>@RequiresApproval</code>,
+          <code>responseAs</code>, <code>ContextProvider</code>, <code>AiGuardrail</code>,
+          <code>StreamingSession</code> — and implemented once, above the seam. An adapter
+          satisfies an interface five methods wide and inherits all of it. So the
+          billing-support agent at the top of this post is not portable because its
+          <em>chat call</em> can be redirected; it is portable because every feature it
+          uses is Atmosphere's, delivered through the same shared path on whichever
+          runtime declares the capability — and a contract test pins what each one
+          declares. That is what "portable AI agent" means here.
         </p>
         <p>
-          I have run this ledger to the end once before. Atmosphere's legacy branch still
-          carries thirty-seven classes under <code>org.atmosphere.container</code> — ten
-          named for Jetty, seven for Tomcat, five for GlassFish, four for Grizzly — most of
-          them written against a servlet container's own proprietary async API. On
-          <code>main</code> that package is six files, and five of the six are the ones
-          that were written against a standard rather than a vendor. The APIs underneath
-          went away; the <code>AsyncSupport</code> seam they plugged into did not, and
-          neither did the <code>AtmosphereHandler</code> API the application code was
-          written against. The AI-layer version has already started on a shorter clock:
-          the Spring AI 2.0 GA upgrade broke three call sites the adapters make — two
-          renames and one expanded parameter list — and the whole migration landed in the
-          adapter modules and a version line in the root pom. Nobody's <code>@Agent</code>
-          class knew. Being OpenAI-compatible makes the <em>model</em> swappable and leaves
-          the framework above it welded in; the SPI makes both swappable.
+          Concretely: all twelve runtimes funnel every invocation of a tool you declared
+          into one method that validates the model's arguments against your declared
+          parameters, puts the call to whatever governance policy chain you installed,
+          enforces any <code>@Authorize</code> the tool declares, and runs your method
+          under a deadline. Every dispatch runs through one nine-layer decorator chain —
+          memory, lineage, metrics, cost, budget, a dev inspector, guardrails, structured
+          output, confidence — each layer applied when it is configured, and composed at
+          exactly two call sites in the codebase, neither of which is an adapter. Adapters
+          emit into one session sink with a nineteen-variant event vocabulary behind it,
+          so a tool start, a tool result, and an approval request each have one wire shape
+          no matter which runtime produced them. A2A, AG-UI, and the five
+          messaging-channel bridges target that pipeline rather than a runtime, which is
+          why adding Slack does not multiply by the number of providers you support. And
+          when the framework underneath moves, the move stays inside the adapter: the
+          Spring AI 2.0 GA upgrade broke three call sites the adapters make, and the whole
+          migration landed in the adapter modules and a version line in the root pom.
+          Nobody's <code>@Agent</code> class knew. Being OpenAI-compatible makes the
+          <em>model</em> swappable and leaves the framework above it welded in; the SPI
+          makes both swappable — and carries the features with it.
         </p>
 
         <h2 id="not-another-llm-library">Why this isn't another LLM library</h2>
