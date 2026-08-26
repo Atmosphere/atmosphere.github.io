@@ -75,7 +75,9 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
         <h1>Atmosphere 4 released, now shipping a portable AI agent component</h1>
         <p class="lede">
           I added an AI agent layer to Atmosphere. Wiring up the LLM was the easy
-          part — the streaming was already done.
+          part — the streaming was already done. The design decision that matters is
+          that the agent is written against one abstraction, so the same agent runs
+          unchanged on any of twelve AI runtimes.
         </p>
       </header>
 
@@ -84,7 +86,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           <p class="summary-title">What's in here</p>
           <ol>
             <li><a href="#runtimes">One annotation, twelve runtimes</a><span> — the <code>@Agent</code> class, and the SPI that lets you swap the AI framework under it</span></li>
-            <li><a href="#why-a-seam">Why a seam at all</a><span> — what a base URL reaches, what it cannot, and why abstracting the features — not just the call — is what makes an agent portable</span></li>
+            <li><a href="#portability-layer">Why a portability layer</a><span> — what a base URL cannot reach, and why abstracting the features, not just the model call, is what makes an agent portable</span></li>
             <li><a href="#not-another-llm-library">Why this isn't another LLM library</a><span> — what Atmosphere adds on top of Spring AI and LangChain4j instead of replacing them</span></li>
             <li><a href="#governance">Governance in the box</a><span> — policy admission, scope confinement, prompt-injection screens, Cedar/Rego, audit sinks</span></li>
             <li><a href="#verifier">Guardians of the Agents</a><span> — proving the whole tool-call plan safe before any of it executes</span></li>
@@ -179,8 +181,8 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           layer carried application code across WebSocket, Server-Sent Events, and
           long-polling before the Java WebSocket spec existed — and to this day it does more
           than the spec, with the transport fallback and reconnect the standard never
-          covered. The AI runtimes are that same idea one layer up — and the next section
-          is about why that bet is worth placing twice.
+          covered. The AI runtimes are that same idea one layer up; the next section
+          explains why.
         </p>
         <p>
           Your agent runs on any of twelve contract-tested runtimes. Nine wrap an AI
@@ -196,83 +198,100 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           you opt into a broadcaster and one reply fans out to every subscriber.
         </p>
 
-        <h2 id="why-a-seam">Why a seam at all</h2>
+        <h2 id="portability-layer">Why a portability layer</h2>
         <p>
-          The objection to all of that is that the seam is unnecessary: every provider
-          speaks OpenAI now, so why twelve runtimes instead of one HTTP client and a
-          configurable base URL? You have already met the answer: with no adapter on the
-          classpath, the dependency-free OpenAI-compatible runtime <em>is</em> what serves
-          your calls, and it covers nineteen of the twenty-two capabilities the SPI
-          defines. It is the floor, not the ceiling. For OpenAI, Gemini, Ollama, and any
-          proxy that speaks the same dialect, a base URL genuinely is the mechanism. The
-          first integration is rarely the problem: you add a client, you get a token
-          stream, and for as long as there is one provider the seam looks like ceremony.
-          The bill arrives later, one requirement at a time, and every line of it is paid
-          in your application code.
+          The central design decision in Atmosphere 4 is a single interface,
+          <code>AgentRuntime</code>, between an agent and whatever executes it — an AI
+          framework or a model API. An agent is written against Atmosphere's types only.
+          Which runtime executes it is a deployment choice. This section explains why
+          that layer exists and what it buys you over calling a provider directly.
         </p>
         <p>
-          Point that client at a second provider and the divergence is structural, not
-          cosmetic. On Anthropic a system prompt is not a message at all — it moves to a
-          top-level <code>system</code> field, and a system-role message left in the array
-          maps to nothing and is dropped. A tool result is not a tool-role message either:
-          it becomes a <code>tool_result</code> block on a <em>user</em>-role message, so
-          the role itself changes — on the second turn, after the first one already looked
-          like it worked. It does not even hold inside the compatible set: OpenAI's own
-          optional <code>prompt_cache_key</code> is not safe to send blind, so the built-in
-          client keeps a default-deny allow-list of endpoints known to tolerate it, because
-          a stricter compatibility layer rejects the whole request rather than ignoring the
-          field. Atmosphere's Anthropic adapter is nine hundred lines of exactly this kind
-          of mapping. Write that once against a direct integration and it is bound to that
-          provider's shapes — the tool-call frame, the finish signal, the error taxonomy.
-          The second provider does not reuse it, because the providers do not line up.
+          The obvious objection: most providers expose an OpenAI-compatible endpoint,
+          so why not one HTTP client and a configurable base URL? Atmosphere ships
+          exactly that. With no adapter on the classpath, a dependency-free
+          OpenAI-compatible runtime serves every call, and it implements nineteen of
+          the twenty-two capabilities the SPI defines. For OpenAI, Gemini, Ollama, or a
+          proxy that speaks the same dialect, it is enough. It stops being enough in
+          three situations.
+        </p>
+        <ol class="cases">
+          <li>
+            <strong>The provider's wire format is different.</strong> On Anthropic, the
+            system prompt is not a message; it is a top-level <code>system</code> field,
+            and a system-role message left in the array is dropped. A tool result is not
+            a tool-role message; it is a <code>tool_result</code> block on a
+            <em>user</em>-role message, so the role itself changes on the second turn.
+            The divergence reaches into the compatible set too: OpenAI's optional
+            <code>prompt_cache_key</code> is rejected by some compatible endpoints, so
+            the built-in client only sends it to hosts on a default-deny allow-list.
+            Atmosphere's Anthropic adapter is roughly nine hundred lines of this kind of
+            mapping. Written against a provider SDK directly, that code lives in your
+            application and is specific to one provider.
+          </li>
+          <li>
+            <strong>What you want is not at an endpoint.</strong> A Spring AI
+            <code>ChatClient</code> or a LangChain4j <code>StreamingChatModel</code> that
+            your platform team already configured lives in your process, not behind a
+            URL. The Spring AI and LangChain4j runtimes accept one by explicit binding.
+            CrewAI is not a model API at all; it is a Python agent stack, reached
+            through the sidecar described above. There is no base URL to point at.
+          </li>
+          <li>
+            <strong>The framework has native machinery worth using.</strong> Where a
+            runtime advertises its own file-tool surface, the adapter uses it, and
+            Atmosphere's built-in file tools are not registered alongside it. The
+            abstraction routes to the framework's capability instead of hiding it.
+          </li>
+        </ol>
+        <p>
+          That is the case for an abstraction. The case for a <em>common</em> one is
+          the part that makes the agent portable, and it is worth stating plainly:
+          Atmosphere did not abstract the model call and stop. It abstracted the
+          features. Each of these is defined once, as an Atmosphere type, and
+          implemented once, above the runtime interface:
+        </p>
+        <ul class="cases">
+          <li>tool calling — <code>@AiTool</code></li>
+          <li>human approval of a tool call — <code>@RequiresApproval</code></li>
+          <li>typed, schema-enforced output — <code>responseAs</code></li>
+          <li>retrieval — <code>ContextProvider</code></li>
+          <li>guardrails — <code>AiGuardrail</code></li>
+          <li>token-by-token streaming and cancellation — <code>StreamingSession</code></li>
+          <li>conversation memory and token accounting</li>
+        </ul>
+        <p>
+          An adapter implements five methods — <code>name</code>,
+          <code>isAvailable</code>, <code>priority</code>, <code>configure</code>, and
+          <code>execute</code> — and inherits all of the above. Each runtime declares
+          the capabilities it delivers, and a contract test pins that declaration so it
+          cannot drift from the code. The billing-support agent at the top of this post
+          is therefore not portable because its chat call can be redirected. It is
+          portable because every feature it uses is Atmosphere's, and every runtime
+          that declares the capability delivers it through the same shared code.
         </p>
         <p>
-          Then there is what a base URL cannot address at all, because it is not at an
-          endpoint. It cannot reach an object that lives in your process — the client your
-          platform group already configured, observability and all. The Spring AI and
-          LangChain4j runtimes take one by explicit binding instead. It cannot reach the CrewAI sidecar
-          above at all, because the thing you want there is the agent stack, not the
-          model. And where a framework does something natively, the adapter bridges to
-          <em>that</em> machinery rather than papering over it: a runtime that
-          advertises its own native file surface keeps it on its own path, and
-          Atmosphere's built-in file tools are not registered alongside it.
+          In concrete terms, this is what "shared" means in the codebase today. All
+          twelve runtimes route every invocation of a tool you declared through one
+          method, which validates the model's arguments against the declared
+          parameters, consults whatever governance policy chain you installed,
+          enforces any <code>@Authorize</code> on the tool, and applies an execution
+          deadline. Every dispatch passes through one decorator chain of nine layers —
+          memory, lineage, metrics, cost, budget, a dev inspector, guardrails,
+          structured output, confidence — each applied when configured, and composed at
+          two call sites, neither of them in an adapter. Adapters emit into one session
+          sink backed by a sealed event type with nineteen variants, so a tool start, a
+          tool result, and an approval request have one wire shape regardless of which
+          runtime produced them. A2A, AG-UI, and the five messaging-channel bridges
+          target that pipeline, not a runtime, so adding a channel does not multiply by
+          the number of providers you support. And when Spring AI 2.0 went GA and
+          renamed APIs, three call sites changed, all in the adapter modules; no
+          <code>@Agent</code> class was touched.
         </p>
         <p>
-          That is the case for a seam. The case for a <em>common</em> one is what makes
-          the agent portable, and it is worth saying plainly: Atmosphere did not abstract
-          the model call and stop. It abstracted the <em>features</em>. Tool calling,
-          human approval, structured output, conversation memory, retrieval, guardrails,
-          cancellation, token accounting, and the streaming itself are each defined once,
-          as Atmosphere types — <code>@AiTool</code>, <code>@RequiresApproval</code>,
-          <code>responseAs</code>, <code>ContextProvider</code>, <code>AiGuardrail</code>,
-          <code>StreamingSession</code> — and implemented once, above the seam. An adapter
-          satisfies an interface five methods wide and inherits all of it. So the
-          billing-support agent at the top of this post is not portable because its
-          <em>chat call</em> can be redirected; it is portable because every feature it
-          uses is Atmosphere's, delivered through the same shared path on whichever
-          runtime declares the capability — and a contract test pins what each one
-          declares. That is what "portable AI agent" means here.
-        </p>
-        <p>
-          Concretely: all twelve runtimes funnel every invocation of a tool you declared
-          into one method that validates the model's arguments against your declared
-          parameters, puts the call to whatever governance policy chain you installed,
-          enforces any <code>@Authorize</code> the tool declares, and runs your method
-          under a deadline. Every dispatch runs through one nine-layer decorator chain —
-          memory, lineage, metrics, cost, budget, a dev inspector, guardrails, structured
-          output, confidence — each layer applied when it is configured, and composed at
-          exactly two call sites in the codebase, neither of which is an adapter. Adapters
-          emit into one session sink with a nineteen-variant event vocabulary behind it,
-          so a tool start, a tool result, and an approval request each have one wire shape
-          no matter which runtime produced them. A2A, AG-UI, and the five
-          messaging-channel bridges target that pipeline rather than a runtime, which is
-          why adding Slack does not multiply by the number of providers you support. And
-          when the framework underneath moves, the move stays inside the adapter: the
-          Spring AI 2.0 GA upgrade broke three call sites the adapters make, and the whole
-          migration landed in the adapter modules and a version line in the root pom.
-          Nobody's <code>@Agent</code> class knew. Being OpenAI-compatible makes the
-          <em>model</em> swappable and leaves the framework above it welded in; the SPI
-          makes both swappable — and carries the features with it.
+          An OpenAI-compatible endpoint makes the model swappable. The
+          <code>AgentRuntime</code> interface makes the framework swappable as well, and
+          carries the features with it. That is what a portable agent means here.
         </p>
 
         <h2 id="not-another-llm-library">Why this isn't another LLM library</h2>
@@ -693,6 +712,12 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
     margin: 0 0 var(--space-lg);
     color: var(--color-text-secondary);
   }
+  .post-body .cases {
+    margin: 0 0 var(--space-lg);
+    padding-left: 1.5rem;
+    color: var(--color-text-secondary);
+  }
+  .post-body .cases li { margin: 0 0 var(--space-sm); }
   .post-body strong { color: var(--color-text-primary); }
   .post-body em { color: var(--color-text-primary); font-style: italic; }
   .post-body code {
