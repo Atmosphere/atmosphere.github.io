@@ -119,6 +119,7 @@ plain `mvn compile`.
 | Template | Source sample | What you get |
 |----------|--------------|-------------|
 | `chat` | `spring-boot-chat` | WebSocket chat with Broadcaster and `@ManagedService` |
+| `one-dep-agent` | `spring-boot-one-dep-agent` | One dependency plus a single `@Agent` class — streaming chat on the keyless demo runtime |
 | `ai-chat` | `spring-boot-ai-chat` | `@AiEndpoint` with streaming, conversation memory, configurable LLM backend |
 | `ai-tools` | `spring-boot-ai-tools` | `@AiTool` tool calling, approval gates |
 | `mcp-server` | `spring-boot-mcp-server` | MCP tools, resources, and prompts |
@@ -130,6 +131,8 @@ plain `mvn compile`.
 | `coding-agent` | `spring-boot-coding-agent` | Sandboxed coding agent — clones a repo, reads files, proposes a patch |
 | `guarded-agent` | `spring-boot-guarded-email-agent` | Plan-and-Verify (`atmosphere-verifier`) inbox-exfiltration demo |
 | `assistant` | `spring-boot-personal-assistant` | Long-lived `@Coordinator` assistant with memory + delegation |
+| `browser-agent` | `spring-boot-browser-agent` | Code-as-action agent — the model writes Playwright that drives a headless browser in a sandbox container (requires Docker) |
+| `classic-rooms` | `spring-boot-team-rooms` | Classic annotations, no AI on the classpath — `@ManagedService` per room, `@BroadcasterFilterService` redaction, presence, bounded replay, a 429 rate limiter |
 
 Pass `--skill-file <path>` to auto-select the `agent` template with
 your skill file wired in.

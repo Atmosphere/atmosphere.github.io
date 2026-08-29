@@ -243,6 +243,44 @@ public class Chat { ... }
 
 Multiple filters are applied in the order they are listed.
 
+#### What the filter actually receives on the managed path
+
+Encoding happens **before** the filter chain. When a `@Message`-annotated method returns a value,
+`ManagedAtmosphereHandler` runs the encoder and broadcasts a `RawMessage` wrapping the encoded
+payload — so `filter()` receives a `RawMessage`, not your domain type. A filter that matches only
+your own class compiles, registers, and silently never fires:
+
+```java
+// WRONG on the managed path — never matches, message goes out unfiltered
+public BroadcastAction filter(String broadcasterId, Object originalMessage, Object message) {
+    if (message instanceof ChatMessage m) {   // never true after encoding
+        return new BroadcastAction(redact(m));
+    }
+    return new BroadcastAction(message);
+}
+```
+
+Handle every shape the message can arrive in — the domain type (direct `broadcast()` calls), the
+encoded `String`, and the `RawMessage` wrapper:
+
+```java
+public BroadcastAction filter(String broadcasterId, Object originalMessage, Object message) {
+    if (message instanceof RawMessage raw) {
+        return new BroadcastAction(new RawMessage(redact(String.valueOf(raw.message()))));
+    }
+    if (message instanceof ChatMessage m) {
+        return new BroadcastAction(redact(m));
+    }
+    if (message instanceof String s) {
+        return new BroadcastAction(redact(s));
+    }
+    return new BroadcastAction(message);
+}
+```
+
+Test a filter with what the wire actually carries, not with the object your `@Message` method
+returned — a unit test that feeds it the domain type passes while the real path is unfiltered.
+
 Alternatively, annotate the filter class itself with `@BroadcasterFilterService` and Atmosphere will discover and register it at startup:
 
 ```java

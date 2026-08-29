@@ -164,7 +164,7 @@ The `org.atmosphere.webtransport` package provides a transport-agnostic SPI:
 - Single bidirectional stream per session (WebSocket-equivalent semantics)
 - QUIC datagrams not yet exposed to application code
 - Multiplexed streams deferred to v2
-- Chrome strips query params from WebTransport CONNECT `:path` — auth tokens must use header-based authentication, not query parameters
+- Chrome strips query params from the WebTransport CONNECT `:path`, and the browser `WebTransport` API sends **no custom request headers** — so neither query parameters nor headers can carry a token. Authenticate after the session opens (a token in the first message), or with a cookie scoped to the origin. The same applies to any identity you would otherwise put on the query string.
 
 ## Source
 
