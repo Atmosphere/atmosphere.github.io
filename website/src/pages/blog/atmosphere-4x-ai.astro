@@ -235,7 +235,9 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
             your platform team already configured lives in your process, not behind a
             URL. The Spring AI and LangChain4j runtimes accept one by explicit binding.
             CrewAI is not a model API at all; it is a Python agent stack, reached
-            through the sidecar described above. There is no base URL to point at.
+            through the sidecar described above. Its URL speaks session control over
+            HTTP and SSE, not chat completions — nothing an OpenAI-compatible client
+            could be repointed at.
           </li>
           <li>
             <strong>The framework has native machinery worth using.</strong> Where a
@@ -453,7 +455,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           the live step lambdas, so application state never crosses the Temporal payload
           boundary — adding the adapter imposes no serialization constraints on your
           state type. A test pins the two engines' snapshot trails as equivalent — the
-          same ordered sequence of (last-completed-step, done) entries — so both read
+          same set of (last-completed-step, done) entries — so both read
           the same checkpoint contract.
         </p>
 
@@ -505,7 +507,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           a live chat tab plus operational tabs that appear as you wire the matching
           pieces in: the governance policy decisions as they happen, the
           OWASP-agentic-threats matrix, the plan-verifier's verdicts, and the MCP
-          Apps host. It's the same UI the samples run on — thirty-one of them,
+          Apps host. It's the same UI most of the samples run on — there are thirty-three of them,
           mostly Spring Boot and Quarkus, with a few plain embedded-server and gRPC builds.
         </p>
 
@@ -547,7 +549,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
         <p>
           And if the client is itself a JVM service, <strong>wasync</strong> is the Java
           counterpart to atmosphere.js — a server-to-server client with an ordered
-          WebSocket → SSE → long-polling fallback chain, with gRPC available as a
+          WebSocket → SSE → chunked streaming → long-polling fallback chain, with gRPC available as a
           separate bidirectional transport.
         </p>
 
@@ -620,9 +622,10 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           <code>atmosphere-spring-boot-starter</code>.)
           Prefer to scaffold? The CLI does it in one line —
           <code>atmosphere new my-app --template ai-chat</code>, then
-          <code>./mvnw spring-boot:run</code>. The CLI exposes fourteen starters —
+          <code>./mvnw spring-boot:run</code>. The CLI exposes fifteen starters —
           chat, a one-dependency agent, AI chat, tools, RAG, MCP, multi-agent, classroom,
-          governance, coding, guarded-agent, assistant, browser-agent, and a dentist agent —
+          governance, coding, guarded-agent, assistant, browser-agent, a dentist agent, and
+          a classic multi-room chat —
           all sparse-cloned from the real sample applications. Kotlin is a first-class option too — there's a small DSL and
           coroutine extensions — and for an enterprise console you can pull a single
           <code>atmosphere-admin-bundle</code> that wires the runtime, AI, coordinator,
