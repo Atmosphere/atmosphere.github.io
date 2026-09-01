@@ -455,7 +455,7 @@ const temporalDepSnippet = `&lt;!-- The Workflow&lt;S&gt; code above does not ch
           the live step lambdas, so application state never crosses the Temporal payload
           boundary — adding the adapter imposes no serialization constraints on your
           state type. A test pins the two engines' snapshot trails as equivalent — the
-          same set of (last-completed-step, done) entries — so both read
+          same ordered sequence of (last-completed-step, done) entries — so both read
           the same checkpoint contract.
         </p>
 
