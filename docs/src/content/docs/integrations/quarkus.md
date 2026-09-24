@@ -71,8 +71,38 @@ All properties are under the `quarkus.atmosphere.*` prefix:
 | `quarkus.atmosphere.load-on-startup` | `1` | Servlet load-on-startup order -- **must be > 0** |
 | `quarkus.atmosphere.heartbeat-interval` | (default) | Heartbeat interval (Duration string, e.g. `30s`) |
 | `quarkus.atmosphere.init-params` | (none) | Map of raw `ApplicationConfig` init params |
+| `quarkus.atmosphere.container` | `servlet` | `servlet` (Undertow) or `vertx` (Vert.x route, virtual threads) — see [Container modes](#container-modes) |
+| `quarkus.atmosphere.vertx.max-body-size` | `10M` | `container=vertx`: largest request body accepted; larger bodies get `413` |
+| `quarkus.atmosphere.vertx.drain-timeout` | `30s` | `container=vertx`: how long a write waits for a full write queue to drain before the slow client is disconnected |
 
 > **Note:** `load-on-startup` must be > 0. Quarkus skips servlet initialization when this value is <= 0, unlike the standard Servlet spec where >= 0 means "load on startup." See `modules/quarkus-extension/runtime/src/main/java/org/atmosphere/quarkus/runtime/AtmosphereConfig.java` for the full config schema.
+
+## Container modes
+
+`quarkus.atmosphere.container` picks how the `servlet-path` mapping is served:
+
+| | `servlet` (default) | `vertx` |
+|---|---|---|
+| Request path | Undertow servlet on the Vert.x router | Vert.x route; no servlet in the request path |
+| HTTP suspend (long-polling, SSE) | Servlet 3.0 async, no thread held | One parked virtual thread per suspended connection |
+| WebSocket | JSR-356 endpoints | Vert.x WebSocket; whole messages delivered in order per connection |
+| Backpressure | container | Writes wait for Vert.x to drain (bounded by `vertx.drain-timeout`); a WebSocket whose handler falls behind is paused |
+| Security | `quarkus.http.auth.permission` + servlet principal | `quarkus.http.auth.permission` rejects before Atmosphere runs; the `SecurityIdentity` principal becomes the Atmosphere request's user principal |
+
+```properties
+quarkus.atmosphere.container=vertx
+```
+
+Both modes get the same framework configuration. The extension's tests run long-polling, SSE,
+WebSocket, caller identity, disconnect cancellation, the body limit, and the MCP OAuth
+resource-server gate in `vertx` mode.
+
+Current limits of `vertx` mode:
+
+- Only the Atmosphere endpoint moves to Vert.x. The Console info, checkpoint and admin endpoints are
+  still servlets, so `quarkus-undertow` stays on the classpath.
+- `session-support` is ignored (no servlet `HttpSession`); a warning is logged at startup.
+- Native image is not yet verified in `vertx` mode; CI builds the default `servlet` mode.
 
 ## Running
 
