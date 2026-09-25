@@ -65,7 +65,7 @@ All properties are under the `quarkus.atmosphere.*` prefix:
 | `quarkus.atmosphere.packages` | (none) | Comma-separated packages to scan |
 | `quarkus.atmosphere.servlet-path` | `/atmosphere/*` | Servlet URL mapping |
 | `quarkus.atmosphere.session-support` | `false` | Enable HTTP session support |
-| `quarkus.atmosphere.websocket-support` | (auto) | Explicitly enable/disable WebSocket transport |
+| `quarkus.atmosphere.websocket-support` | (enabled) | `false` turns the WebSocket transport off: no JSR-356 endpoint in servlet mode, the upgrade is refused (`501`) in `vertx` mode, and clients fall back to SSE, streaming or long-polling (read since 4.0.72; earlier releases ignored it) |
 | `quarkus.atmosphere.broadcaster-class` | (default) | Custom `Broadcaster` implementation |
 | `quarkus.atmosphere.broadcaster-cache-class` | (default) | Custom `BroadcasterCache` implementation |
 | `quarkus.atmosphere.load-on-startup` | `1` | Servlet load-on-startup order -- **must be > 0** |
