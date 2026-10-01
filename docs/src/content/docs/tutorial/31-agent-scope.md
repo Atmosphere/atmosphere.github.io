@@ -75,7 +75,7 @@ The purpose vector is embedded once and cached for the life of the guardrail, so
 
 ### LLM-classifier tier
 
-Sends a zero-shot YES/NO classification prompt to the resolved `AgentRuntime`. Uses a tolerant parser (`**YES**`, `YES.`, `no - this is off-topic` all parse correctly). Opt-in when accuracy justifies the latency.
+Asks one typed boolean question per request — "is this off-topic for the declared purpose, or does it touch a forbidden topic?" — through a [`DecisionModel`](/docs/reference/decision-models/): a `RuntimeDecisionModel` over the resolved `AgentRuntime` unless a registered decision model (such as the [TypeSafe adapter](/docs/integrations/typesafe/)) is available. The reply must be a strict `{"answer": true|false, "confidence": 0..1}` object; there is no lenient reading of free text. Opt-in when accuracy justifies the latency.
 
 ```java
 @AgentScope(
@@ -84,6 +84,22 @@ Sends a zero-shot YES/NO classification prompt to the resolved `AgentRuntime`. U
     forbiddenTopics = {"legal advice to the user personally"},
     tier = AgentScope.Tier.LLM_CLASSIFIER)
 ```
+
+An `@Agent` skill file selects the same tier with `scopeTier: llm` in its frontmatter.
+
+**Fail-closed by default.** A `P(off-topic)` of at least 0.5 is out of scope; a `false` answer with a belief below 0.2 is in scope. Everything else is *uncertain* and the request is **denied** at pre-admission:
+
+- the band between 0.2 and 0.5, or a `false` answer with no confidence;
+- a timeout, no free decision slot, a runtime error, or an empty, unparseable or out-of-set reply;
+- no reachable model at all — only the demo runtime installed. An `LLM_CLASSIFIER` endpoint in that state denies **every** request.
+
+On the Built-in runtime's chat-completions path the belief is the model's measured distribution over `true`/`false`; on other runtimes it is the confidence the model reports, read against the same thresholds.
+
+:::caution[Changed after 4.0.71]
+Releases up to 4.0.71 read the classifier's reply as free text and **admitted** an empty, unparseable or timed-out reply. The fail-closed behaviour above ships in the next release.
+:::
+
+The opt-out is explicit and not the default: set the JVM system property `org.atmosphere.ai.scope.llm-classifier.fail-open=true` (`-D` or `System.setProperty`; it is read on each uncertain verdict, and no Spring Boot or Quarkus key binds to it), or build the guardrail yourself with `new LlmClassifierScopeGuardrail(model, timeout, gate, failOpen)`. In fail-open mode an uncertain verdict admits the request with a WARN log. With `postResponseCheck = true`, the post-response check keeps its posture: the bytes are already on the wire, so there an uncertain verdict admits and only a flagged one denies.
 
 ---
 
@@ -159,6 +175,7 @@ Every scope decision flows through the audit trail:
 ## Related
 
 - **Reference**: [Governance Policy Plane](/docs/reference/governance/) — full `ScopeGuardrail` SPI + tier semantics
+- **Reference**: [Decision Models](/docs/reference/decision-models/) — the `DecisionModel` the LLM tier asks, and every LLM safety tier's opt-out
 - **Previous chapter**: [Governance Policy Plane tutorial](/docs/tutorial/30-governance-policy-plane/)
 - **Next chapter**: [OWASP Agentic Top-10 evidence matrix](/docs/tutorial/32-owasp-agentic-matrix/)
 - **Sample**: [`samples/spring-boot-ms-governance-chat`](https://github.com/Atmosphere/atmosphere/tree/main/samples/spring-boot-ms-governance-chat) — declares `@AgentScope(purpose = "Customer support ...")` and mirrors MS customer-service rule set

@@ -126,7 +126,9 @@ Three tier implementations ship in-tree:
 
 - `RuleBasedScopeGuardrail` — keyword / regex + bundled hijacking probes. Sub-ms. No dependencies.
 - `EmbeddingScopeGuardrail` — cosine similarity against purpose vector via `EmbeddingRuntime`. ~5–20ms. **Default tier.**
-- `LlmClassifierScopeGuardrail` — zero-shot YES/NO against the resolved `AgentRuntime`. ~100–500ms. Opt-in via `tier = LLM_CLASSIFIER`.
+- `LlmClassifierScopeGuardrail` — one typed boolean question per request ("is this off-topic for the declared purpose, or does it touch a forbidden topic?") asked through a [`DecisionModel`](/docs/reference/decision-models/) — by default a `RuntimeDecisionModel` over the resolved `AgentRuntime`. One model round-trip per request. Opt-in via `tier = LLM_CLASSIFIER`.
+
+The LLM tier **fails closed**. A `P(off-topic)` of at least 0.5 is out of scope, a `false` answer below 0.2 is in scope, and everything else is uncertain — the band between, a `false` answer with no confidence, a timeout, no capacity, an empty, unparseable or out-of-set reply, and no reachable model at all (only the demo runtime). An uncertain verdict is `Outcome.ERROR`, which `ScopePolicy` denies at pre-admission. So an `@AgentScope(tier = LLM_CLASSIFIER)` endpoint with no reachable model denies every request. This is new after 4.0.71: earlier releases read the reply as free text and admitted an empty, unparseable or timed-out one. The explicit, non-default opt-out is the JVM system property `org.atmosphere.ai.scope.llm-classifier.fail-open=true` (`-D` or `System.setProperty`, read on each uncertain verdict; no Spring Boot or Quarkus key binds to it), or the `failOpen` argument of `new LlmClassifierScopeGuardrail(model, timeout, gate, failOpen)`. The post-response check (`postResponseCheck = true`) runs after the bytes are on the wire, so there an uncertain verdict admits and only a flagged one denies.
 
 `ScopePolicy` wraps a `ScopeGuardrail` as a `GovernancePolicy` — breach decisions map via `AgentScope.Breach` to `Deny` / `Transform` (rewriting the request message to the redirect text).
 
@@ -458,6 +460,18 @@ into the next request's system prompt:
 
 It reads `GovernanceDecisionLog` (installed out-of-box by `atmosphere-admin`), is bounded and
 deduplicated, and fails open — a feedback error never breaks the turn.
+
+**Observe — the feedback frames.** The injection is otherwise invisible to the client, so a turn
+that carried guidance sends two metadata frames just before its `complete` frame:
+`ai.governance.feedback.injected` (how many lines were injected, at most `maxItems`) and
+`ai.governance.feedback.lines` (those lines, each capped at 512 characters). Only lines the final
+system prompt still carries are reported, and nothing is sent when nothing was injected or on the
+error path. On an `@AiEndpoint(broadcastReply = true)` room the guidance is still injected but the
+frames are not sent, so one subscriber's governance history never reaches the others. Like every
+`AiInterceptor`, it runs on the `@AiEndpoint` path only, not on `AiPipeline`. The Console shows the
+frames as the turn's **Governance guidance applied** panel; see the
+[AI reference](/docs/reference/ai/#governance-feedback-signal). These frames are not in a release
+yet: they were added after 4.0.71.
 
 **Timing.** On the `@AiEndpoint` streaming path the guardrail loop (which *records* the `Prefer`)
 runs **before** the interceptor (which *injects*), so a `Prefer` steers the **same** turn that
