@@ -416,6 +416,152 @@ Every rule reuses the resolved client by default (same provider/credentials; onl
 
 The CLI scaffolds the opt-in block for you: `atmosphere new my-app --template ai-chat --routing` appends a commented, ready-to-uncomment `atmosphere.ai.routing.*` tree to the generated `application.yml`. `--routing` is only valid for AI templates that ship an `application.yml`, and the emitted block is commented so the scaffold is byte-identical until you uncomment it.
 
+## Confidence Signals
+
+:::note[Not in a release yet]
+Decision-level confidence (`DECISION_LOGPROBS`), confidence routing, decision models, intent routing and the governance feedback frames below were added after 4.0.71 and ship in the next release. They are on `main` (4.0.72-SNAPSHOT).
+:::
+
+Every completed turn can carry an `AiConfidence`: an `aggregate` in `[0, 1]` (or unknown) and a `Source` that says how it was derived. Callers weight it by source:
+
+| `AiConfidence.Source` | Where it comes from |
+|-----------------------|---------------------|
+| `LOGPROBS_NATIVE` | Mean native token probability over the whole response — the Built-in runtime, when the provider returns logprobs. It measures fluency, not how sure the model was of the answer |
+| `DECISION_LOGPROBS` | The margin of the emitted value in the model's distribution over a designated decision field's allowed values (next section) |
+| `MODEL_REPORTED_FIELD` | The `"confidence": 0.x` field the model is asked to emit — the universal fallback on every runtime |
+| `HEURISTIC` | Caller-computed |
+
+Native logprobs are requested on the Built-in runtime only when the request carries an `AiConfidenceElicitation`, and only for endpoints that accept the field: `atmosphere.ai.logprobs` (env `LLM_LOGPROBS`) is `auto` by default, which defers to a default-deny allow-list (OpenAI, Azure OpenAI, loopback); `enabled` forces emission and `disabled` turns it off.
+
+### Decision-level confidence (`DECISION_LOGPROBS`)
+
+A long, fluent answer whose one decisive token was a coin flip still scores about 0.95 on `LOGPROBS_NATIVE`. When the answer is a decision, score the decision instead — name the field that carries it:
+
+```java
+enum Verdict { APPROVE, REJECT, DEFER }
+record Triage(Verdict verdict, String reason) { }
+
+pipeline.setDefaultConfidenceElicitation(
+        AiConfidenceElicitation.defaults().withDecisionField("verdict"));
+```
+
+The Built-in runtime resolves the field against the response type's JSON Schema: it must be a **top-level** property that is a string `enum` or a `boolean` (at most 16 allowed values). The client then also requests `top_logprobs`, locates the tokens of that value in the final round's JSON, builds the model's distribution over the allowed values, and emits `AiConfidence.fromDecision(...)` with source `DECISION_LOGPROBS`:
+
+- **`aggregate`** scores the value the model **emitted**, `DecisionDistribution.marginOf(answer)`: `0` unless that value is strictly the most likely, otherwise `(k * p(answer) - 1) / (k - 1)` for `k` allowed values. A coin flip between `true` and `false` scores `0`, not `0.5`, and a value sampled against a more likely rival also scores `0`.
+- **`decision()`** carries the `DecisionDistribution`: value → probability in schema order, plus `observedMass`, the share of probability carried by listed alternatives that match an allowed value. A `ConfidenceRouting` handler reads it through `ConfidenceDecision.confidence().decision()`.
+- **`tokens()`** holds the sampled tokens of the decision value up to the one that determined it, not the whole response.
+
+What the provider does not show is resolved **against** the answer, never for it: probability outside the requested `top_logprobs`, or on alternatives that could still become several values, goes to the rivals first, so the reported margin is the lowest confidence in the answer consistent with what the provider returned. The distribution is not renormalised.
+
+When the distribution cannot be built — the provider ignored `top_logprobs`, the field is absent from the output, the value is not an allowed one — the runtime emits **no** native confidence and the model-reported field applies (unknown routes to `ESCALATE` by default). It does not fall back to the fluency mean.
+
+**Mode scope.** Decision confidence exists only where native logprobs do: the Built-in runtime's chat-completions path, in structured-output mode (strict `json_schema` or the `json_object` fallback). A turn with a decision field is kept on that path against `api.openai.com` too, instead of the Responses API that a `conversationId` would otherwise select. Every other runtime (LangChain4j, Spring AI, ADK, Embabel, Koog, and the rest) never emits native logprobs, so on those paths `withDecisionField` has no effect and confidence stays on the model-reported field. The scoring is pinned against hand-authored SSE fixtures whose logprob values were chosen by hand; it has not yet been checked against a captured live-provider stream.
+
+### Confidence routing
+
+Emitting a confidence routes nothing. `ConfidenceRouting` is the consumer: it turns each completed turn's `AiConfidence` into a `ConfidenceRoute` — the answer says *what*, the confidence says *whether to act on it*.
+
+```java
+pipeline.setDefaultConfidenceRouting(ConfidenceRouting.of(0.9, 0.5)
+        .withHandler(decision -> {
+            if (decision.route() == ConfidenceRoute.ESCALATE) {
+                reviewQueue.submit(decision.request(), decision.confidence());
+            }
+        }));
+```
+
+| Confidence | Route |
+|------------|-------|
+| `>= actAt` (default 0.9) | `ACT` |
+| `>= confirmAt` (default 0.5) | `CONFIRM` |
+| below `confirmAt` | `ESCALATE` |
+| unknown — no field, out of range, nothing emitted | `unknownRoute`, default `ESCALATE` |
+
+**Unknown escalates.** A turn nobody measured never acts; `withUnknownRoute(...)` changes that explicitly.
+
+- **Both dispatch paths.** `@AiEndpoint` (per-request `ai.confidence.routing` metadata) and `AiPipeline` (`setDefaultConfidenceRouting`, or the same metadata key) behave identically; the layer is part of the shared dispatch decorator chain.
+- **Signal.** The router sees native logprobs when a runtime reports them and the parsed field otherwise. A routing with no `AiConfidenceElicitation` installs the default cue, because a turn nobody asked about is always unknown. For a structured decision, designate it with `withDecisionField(...)` so the route follows how sure the model was of that value rather than the fluency of the whole text, which can route a coin flip to `ACT`.
+- **Structured output.** The cue is not appended (it would break the single-JSON-object parse). Declare the confidence field on the response record; with a routing in scope the field is read from the raw JSON.
+- **Delivery.** Before the terminal frame the route rides the wire as the `ai.confidence.route` metadata frame, and the handler receives a `ConfidenceDecision(route, confidence, request)`. The handler runs on the completing thread — hand long work off. A handler that throws is logged and does not fail the turn.
+- **Not routed:** a turn that errored, or that a guardrail already blocked. There is no answer to act on.
+- **Tool calls are not gated on confidence.** The confidence of a tool-call decision is not known when the tool is about to run; tool gating stays with `@RequiresApproval` / `ToolApprovalPolicy`.
+
+`ConfidenceThresholdGuardrail` is the older, narrower primitive: it reads only the text field, passes when the field is missing, and blocks the stream rather than routing the turn.
+
+## Decision Models
+
+`DecisionModel` (`org.atmosphere.ai.decision`) is a separate SPI for models that **decide** rather than write: typed `Choice` / `Score` / `Noul` (boolean) questions, one typed answer each, with the same `AiConfidence` so a `ConfidenceRouting` gates it unchanged. `RuntimeDecisionModel` turns any `AgentRuntime` into one; `DecisionModelResolver` discovers registered models; an external model such as the [TypeSafe adapter](/docs/integrations/typesafe/) plugs in through `ServiceLoader`. The `LLM_CLASSIFIER` injection and scope tiers and the LLM moderation detector now ask their questions through it and **fail closed** on an uncertain answer.
+
+See [Decision Models](/docs/reference/decision-models/) for the SPI, the discovery order, where the confidence comes from, and each consumer's opt-out.
+
+## Intent Routing
+
+`IntentRouting` (`org.atmosphere.ai.intent`) decides, **before** a request reaches the LLM, which handler takes it: a deterministic Java callback, the normal LLM path, or a person. It asks one `Question.Choice` over the declared routes through a `DecisionModel` and gates the answer with the same `ConfidenceRouting` tiers a completed turn is routed on.
+
+It **composes with model routing**: intent routing picks the handler, and on an LLM route the request continues down the normal dispatch path, where the runtime (a `RoutingAiSupport` over a `DefaultModelRouter`, for example) still picks the model.
+
+```java
+public class SupportIntents implements IntentRoutingProvider {
+    @Override
+    public IntentRouting intentRouting() {
+        return IntentRouting.of("Which team should handle this customer message?",
+                        IntentRoute.handler("track", "where an order or parcel is",
+                                decision -> orders.status(decision.message())),
+                        IntentRoute.llm("general", "anything else"),
+                        IntentRoute.human("agent", "the customer needs a person",
+                                decision -> "A person will follow up (ticket "
+                                        + tickets.open(decision.request()) + ")"))
+                .withThresholds(ConfidenceRouting.of(0.9, 0.5))
+                .withHandler(decision -> audit.record(decision));
+    }
+}
+
+@AiEndpoint(path = "/support", intentRouting = SupportIntents.class)
+public class SupportChat {
+    @Prompt
+    public void onPrompt(String message, StreamingSession session) {
+        session.stream(message);   // routed here, before the runtime is called
+    }
+}
+```
+
+On `AiPipeline`, call `pipeline.setDefaultIntentRouting(routing)`. Per request, an `AiInterceptor` (endpoint) or the caller (pipeline) can put a routing under the `ai.intent.routing` metadata key; it wins over the default and is removed before the request reaches the runtime.
+
+| Classification | What runs |
+|----------------|-----------|
+| choice at `>= actAt` (default 0.9) | the chosen route |
+| choice at `>= confirmAt` (default 0.5) | the requester is asked to confirm; approved runs the chosen route, denied or timed out (`confirmTimeout`, default 2 min, at most 1 h) runs the human route, and so does a confirmation that cannot be sent |
+| choice below `confirmAt` | the human route |
+| the model chose the human route | the human route, at any confidence, without a confirmation |
+| no decision model, `Answer.Failed`, a message over 262,144 characters, a model that throws | the human route |
+| a valid choice with no confidence at all | `ConfidenceRouting.unknownRoute()`, `ESCALATE` by default |
+
+- **Routes.** 2..16 routes with unique names (`[A-Za-z0-9_-]{1,64}`), exactly one `IntentRoute.Human`.
+- **Where the confidence comes from.** Only the Built-in runtime against an endpoint that returns logprobs scores the choice from the model's distribution (`DECISION_LOGPROBS`). On every other runtime `RuntimeDecisionModel` uses the confidence the model reports, and the ACT and CONFIRM tiers gate on that number: a model that reports 0.95 acts, and its deterministic handler runs without a confirmation. The source is in `IntentDecision.reason()`. For a stricter posture there, raise the tiers with `withThresholds(...)` or route through a `DecisionModel` whose confidence you trust (`withDecisionModel(...)`).
+- **Where it runs.** After admission on both paths — request guardrails, governance policies, and on the endpoint the `AiInterceptor` pre-processing and per-request scope — so a denied request is never classified. RAG runs after routing, so a handler or human route pays no retrieval call. A request a scope policy rewrote to its redirect text is not classified; it continues to the LLM path, which renders the redirect.
+- **Handlers.** An `IntentHandler` returns the reply text; the framework sends it and completes the turn, or errors the turn when the handler throws (there is no fallback to the LLM). The human route's handler hands the request to your queue and returns the acknowledgement. Handler turns are recorded in conversation memory; cost, budget, response guardrails, structured output, confidence and the model metrics do not apply because no model is called.
+- **Confirmation.** A CONFIRM-tier choice uses the approval machinery tools use: an `approval-required` frame with tool name `intent:<route>`, answered by `/__approval/<id>/approve` or `/deny` on the same session. On `@AiEndpoint` the wait is cut short to end before the endpoint's `timeout()`. The OpenAI-compatible and batch surfaces have no channel to answer on, so a CONFIRM-tier choice there escalates to the human route at once.
+- **Cancellation.** A cancelled turn is never routed: it errors with a `CancellationException` and runs no handler or human route.
+- **Wire signal.** Before any reply: `ai.intent.route`, `ai.intent.tier` (`ACT` / `CONFIRM` / `ESCALATE`), `ai.intent.choice` (absent when the model gave no answer) and `ai.intent.confidence` (absent when unknown) as metadata frames. The OpenAI-compatible surface sends them as `X-Atmosphere-Intent-Route`, `X-Atmosphere-Intent-Tier`, `X-Atmosphere-Intent-Choice` and `X-Atmosphere-Intent-Confidence` response headers. A batch item result does not carry them.
+- **Bounds.** One question per request, bounded by `timeout` (default 5 s, at most 10 min) and the decision model's concurrency limit. Without `withDecisionModel(...)` the routing resolves through `DecisionModelResolver` and shares the fallback's 8 slots with the LLM safety tiers; for a high-traffic endpoint, give it its own `RuntimeDecisionModel`.
+
+The tiers have been driven end-to-end over WebSocket against a scripted runtime that reports a decision distribution, on both `@AiEndpoint` and `AiPipeline`; they have not yet been exercised against a live provider's logprobs.
+
+## Governance Feedback Signal
+
+`GovernanceFeedbackInterceptor` re-injects recent `deny` / `prefer` governance decisions into the next turn's system prompt (see [Governance as a learning signal](/docs/reference/governance/#governance-as-a-learning-signal)). That injection is otherwise invisible to the client, so a turn that carried guidance reports it with two metadata frames just before its `complete` frame:
+
+| Metadata key | Value |
+|--------------|-------|
+| `ai.governance.feedback.injected` | how many guidance lines were injected (at most `maxItems`, default 5) |
+| `ai.governance.feedback.lines` | those lines, each capped at 512 characters |
+
+- **Only what reached the model.** Only lines the final system prompt still carries are reported, so an interceptor later in the chain that replaces the system prompt suppresses the signal along with the guidance. Nothing is sent when nothing was injected, nor on the `error()` terminal path.
+- **Never to other subscribers.** The lines are the prompter's own governance history, so they are sent only when the `@AiEndpoint` handler confirmed the reply goes to the prompter alone. On an `@AiEndpoint(broadcastReply = true)` room the guidance is still injected, but neither frame is sent.
+- **`@AiEndpoint` only.** `AiInterceptor`s run on the `@AiEndpoint` dispatch path; the resource-free `AiPipeline` runs none, so there the guidance is neither injected nor signalled.
+
+The Atmosphere Console renders the frames under the turn as the **Governance guidance applied** panel. That is what an e2e can assert; whether the model then *follows* the guidance is model behaviour, not a framework guarantee.
+
 ## Direct Adapter Usage
 
 You can bypass `@AiEndpoint` and use adapters directly:
@@ -817,7 +963,9 @@ The `RecordingSession` test double captures all events, text chunks, metadata, a
 - [LangChain4j Adapter](../../integrations/langchain4j/)
 - [Google ADK Adapter](../../integrations/adk/)
 - [Embabel Adapter](../../integrations/embabel/)
-- [MCP Server](mcp/) -- AI-MCP bridge for tool-driven streaming
-- [Rooms & Presence](rooms/) -- AI virtual members in rooms
+- [Decision Models](/docs/reference/decision-models/) -- `DecisionModel` SPI, the LLM safety tiers, intent routing
+- [TypeSafe Adapter](/docs/integrations/typesafe/) -- an external `DecisionModel`
+- [MCP Server](/docs/reference/mcp/) -- AI-MCP bridge for tool-driven streaming
+- [Rooms & Presence](/docs/reference/rooms/) -- AI virtual members in rooms
 - [atmosphere.js](../../clients/javascript/) -- `useStreaming` React/Vue/Svelte hooks
 - [Module README](https://github.com/Atmosphere/atmosphere/tree/main/modules/ai)
