@@ -109,6 +109,7 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'AI / LLM', slug: 'reference/ai' },
+            { label: 'Decision Models', slug: 'reference/decision-models' },
             { label: 'Session Tape', slug: 'reference/tape' },
             { label: 'Interactions API', slug: 'reference/interactions' },
             { label: 'Runtime Selection', slug: 'reference/runtime-selection' },
@@ -150,6 +151,7 @@ export default defineConfig({
             { label: 'Anthropic', slug: 'integrations/anthropic' },
             { label: 'Cohere', slug: 'integrations/cohere' },
             { label: 'CrewAI', slug: 'integrations/crewai' },
+            { label: 'TypeSafe (Decision Model)', slug: 'integrations/typesafe' },
           ],
         },
         {
