@@ -72,6 +72,14 @@ opt-outs are explicit: `atmosphere.ai.rag.safety.fail-open` /
 `ModerationGuardrail.failOpen()` / `atmosphere.ai.guardrails.moderation.fail-open`
 (moderation).
 
+**The semantic-intent scope tier no longer admits unscreened.** With no
+`EmbeddingRuntime`, `@AgentScope(tier = SEMANTIC_INTENT)` used to admit every
+request with a warning; it now degrades to the rule-based tier, like the default
+embedding tier, so forbidden topics and hijacking probes are still enforced. A
+forbidden topic that fails to embed is no longer skipped: the verdict is an
+error, which `ScopePolicy` denies at pre-admission. The opt-out is the JVM system
+property `org.atmosphere.ai.scope.semantic-intent.fail-open`.
+
 **Intent routing.** `IntentRouting` decides, before the LLM is called, whether a
 request goes to a deterministic Java handler, the normal LLM path, or a person —
 one `Question.Choice` gated by the same confidence tiers, with a confirmation

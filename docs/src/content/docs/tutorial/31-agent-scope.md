@@ -85,7 +85,15 @@ The embedding tier plus a contrastive margin. A request is admitted only when it
     tier = AgentScope.Tier.SEMANTIC_INTENT)
 ```
 
-A skill file selects it with `scopeTier: semantic`. It needs an `EmbeddingRuntime` like the default tier; without one it **admits every request** and logs a warning, where the embedding tier degrades to rule-based.
+A skill file selects it with `scopeTier: semantic`. It needs an `EmbeddingRuntime` like the default tier, and without one it does what the embedding tier does: it **degrades to the rule-based tier** for each request and logs a warning, so forbidden topics and the built-in hijacking probes are still enforced. When a runtime is present but an embedding call fails — for the purpose, the request or a forbidden topic — the verdict is an error, which `ScopePolicy` **denies** at pre-admission; a forbidden topic that cannot be embedded is never skipped. A message below `similarityThreshold` is rejected before the forbidden topics are embedded, so a topic that fails to embed cannot turn that rejection into an error (with `postResponseCheck = true` an error admits, because the bytes are already on the wire).
+
+The margin is not configurable from `@AgentScope` or a skill file: those paths always use 0.05. A different margin needs `new SemanticIntentScopeGuardrail(runtime, margin)` passed to `ScopePolicy`'s constructor.
+
+:::caution[Changed after 4.0.71]
+Releases up to 4.0.71 **admitted every request** at this tier when no `EmbeddingRuntime` was installed, and skipped a forbidden topic whose embedding failed. The behaviour above ships in the next release.
+:::
+
+The opt-out is explicit and not the default: set the JVM system property `org.atmosphere.ai.scope.semantic-intent.fail-open=true` (`-D` or `System.setProperty`; it is read on each request that finds no `EmbeddingRuntime`, and no Spring Boot or Quarkus key binds to it), or build the guardrail yourself with `new SemanticIntentScopeGuardrail(runtime, margin, failOpen)`. In fail-open mode a request with no `EmbeddingRuntime` is admitted unscreened with a WARN log. It does not relax the margin gate or an embedding failure when a runtime is present.
 
 ### LLM-classifier tier
 

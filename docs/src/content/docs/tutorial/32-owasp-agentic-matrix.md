@@ -72,7 +72,7 @@ curl -s http://localhost:8080/api/admin/governance/owasp | jq
       "evidence": [
         { "class": "org.atmosphere.ai.annotation.AgentScope",
           "test": "org.atmosphere.ai.governance.scope.RuleBasedScopeGuardrailTest",
-          "description": "@AgentScope + ScopeGuardrail (3 tiers: rule / embedding / LLM classifier)" }
+          "description": "@AgentScope + ScopeGuardrail (4 tiers: rule / embedding / semantic intent / LLM classifier)" }
       ],
       "notes": "Full defense-in-depth: pre-admission classification, system-prompt hardening, sample lint."
     }
