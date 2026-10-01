@@ -111,7 +111,7 @@ public @interface AgentScope {
     String justification() default "";
     boolean postResponseCheck() default false;
     enum Breach { POLITE_REDIRECT, DENY, CUSTOM_MESSAGE }
-    enum Tier { RULE_BASED, EMBEDDING_SIMILARITY, LLM_CLASSIFIER }
+    enum Tier { RULE_BASED, EMBEDDING_SIMILARITY, SEMANTIC_INTENT, LLM_CLASSIFIER }
 }
 
 public interface ScopeGuardrail {
@@ -122,13 +122,14 @@ public interface ScopeGuardrail {
 }
 ```
 
-Three tier implementations ship in-tree:
+Four tier implementations ship in-tree:
 
 - `RuleBasedScopeGuardrail` — keyword / regex + bundled hijacking probes. Sub-ms. No dependencies.
 - `EmbeddingScopeGuardrail` — cosine similarity against purpose vector via `EmbeddingRuntime`. ~5–20ms. **Default tier.**
+- `SemanticIntentScopeGuardrail` — the embedding tier plus a contrastive margin: a request is admitted only when its similarity to the purpose reaches `similarityThreshold` and beats its best forbidden-topic similarity by at least `SemanticIntentScopeGuardrail.DEFAULT_MARGIN` (0.05). Same `EmbeddingRuntime` cost. Opt-in via `tier = SEMANTIC_INTENT`, or `scopeTier: semantic` in a skill file's frontmatter. With no `EmbeddingRuntime` installed it admits every request and logs a warning (the embedding tier degrades to rule-based instead).
 - `LlmClassifierScopeGuardrail` — one typed boolean question per request ("is this off-topic for the declared purpose, or does it touch a forbidden topic?") asked through a [`DecisionModel`](/docs/reference/decision-models/) — by default a `RuntimeDecisionModel` over the resolved `AgentRuntime`. One model round-trip per request. Opt-in via `tier = LLM_CLASSIFIER`.
 
-The LLM tier **fails closed**. A `P(off-topic)` of at least 0.5 is out of scope, a `false` answer below 0.2 is in scope, and everything else is uncertain — the band between, a `false` answer with no confidence, a timeout, no capacity, an empty, unparseable or out-of-set reply, and no reachable model at all (only the demo runtime). An uncertain verdict is `Outcome.ERROR`, which `ScopePolicy` denies at pre-admission. So an `@AgentScope(tier = LLM_CLASSIFIER)` endpoint with no reachable model denies every request. This is new after 4.0.71: earlier releases read the reply as free text and admitted an empty, unparseable or timed-out one. The explicit, non-default opt-out is the JVM system property `org.atmosphere.ai.scope.llm-classifier.fail-open=true` (`-D` or `System.setProperty`, read on each uncertain verdict; no Spring Boot or Quarkus key binds to it), or the `failOpen` argument of `new LlmClassifierScopeGuardrail(model, timeout, gate, failOpen)`. The post-response check (`postResponseCheck = true`) runs after the bytes are on the wire, so there an uncertain verdict admits and only a flagged one denies.
+The LLM tier **fails closed**. A `P(off-topic)` of at least 0.5 is out of scope, and so is a `true` answer that carries no confidence at all; a `false` answer below 0.2 is in scope, and everything else is uncertain — the band between, a `false` answer with no confidence, a timeout, no capacity, an empty, unparseable or out-of-set reply, and no reachable model at all (only the demo runtime). An uncertain verdict is `Outcome.ERROR`, which `ScopePolicy` denies at pre-admission. So an `@AgentScope(tier = LLM_CLASSIFIER)` endpoint with no reachable model denies every request. This is new after 4.0.71: earlier releases read the reply as free text and admitted an empty, unparseable or timed-out one. The explicit, non-default opt-out is the JVM system property `org.atmosphere.ai.scope.llm-classifier.fail-open=true` (`-D` or `System.setProperty`, read on each uncertain verdict; no Spring Boot or Quarkus key binds to it), or the `failOpen` argument of `new LlmClassifierScopeGuardrail(model, timeout, gate, failOpen)`. The post-response check (`postResponseCheck = true`) runs after the bytes are on the wire, so there an uncertain verdict admits and only a flagged one denies.
 
 `ScopePolicy` wraps a `ScopeGuardrail` as a `GovernancePolicy` — breach decisions map via `AgentScope.Breach` to `Deny` / `Transform` (rewriting the request message to the redirect text).
 

@@ -42,7 +42,10 @@ scores about 0.95. Name the field that carries the decision
 scores **that value** from the model's distribution over the allowed values
 (`DECISION_LOGPROBS`): a coin flip scores `0`, and anything the provider did not
 show counts against the answer. Built-in runtime, chat-completions path,
-structured output only; every other runtime stays on the model-reported field.
+structured output only, against an endpoint that passes the logprobs gate
+(OpenAI, Azure OpenAI and loopback by default; `atmosphere.ai.logprobs`) and
+returns `top_logprobs`; every other runtime or endpoint stays on the
+model-reported field.
 The scoring is pinned against hand-authored fixtures, not yet against a captured
 live-provider stream.
 
@@ -57,9 +60,12 @@ models through `ServiceLoader`.
 the `@AgentScope(tier = LLM_CLASSIFIER)` scope tier and the LLM moderation
 detector ask their questions through a `DecisionModel` and treat an uncertain
 answer — a timeout, no capacity, an empty or unparseable reply, a belief between
-0.2 and 0.5, no reachable model — as a denial. Before, the scope and moderation
-tiers read free text and **admitted** an empty, unparseable or timed-out reply;
-an `LLM_CLASSIFIER` scope with no reachable model now denies every request. The
+0.2 and 0.5 — as a denial. With no reachable model at all, the scope and
+moderation tiers deny too; the injection tier instead downgrades to `RULE_BASED`
+with a warning. Before, all three tiers read free text and **admitted** an empty,
+unparseable (for the injection tier, ambiguous) or timed-out reply: a RAG or
+memory `LLM_CLASSIFIER` screen now drops those documents, and an
+`LLM_CLASSIFIER` scope with no reachable model denies every request. The
 opt-outs are explicit: `atmosphere.ai.rag.safety.fail-open` /
 `atmosphere.ai.memory.safety.fail-open` (injection), the JVM system property
 `org.atmosphere.ai.scope.llm-classifier.fail-open` (scope), and
@@ -80,8 +86,8 @@ frames before `complete`, rendered by the Console as **Governance guidance
 applied**. Only lines that reached the model are reported, and never on a
 broadcast room reply.
 
-**TypeSafe adapter (in progress).** `atmosphere-ai-decision-typesafe` is a
-`DecisionModel` over the TypeSafe System One API, whose answers carry the
+**TypeSafe adapter.** `atmosphere-ai-decision-typesafe` (on `main`, not
+released) is a `DecisionModel` over the TypeSafe System One API, whose answers carry the
 provider's own distribution (confidence source `PROVIDER_DISTRIBUTION`). Its
 successful-answer path is verified against fixtures copied from TypeSafe's
 documentation; only the invalid-key path has been exercised live.

@@ -39,7 +39,7 @@ No other wiring needed — `AiEndpointProcessor` auto-installs a `ScopePolicy` o
 
 ---
 
-## The three tiers
+## The four tiers
 
 `@AgentScope(tier = …)` picks the classifier. Operator trade-off between latency and accuracy:
 
@@ -47,6 +47,7 @@ No other wiring needed — `AiEndpointProcessor` auto-installs a `ScopePolicy` o
 |---|---|---|---|
 | `RULE_BASED` | Sub-millisecond | Coarse, brittle on creative phrasings | Clearly-delineated scopes (math tutor never answers medical; customer support never writes code) |
 | `EMBEDDING_SIMILARITY` **(default)** | ~5–20 ms | Good, deterministic | Most endpoints — good balance of latency and recall |
+| `SEMANTIC_INTENT` | ~5–20 ms | Higher precision than plain similarity when the forbidden topics are rich | A forbidden topic sits close to the purpose (customer support vs. medical advice about a product) |
 | `LLM_CLASSIFIER` | ~100–500 ms | Best | High-stakes scopes where false-negatives cost more than latency (medical, financial, legal-adjacent) |
 
 ### Rule-based tier
@@ -73,9 +74,22 @@ Compares the cosine similarity between the incoming message's embedding and the 
 
 The purpose vector is embedded once and cached for the life of the guardrail, so high-traffic endpoints pay exactly one embedding round-trip at startup, not per request.
 
+### Semantic-intent tier
+
+The embedding tier plus a contrastive margin. A request is admitted only when its similarity to `purpose` reaches `similarityThreshold` **and** beats its best `forbiddenTopics` similarity by at least 0.05 (`SemanticIntentScopeGuardrail.DEFAULT_MARGIN`). A question about a product's allergens can sit closer to "medical advice" than to "customer support for orders"; plain similarity admits it, this tier denies it.
+
+```java
+@AgentScope(
+    purpose = "Customer support for orders",
+    forbiddenTopics = {"medical advice"},
+    tier = AgentScope.Tier.SEMANTIC_INTENT)
+```
+
+A skill file selects it with `scopeTier: semantic`. It needs an `EmbeddingRuntime` like the default tier; without one it **admits every request** and logs a warning, where the embedding tier degrades to rule-based.
+
 ### LLM-classifier tier
 
-Asks one typed boolean question per request — "is this off-topic for the declared purpose, or does it touch a forbidden topic?" — through a [`DecisionModel`](/docs/reference/decision-models/): a `RuntimeDecisionModel` over the resolved `AgentRuntime` unless a registered decision model (such as the [TypeSafe adapter](/docs/integrations/typesafe/)) is available. The reply must be a strict `{"answer": true|false, "confidence": 0..1}` object; there is no lenient reading of free text. Opt-in when accuracy justifies the latency.
+Asks one typed boolean question per request — "is this off-topic for the declared purpose, or does it touch a forbidden topic?" — through a [`DecisionModel`](/docs/reference/decision-models/): a `RuntimeDecisionModel` over the resolved `AgentRuntime` unless a registered decision model (such as the [TypeSafe adapter](/docs/integrations/typesafe/)) is available. Asked through the `RuntimeDecisionModel` fallback, the reply must be a strict `{"answer": true|false, "confidence": 0..1}` object; there is no lenient reading of free text. The TypeSafe adapter answers in the TypeSafe API's own format, decoded just as strictly. Opt-in when accuracy justifies the latency.
 
 ```java
 @AgentScope(
@@ -87,13 +101,13 @@ Asks one typed boolean question per request — "is this off-topic for the decla
 
 An `@Agent` skill file selects the same tier with `scopeTier: llm` in its frontmatter.
 
-**Fail-closed by default.** A `P(off-topic)` of at least 0.5 is out of scope; a `false` answer with a belief below 0.2 is in scope. Everything else is *uncertain* and the request is **denied** at pre-admission:
+**Fail-closed by default.** A `P(off-topic)` of at least 0.5 is out of scope, and so is a `true` answer that carries no confidence at all; a `false` answer with a belief below 0.2 is in scope. Everything else is *uncertain* and the request is **denied** at pre-admission:
 
 - the band between 0.2 and 0.5, or a `false` answer with no confidence;
 - a timeout, no free decision slot, a runtime error, or an empty, unparseable or out-of-set reply;
 - no reachable model at all — only the demo runtime installed. An `LLM_CLASSIFIER` endpoint in that state denies **every** request.
 
-On the Built-in runtime's chat-completions path the belief is the model's measured distribution over `true`/`false`; on other runtimes it is the confidence the model reports, read against the same thresholds.
+Where the belief comes from depends on who answers. On the Built-in runtime's chat-completions path, against an endpoint that passes the logprobs gate (OpenAI, Azure OpenAI and loopback by default; `atmosphere.ai.logprobs`) and returns `top_logprobs` covering at least half the probability mass, it is the model's measured distribution over `true`/`false`. A registered decision model such as the [TypeSafe adapter](/docs/integrations/typesafe/) supplies its own `P(true)` (`PROVIDER_DISTRIBUTION`). Otherwise — other runtimes, other endpoints, too little observed mass — it is the confidence the model reports, read against the same thresholds.
 
 :::caution[Changed after 4.0.71]
 Releases up to 4.0.71 read the classifier's reply as free text and **admitted** an empty, unparseable or timed-out reply. The fail-closed behaviour above ships in the next release.

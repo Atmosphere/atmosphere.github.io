@@ -58,7 +58,7 @@ Every answer's `confidence()` is the same `AiConfidence` a streamed turn carries
 2. otherwise a `RuntimeDecisionModel` over the resolved `AgentRuntime`, but only if that runtime is not the demo fallback. A keyless local model (Ollama, `LLM_MODE=local`) counts as reachable;
 3. otherwise empty: no model can answer.
 
-Only a non-empty result is cached, so a model configured after the first lookup is still picked up. `DecisionModelResolver.reset()` forgets the cached model.
+Only a non-empty result is cached, so a model configured after the first lookup is still picked up. `DecisionModelResolver.reset()` forgets the cached model and closes it when it is `AutoCloseable`; a consumer that already holds it, such as a built `LLM_CLASSIFIER` injection screen, keeps the closed instance until it is rebuilt.
 
 The fallback `RuntimeDecisionModel` is **one instance shared** by every consumer that resolves through here — the injection, scope and moderation tiers and an intent routing without a model of its own — so its concurrency bound is shared too. It allows 8 questions in flight unless the JVM system property `-Dorg.atmosphere.ai.decision.max-concurrency=<n>` sets another positive integer. The property is read when the fallback is first resolved; it is not an `application.properties` key. A registered `DecisionModel` sizes itself.
 
@@ -106,13 +106,13 @@ The injection tier runs **on top of the `RULE_BASED` floor**: the zero-dependenc
 
 All three read the answer the same way — the injection tier with its own mapping, the scope and moderation tiers through `NoulGate`, whose default thresholds match the injection tier's:
 
-- a belief in `true` of at least **0.5** flags;
+- a belief in `true` of at least **0.5** flags, and so does a `true` answer that carries no confidence at all;
 - a `false` answer with a belief below **0.2** clears;
 - everything else is **uncertain** — the band between, a `false` answer with no confidence, a `true` answer the belief disagrees with, any `Answer.Failed` (timeout, capacity, runtime error, empty, unparseable or out-of-set reply) and state over 262,144 characters.
 
 A model-reported confidence `c` reads as `P(true) = c` for a `true` answer and `1 - c` for a `false` one, so the thresholds give the same verdict whether the belief was measured or self-reported.
 
-For the scope and moderation tiers, no decision model at all (only the demo runtime) is uncertain too; the injection tier instead downgrades to `RULE_BASED` with a warning, and the console reports `RULE_BASED`.
+For the scope and moderation tiers, no decision model at all (only the demo runtime) is uncertain too; the injection tier instead downgrades to `RULE_BASED` with a warning, and the console reports `RULE_BASED`. The RAG and memory screens keep that classifier until they are rebuilt (in practice, a restart); `InjectionClassifierResolver.reset()` alone does not change a screen already built.
 
 **Uncertain fails closed by default** in each tier:
 
@@ -125,7 +125,7 @@ For the scope and moderation tiers, no decision model at all (only the demo runt
 Even with moderation's `failOpen()`, a category the detector did flag still blocks. The scope tier's post-response check (`@AgentScope(postResponseCheck = true)`) keeps its posture: the bytes are already on the wire, so an uncertain verdict there admits and a flagged one denies.
 
 :::caution[Behaviour change]
-Before this, the scope and moderation tiers read free text and admitted an empty, unparseable or timed-out reply. An `@AgentScope(tier = LLM_CLASSIFIER)` endpoint with no reachable model now **denies every request** unless the opt-out is set.
+Before this, all three tiers read free text and admitted an empty, unparseable (for the injection tier, ambiguous) or timed-out reply. A RAG or long-term-memory screen on `LLM_CLASSIFIER` now **drops** a document whose classifier reply is blank, ambiguous or timed out, unless `atmosphere.ai.rag.safety.fail-open` / `atmosphere.ai.memory.safety.fail-open` is set. An `@AgentScope(tier = LLM_CLASSIFIER)` endpoint with no reachable model now **denies every request** unless the opt-out is set.
 :::
 
 **Capacity.** With every category blocked, one moderation inspection asks six questions (fewer after `.blocking(...)`), in parallel under one 5 s deadline. By default those share the fallback's 8 slots with the injection and scope tiers and intent routing; concurrent turns past that bound wait, and a question with no slot by the deadline is `CAPACITY` — uncertain, so the turn is blocked. Size the pool with `-Dorg.atmosphere.ai.decision.max-concurrency=<n>`, register a `DecisionModel` with its own bound, or build the consumer over its own `RuntimeDecisionModel`.

@@ -9,7 +9,7 @@ The [OWASP Agentic AI Top 10](https://genai.owasp.org/initiatives/agentic-securi
 
 | # | Threat | Coverage | Key evidence |
 |---|---|---|---|
-| A01 | **Goal Hijacking** | COVERED | `@AgentScope` + 3 `ScopeGuardrail` tiers + pipeline system-prompt hardening + sample-lint CI |
+| A01 | **Goal Hijacking** | COVERED | `@AgentScope` + 4 `ScopeGuardrail` tiers + pipeline system-prompt hardening + sample-lint CI |
 | A02 | Tool Misuse | PARTIAL | `@RequiresApproval` + MS-YAML rules over `tool_name` |
 | A03 | Memory Poisoning | DESIGN | `AiConversationMemory` SPI exists; integrity signing deferred (Phase B1) |
 | A04 | Indirect Prompt Injection | PARTIAL | `PiiRedactionGuardrail` response-side scan + scope preamble blunts injected instructions |

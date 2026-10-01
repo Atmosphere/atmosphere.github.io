@@ -53,8 +53,8 @@ A JVM system property wins over the environment variable. The environment variab
 
 These are JVM system properties and environment variables, not Spring Boot or Quarkus configuration keys.
 
-- **Pinned model by default.** `jev-latest` and `jev-preview` are moving aliases: TypeSafe documents that the answers behind them can change without a change on your side. They are accepted, with an INFO log. Each `DecisionResult.model()` reports the versioned id the API says answered.
-- **Base URL.** Scheme and host only, because the adapter appends `/v1/...`. Plain `http` is accepted only for a loopback host, so the key never crosses a network unencrypted.
+- **Pinned model by default.** `jev-latest` and `jev-preview` are moving aliases: TypeSafe documents that the answers behind them can change without a change on your side. They are accepted, with an INFO log. A successful `DecisionResult.model()` reports the versioned id the API says answered; a failed exchange (`TIMEOUT`, `CAPACITY`, `ERROR`, or a `200` whose body is `UNPARSEABLE`) reports the configured id, which may be the alias.
+- **Base URL.** Scheme, host and optional port only (no path, query, fragment or user info), because the adapter appends `/v1/...`. Plain `http` is accepted only for a loopback host, so the key never crosses a network unencrypted.
 - **Bad configuration** (a malformed URL or model id, a key with spaces) does not throw from the ServiceLoader constructor. The instance is unavailable and fails every question with `ERROR`; the reason is logged once per distinct message for the JVM.
 
 To configure an instance in code, use the builder. It throws on bad configuration instead:
@@ -77,8 +77,8 @@ When `isAvailable()` is true, `DecisionModelResolver.resolve()` selects it ahead
 If it is unavailable when a resolution runs (no key yet, the endpoint down at boot, a probe timeout) and a real `AgentRuntime` is configured, the resolver returns the `RuntimeDecisionModel` fallback **provisionally**: one caller rescans every 30 s (`DecisionModelResolver.FALLBACK_RECHECK_INTERVAL`) and switches to TypeSafe once it answers. Until then the safety tiers ask the general LLM.
 
 - The **scope and moderation tiers**, built without an explicit model (as `ScopeGuardrailResolver` and the Spring Boot starters' `LlmModerationDetector` build them), resolve on every check, so they pick up the switch.
-- The **`LLM_CLASSIFIER` injection tier** builds its classifier once with the model it resolved and keeps it until `InjectionClassifierResolver.reset()`.
-- With **no real `AgentRuntime`** (only the demo runtime) there is no fallback. An injection tier first resolved while TypeSafe is unavailable downgrades to `RULE_BASED` and **stays `RULE_BASED` until `InjectionClassifierResolver.reset()`**, even after the resolver starts returning TypeSafe. Its warning says so, and the console reports the tier the screens actually run.
+- The **`LLM_CLASSIFIER` injection tier** builds its classifier once with the model it resolved. `InjectionClassifierResolver.reset()` clears only the resolver caches: the RAG and long-term-memory screens keep the classifier they were built with until they are rebuilt, in practice at a restart.
+- With **no real `AgentRuntime`** (only the demo runtime) there is no fallback. An injection tier first resolved while TypeSafe is unavailable downgrades to `RULE_BASED` and **stays `RULE_BASED` until `InjectionClassifierResolver.reset()` and the screens are rebuilt** (in practice, a restart), even after the resolver starts returning TypeSafe. Its warning says so, and the console reports the tier the screens actually run.
 
 ## Availability probe
 
@@ -158,6 +158,10 @@ Each failure detail names the HTTP status, the provider's message and its `x-typ
 `TypesafeDecisionModel` creates its `HttpClient` on its first request, owns it and closes it in `close()`. An instance that only reads a cached verdict never creates one. `close()` is idempotent: it aborts the exchanges in flight instead of waiting for them, then waits at most 5 s for the client to terminate. A question in flight at that moment fails with `ERROR`, and a closed model is unavailable.
 
 The instance `DecisionModelResolver` selects is closed by `DecisionModelResolver.reset()` (which `InjectionClassifierResolver.reset()` calls). Nothing else closes it — no framework shutdown hook does — so it lives until a reset or the end of the JVM.
+
+:::caution[A reset closes the model the built screens still hold]
+An `LLM_CLASSIFIER` RAG or memory screen built over TypeSafe keeps that same instance. After either `reset()` it is closed, and every question it is asked fails with `ERROR` (`TypeSafe decision model is closed`), which the injection tier reads as uncertain. Until the screen is rebuilt, it drops every document the rule-based check passes — unless `atmosphere.ai.rag.safety.fail-open` / `atmosphere.ai.memory.safety.fail-open` is set. Rebuild the screens (in practice, restart) after a reset.
+:::
 
 ## Tests
 

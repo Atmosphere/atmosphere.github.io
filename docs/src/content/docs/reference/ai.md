@@ -430,6 +430,7 @@ Every completed turn can carry an `AiConfidence`: an `aggregate` in `[0, 1]` (or
 | `DECISION_LOGPROBS` | The margin of the emitted value in the model's distribution over a designated decision field's allowed values (next section) |
 | `MODEL_REPORTED_FIELD` | The `"confidence": 0.x` field the model is asked to emit — the universal fallback on every runtime |
 | `HEURISTIC` | Caller-computed |
+| `PROVIDER_DISTRIBUTION` | The distribution an external `DecisionModel` provider returns, such as the [TypeSafe adapter](/docs/integrations/typesafe/). It appears on decision answers only, never on a streamed turn |
 
 Native logprobs are requested on the Built-in runtime only when the request carries an `AiConfidenceElicitation`, and only for endpoints that accept the field: `atmosphere.ai.logprobs` (env `LLM_LOGPROBS`) is `auto` by default, which defers to a default-deny allow-list (OpenAI, Azure OpenAI, loopback); `enabled` forces emission and `disabled` turns it off.
 
