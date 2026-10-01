@@ -24,6 +24,72 @@ The latest build tracks **Spring Boot 4.0.7**, **Quarkus 3.36.3**,
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
 
+## 4.0.72-SNAPSHOT — Act on what the model is sure of: confidence routing, decision models, intent routing
+
+Not in a release yet: everything in this section was added after 4.0.71.
+
+**Confidence routing.** Emitting a confidence routes nothing; the only consumer
+was `ConfidenceThresholdGuardrail`, which blocks the stream. `ConfidenceRouting` now routes each completed turn on it — `ACT` at or above
+`actAt` (default 0.9), `CONFIRM` at or above `confirmAt` (default 0.5),
+`ESCALATE` below — and an **unknown** confidence escalates by default instead of
+acting. The route rides the wire as `ai.confidence.route`, and a handler gets
+each `ConfidenceDecision`. It behaves the same on `@AiEndpoint` and `AiPipeline`.
+
+**Decision-level confidence.** The mean token probability of a whole reply
+measures fluency: a fluent answer whose one decisive token was a coin flip still
+scores about 0.95. Name the field that carries the decision
+(`AiConfidenceElicitation.withDecisionField("verdict")`) and the Built-in runtime
+scores **that value** from the model's distribution over the allowed values
+(`DECISION_LOGPROBS`): a coin flip scores `0`, and anything the provider did not
+show counts against the answer. Built-in runtime, chat-completions path,
+structured output only; every other runtime stays on the model-reported field.
+The scoring is pinned against hand-authored fixtures, not yet against a captured
+live-provider stream.
+
+**Decision models.** `DecisionModel` (`org.atmosphere.ai.decision`) is a new SPI
+for models that decide rather than write: typed `Choice`, `Score` and `Noul`
+(boolean) questions, one typed answer each, never a guess — a question that
+cannot be answered is an `Answer.Failed` with a reason. `RuntimeDecisionModel`
+turns any `AgentRuntime` into one; `DecisionModelResolver` discovers registered
+models through `ServiceLoader`.
+
+**The LLM safety tiers now fail closed.** The `LLM_CLASSIFIER` injection tier,
+the `@AgentScope(tier = LLM_CLASSIFIER)` scope tier and the LLM moderation
+detector ask their questions through a `DecisionModel` and treat an uncertain
+answer — a timeout, no capacity, an empty or unparseable reply, a belief between
+0.2 and 0.5, no reachable model — as a denial. Before, the scope and moderation
+tiers read free text and **admitted** an empty, unparseable or timed-out reply;
+an `LLM_CLASSIFIER` scope with no reachable model now denies every request. The
+opt-outs are explicit: `atmosphere.ai.rag.safety.fail-open` /
+`atmosphere.ai.memory.safety.fail-open` (injection), the JVM system property
+`org.atmosphere.ai.scope.llm-classifier.fail-open` (scope), and
+`ModerationGuardrail.failOpen()` / `atmosphere.ai.guardrails.moderation.fail-open`
+(moderation).
+
+**Intent routing.** `IntentRouting` decides, before the LLM is called, whether a
+request goes to a deterministic Java handler, the normal LLM path, or a person —
+one `Question.Choice` gated by the same confidence tiers, with a confirmation
+round-trip on `CONFIRM` and the human route on anything uncertain. It composes
+with model routing: on an LLM route the runtime still picks the model. Declare it
+with `@AiEndpoint(intentRouting = ...)` or `AiPipeline.setDefaultIntentRouting`.
+
+**Governance feedback, made visible.** When `GovernanceFeedbackInterceptor`
+injects governance guidance into a turn, the client now sees it:
+`ai.governance.feedback.injected` and `ai.governance.feedback.lines` metadata
+frames before `complete`, rendered by the Console as **Governance guidance
+applied**. Only lines that reached the model are reported, and never on a
+broadcast room reply.
+
+**TypeSafe adapter (in progress).** `atmosphere-ai-decision-typesafe` is a
+`DecisionModel` over the TypeSafe System One API, whose answers carry the
+provider's own distribution (confidence source `PROVIDER_DISTRIBUTION`). Its
+successful-answer path is verified against fixtures copied from TypeSafe's
+documentation; only the invalid-key path has been exercised live.
+
+See [Decision Models](/docs/reference/decision-models/), the
+[AI reference](/docs/reference/ai/#confidence-routing) and the
+[TypeSafe adapter](/docs/integrations/typesafe/).
+
 ## 4.0.65-SNAPSHOT — `@ManagedService` under GraalVM Native Image
 
 **What CI asserts.** `.github/workflows/native-image-ci.yml` builds two real native
@@ -121,7 +187,7 @@ become serializable. Availability is runtime truth: an unreachable server is
 never selected. Proven end-to-end by unit tests on the Temporal test service
 and a Playwright lane that asserts the run — type, task queue, per-step
 activities, terminal result — in Temporal's own Web UI. See the
-[Durable Checkpoints reference](reference/checkpoint.md).
+[Durable Checkpoints reference](/docs/reference/checkpoint/).
 
 ## 4.0.62 — Session tape: record agent runs, replay them, watch them in the Console
 
@@ -144,8 +210,8 @@ truth, not classpath detection.
 Because each completed run is a `(prompt → completion)` record, the tape
 doubles as training data: `TapeDatasetCli` extracts chat-format JSONL for
 distilling a smaller model. See the
-[Session Tape reference](reference/tape.md) and the
-[Session Tape & Replay tutorial](tutorial/36-session-tape.md).
+[Session Tape reference](/docs/reference/tape/) and the
+[Session Tape & Replay tutorial](/docs/tutorial/36-session-tape/).
 
 ## 4.0.60-SNAPSHOT — Deep-agent harness on by default
 
