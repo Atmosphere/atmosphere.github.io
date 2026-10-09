@@ -65,7 +65,7 @@ const plans: Plan[] = [
   {
     name: 'Developer',
     from: usd(PRICES.developer.yearly),
-    period: '/ org / year',
+    period: 'per organization, per year',
     sold: 'developer',
     bestFor: 'Dev, staging and evaluation. Get the team unblocked without a production promise.',
     coverage: 'Business Hours',
@@ -79,7 +79,7 @@ const plans: Plan[] = [
   {
     name: 'Production',
     from: usd(PRICES.production.yearly),
-    period: '/ org / year',
+    period: 'per organization, per year',
     sold: 'production',
     bestFor: 'Atmosphere on the critical path. A four-hour answer during your working day.',
     coverage: 'Business Hours',
@@ -94,7 +94,7 @@ const plans: Plan[] = [
   {
     name: 'Mission-Critical',
     from: 'from $25,000',
-    period: '/ org / year · quoted',
+    period: 'per organization, per year · quoted',
     bestFor: 'Revenue depends on it around the clock. 24×7 cover on a named contact.',
     coverage: '24×7 (S1 / S2)',
     responseS1: '1 Hour · 24×7',
@@ -282,7 +282,7 @@ const plans: Plan[] = [
 
     <div class="support-footer">
       <p class="support-terms">
-        Prices in USD, per organisation, plus applicable taxes. Paying yearly
+        Prices in USD, per organization, plus applicable taxes. Paying yearly
         costs ten months of the monthly price.
       </p>
       <p>
@@ -458,7 +458,8 @@ const plans: Plan[] = [
 
   .plan-period {
     display: block;
-    font-size: 0.75rem;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
     color: var(--color-text-muted);
     margin-top: 2px;
   }
