@@ -17,6 +17,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta name="keywords" content="Java, AI Agents, MCP, A2A, AG-UI, WebSocket, SSE, WebTransport, HTTP3, gRPC, Real-time, LLM, Streaming, Spring AI, LangChain4j, Google ADK, Spring Boot, Quarkus, JVM, Enterprise Support" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalUrl.href} />
+    <link rel="alternate" type="application/rss+xml" title="Async IO Blog" href={new URL('/rss.xml', Astro.site).href} />
+
+    <!-- Cookieless, privacy-friendly analytics. The same domain is set on the
+         docs site so the funnel from home page to docs to contact is one view. -->
+    <script is:inline defer data-domain="async-io.live" src="https://plausible.io/js/script.outbound-links.js"></script>
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
