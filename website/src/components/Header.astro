@@ -79,13 +79,22 @@ const navLinks = [
     right: 0;
     z-index: 100;
     padding: var(--space-md) var(--space-xl);
+  }
+
+  /* The blur sits on a pseudo-element: backdrop-filter on .header itself would make it the
+     containing block of the fixed mobile nav and clip the open menu to the header's height. */
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
     background: linear-gradient(to bottom, var(--color-bg-primary) 0%, transparent 100%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     transition: background 0.3s ease;
   }
 
-  .header.menu-open {
+  .header.menu-open::before {
     background: var(--color-bg-primary);
   }
 
