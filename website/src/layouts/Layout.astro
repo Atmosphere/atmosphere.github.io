@@ -22,7 +22,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 
     <!-- Cookieless, privacy-friendly analytics. The same domain is set on the
          docs site so the funnel from home page to docs to contact is one view. -->
-    <script is:inline defer data-domain="async-io.live" src="https://plausible.io/js/script.outbound-links.js"></script>
+    <script is:inline async src="https://plausible.io/js/pa-uGWiSV9thaUs7mo0F93PN.js"></script>
+    <script is:inline>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init()
+    </script>
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

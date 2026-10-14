@@ -29,7 +29,12 @@ export default defineConfig({
       head: [
         { tag: 'link', attrs: { rel: 'icon', href: '/docs/favicon.svg', type: 'image/svg+xml' } },
         // Same analytics domain as the marketing site, so home → docs → contact is one funnel.
-        { tag: 'script', attrs: { defer: true, 'data-domain': 'async-io.live', src: 'https://plausible.io/js/script.outbound-links.js' } },
+        { tag: 'script', attrs: { async: true, src: 'https://plausible.io/js/pa-uGWiSV9thaUs7mo0F93PN.js' } },
+        {
+          tag: 'script',
+          content:
+            'window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()',
+        },
       ],
       sidebar: [
         {
