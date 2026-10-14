@@ -9,33 +9,39 @@
   </div>
 
   <div class="hero-content">
-    <img src="/logo.svg" alt="Atmosphere" class="hero-logo" width="120" height="120" />
+    <!-- Proof is verifiable open-source fact, rounded down. Re-check before editing:
+         stars:    gh api repos/Atmosphere/atmosphere --jq .stargazers_count            (3,821 on 2026-10-14)
+         releases: curl -s https://repo1.maven.org/maven2/org/atmosphere/atmosphere-runtime/maven-metadata.xml
+                   | grep -o '<version>[^<]*' | grep -viE 'rc|beta|alpha|snapshot|m[0-9]' | wc -l   (283 on 2026-10-14) -->
+    <ul class="hero-proof">
+      <li>
+        <a href="https://github.com/Atmosphere/atmosphere" target="_blank" rel="noopener noreferrer">
+          &#9733; 3.8K GitHub stars
+        </a>
+      </li>
+      <li>280+ releases on Maven Central</li>
+      <li>Supported since 2013</li>
+    </ul>
 
     <h1 class="hero-title">
-      <span class="title-line title-accent">Atmosphere</span>
+      Real-time AI agents for the JVM,
+      <span class="title-accent">backed by the team that builds them.</span>
     </h1>
 
-    <p class="hero-tagline">Real-time, governed AI agents for the JVM.</p>
     <p class="hero-description">
-      Write one <code>@Agent</code> class, stream it to the browser over WebSocket, SSE or
-      WebTransport, and run it on any of twelve AI runtimes &mdash; Spring AI, LangChain4j,
-      Google ADK and more &mdash; without rewriting it. Open source under Apache 2.0, and
-      backed in production by <strong>Async IO</strong>, the team that builds it.
+      <strong>Async IO</strong> builds Atmosphere, the open-source framework that streams one
+      <code>@Agent</code> to browsers and apps over WebSocket, SSE or WebTransport, on any of
+      twelve AI runtimes. We keep it running in production for the teams that depend on it.
     </p>
     <div class="hero-actions">
-      <a href="/docs/tutorial/02-getting-started/" class="btn btn-primary">
-        Get Started
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <a href="/contact/" class="btn btn-primary">
+        Talk to us
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
-      <a href="/contact/" class="btn btn-secondary">
-        Talk to Us
-      </a>
-    </div>
-    <div class="hero-github">
-      <a href="https://github.com/Atmosphere/atmosphere" target="_blank" rel="noopener noreferrer" class="hero-stars">
-        &#9733; Star on GitHub
+      <a href="/docs/tutorial/02-getting-started/" class="btn btn-secondary">
+        Get started free
       </a>
     </div>
     <div class="hero-stats">
@@ -52,11 +58,6 @@
       <div class="stat">
         <span class="stat-value">12 AI Runtimes</span>
         <span class="stat-label">one SPI &mdash; swap by dependency, keep your code</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-value">Since 2013</span>
-        <span class="stat-label">in production</span>
       </div>
     </div>
   </div>
@@ -125,35 +126,53 @@
   .hero-content {
     position: relative;
     min-width: 0;
-    max-width: 800px;
+    max-width: 960px;
     text-align: center;
-  }
-
-  .hero-logo {
-    display: block;
-    margin: 0 auto var(--space-sm);
-    animation: fadeInUp 0.8s var(--ease-out-expo) 0.05s both;
   }
 
   .hero-title {
     font-family: var(--font-display);
-    font-size: clamp(3rem, 10vw, 5.5rem);
+    font-size: clamp(2.25rem, 6vw, 4.25rem);
     font-weight: 400;
-    line-height: 1.05;
+    line-height: 1.08;
     letter-spacing: -0.03em;
     margin-bottom: var(--space-lg);
+    text-wrap: balance;
+    animation: fadeInUp 0.8s var(--ease-out-expo) 0.1s both;
   }
 
-  .title-line {
-    display: block;
-    animation: fadeInUp 0.8s var(--ease-out-expo) both;
+  .hero-proof {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+    list-style: none;
+    margin-bottom: var(--space-xl);
+    animation: fadeInUp 0.8s var(--ease-out-expo) 0.05s both;
   }
 
-  .title-line:nth-child(1) {
-    animation-delay: 0.1s;
+  .hero-proof li {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-accent);
+    border-radius: 999px;
+    padding: 0.35em 0.9em;
+  }
+
+  .hero-proof a {
+    color: inherit;
+    transition: color 0.2s var(--ease-out-quad);
+  }
+
+  .hero-proof a:hover {
+    color: var(--color-accent);
   }
 
   .title-accent {
+    display: block;
     background: linear-gradient(135deg, #b8944a, #d4b060, #c4a86a);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -162,7 +181,7 @@
   }
 
   .hero-description {
-    max-width: 560px;
+    max-width: 600px;
     margin: 0 auto var(--space-2xl);
     font-size: 1.125rem;
     line-height: 1.7;
@@ -175,39 +194,10 @@
     font-weight: 600;
   }
 
-  .hero-tagline {
-    font-family: var(--font-display);
-    font-size: clamp(1.5rem, 4vw, 2.25rem);
-    line-height: 1.2;
-    color: var(--color-text-primary);
-    margin: calc(-1 * var(--space-md)) auto var(--space-lg);
-    animation: fadeInUp 0.8s var(--ease-out-expo) 0.2s both;
-  }
-
   .hero-description code {
     font-family: var(--font-mono);
     font-size: 0.95em;
     color: var(--color-text-primary);
-  }
-
-  .hero-github {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-md);
-    margin: calc(-1 * var(--space-xl)) auto var(--space-3xl);
-    animation: fadeInUp 0.8s var(--ease-out-expo) 0.45s both;
-  }
-
-  .hero-stars {
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-    transition: color 0.2s var(--ease-out-quad);
-  }
-
-  .hero-stars:hover {
-    color: var(--color-accent);
   }
 
   .hero-actions {
@@ -274,6 +264,7 @@
     font-weight: 500;
     color: var(--color-text-primary);
     margin-bottom: var(--space-xs);
+    white-space: nowrap;
   }
 
   .stat-label {
@@ -301,6 +292,11 @@
   @media (max-width: 768px) {
     .hero {
       padding: var(--space-4xl) var(--space-md);
+    }
+
+    .hero-proof li {
+      font-size: 0.6875rem;
+      letter-spacing: 0;
     }
 
     .hero-actions {

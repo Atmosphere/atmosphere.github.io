@@ -4,8 +4,8 @@ const navLinks = [
   { href: '/docs/', label: 'Docs' },
   { href: '/#support', label: 'Support' },
   { href: '/blog/', label: 'Blog' },
-  { href: '/contact/', label: 'Contact' },
   { href: 'https://github.com/Atmosphere/atmosphere', label: 'GitHub', external: true },
+  { href: '/contact/', label: 'Talk to us', cta: true },
 ];
 ---
 
@@ -22,7 +22,7 @@ const navLinks = [
           <li>
             <a
               href={link.href}
-              class="nav-link"
+              class:list={['nav-link', { 'nav-cta': link.cta }]}
               {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
             >
               {link.label}
@@ -151,6 +151,19 @@ const navLinks = [
     color: var(--color-text-primary);
   }
 
+  .nav-cta {
+    padding: var(--space-sm) var(--space-md);
+    color: var(--color-bg-primary);
+    background: var(--color-text-primary);
+    border-radius: 8px;
+    transition: background 0.2s var(--ease-out-quad);
+  }
+
+  .nav-cta:hover {
+    color: var(--color-bg-primary);
+    background: var(--color-accent);
+  }
+
   .external-icon {
     opacity: 0.5;
     transition: opacity 0.2s var(--ease-out-quad);
@@ -222,6 +235,11 @@ const navLinks = [
       font-family: var(--font-display);
       font-weight: 400;
       color: var(--color-text-primary);
+    }
+
+    .nav-cta {
+      color: var(--color-bg-primary);
+      padding: var(--space-sm) var(--space-xl);
     }
 
     .mobile-menu-btn {
