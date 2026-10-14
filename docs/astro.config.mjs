@@ -3,7 +3,7 @@ import starlight from '@astrojs/starlight';
 import mermaid from 'astro-mermaid';
 
 export default defineConfig({
-  site: 'https://async-io.org',
+  site: 'https://async-io.live',
   base: '/docs',
   integrations: [
     // Must come BEFORE starlight so it intercepts ```mermaid fences
@@ -28,6 +28,8 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
       head: [
         { tag: 'link', attrs: { rel: 'icon', href: '/docs/favicon.svg', type: 'image/svg+xml' } },
+        // Same analytics domain as the marketing site, so home → docs → contact is one funnel.
+        { tag: 'script', attrs: { defer: true, 'data-domain': 'async-io.live', src: 'https://plausible.io/js/script.outbound-links.js' } },
       ],
       sidebar: [
         {

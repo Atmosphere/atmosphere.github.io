@@ -15,25 +15,30 @@
       <span class="title-line title-accent">Atmosphere</span>
     </h1>
 
+    <p class="hero-tagline">Real-time, governed AI agents for the JVM.</p>
     <p class="hero-description">
-      Async IO is the company behind <strong>Atmosphere</strong> &mdash; the open-source
-      real-time framework the JVM has trusted in production for years, and now the
-      platform Java teams build governed, durable AI agents on. We provide the
-      engineering, the support, and the long-term commitment that production systems require.
+      Write one <code>@Agent</code> class, stream it to the browser over WebSocket, SSE or
+      WebTransport, and run it on any of twelve AI runtimes &mdash; Spring AI, LangChain4j,
+      Google ADK and more &mdash; without rewriting it. Open source under Apache 2.0, and
+      backed in production by <strong>Async IO</strong>, the team that builds it.
     </p>
-
     <div class="hero-actions">
-      <a href="/contact/" class="btn btn-primary">
-        Talk to Us
+      <a href="/docs/tutorial/02-getting-started/" class="btn btn-primary">
+        Get Started
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
-      <a href="/#support" class="btn btn-secondary">
-        Support Plans
+      <a href="/contact/" class="btn btn-secondary">
+        Talk to Us
       </a>
     </div>
-
+    <div class="hero-install">
+      <code>curl -fsSL https://raw.githubusercontent.com/Atmosphere/atmosphere/main/cli/install.sh | sh</code>
+      <a href="https://github.com/Atmosphere/atmosphere" target="_blank" rel="noopener noreferrer" class="hero-stars">
+        &#9733; Star on GitHub
+      </a>
+    </div>
     <div class="hero-stats">
       <div class="stat">
         <span class="stat-value">5 Transports</span>
@@ -51,7 +56,7 @@
       </div>
       <div class="stat-divider"></div>
       <div class="stat">
-        <span class="stat-value">13 Years</span>
+        <span class="stat-value">Since 2008</span>
         <span class="stat-label">in production</span>
       </div>
     </div>
@@ -120,6 +125,7 @@
 
   .hero-content {
     position: relative;
+    min-width: 0;
     max-width: 800px;
     text-align: center;
   }
@@ -168,6 +174,55 @@
   .hero-description strong {
     color: var(--color-text-primary);
     font-weight: 600;
+  }
+
+  .hero-tagline {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    line-height: 1.2;
+    color: var(--color-text-primary);
+    margin: calc(-1 * var(--space-md)) auto var(--space-lg);
+    animation: fadeInUp 0.8s var(--ease-out-expo) 0.2s both;
+  }
+
+  .hero-description code {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+    color: var(--color-text-primary);
+  }
+
+  .hero-install {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin: calc(-1 * var(--space-xl)) auto var(--space-3xl);
+    animation: fadeInUp 0.8s var(--ease-out-expo) 0.45s both;
+  }
+
+  .hero-install code {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: var(--space-sm) var(--space-md);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+  }
+
+  .hero-stars {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    transition: color 0.2s var(--ease-out-quad);
+  }
+
+  .hero-stars:hover {
+    color: var(--color-accent);
   }
 
   .hero-actions {
