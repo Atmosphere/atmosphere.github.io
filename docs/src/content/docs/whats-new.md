@@ -18,8 +18,8 @@ native image has no `.class` files to scan — so the binary answered a health U
 every annotated endpoint was dead. The 4.0.65-SNAPSHOT section below covers the fix and
 states exactly which path CI drives and which paths it leaves unproven.
 
-The latest build tracks **Spring Boot 4.0.7**, **Quarkus 3.36.3**,
-**Jackson 3.2.1**, and **atmosphere.js 5.0.41**, and requires **JDK 21** as a minimum.
+The latest build tracks **Spring Boot 4.1.1**, **Quarkus 3.39.5**,
+**Jackson 3.2.3**, and **atmosphere.js 5.0.48**, and requires **JDK 21** as a minimum.
 
 This page is a highlights reel. For the per-patch history, see the
 [CHANGELOG](https://github.com/Atmosphere/atmosphere/blob/main/CHANGELOG.md).
@@ -766,7 +766,7 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
 
 ## Integrations
 
-- **Spring Boot 4.0.7** — auto-configuration, Actuator
+- **Spring Boot 4.1.1** — auto-configuration, Actuator
   health indicator (`AtmosphereHealthIndicator`), and two separate pieces of native
   image support: `AtmosphereRuntimeHints` registers reflection and resource hints
   sourced from `NativeImageMetadata.collect(…)` rather than a hand-maintained list, and
@@ -779,7 +779,7 @@ the wire surfaces, samples, and CI gates that make it adoptable. See the
   `spring-boot-health` where needed. The starter overrides the parent POM's old
   SLF4J 1.x/Logback 1.2.x pins in `<dependencies>` so upgrades don't regress.
   See [Spring Boot Reference](/docs/integrations/spring-boot/).
-- **Quarkus 3.36.0** — build-time Jandex annotation scanning, Arc CDI
+- **Quarkus 3.39.5** — build-time Jandex annotation scanning, Arc CDI
   integration, custom `QuarkusJSR356AsyncSupport`, and `@BuildStep`-driven native
   image registration. Registration is driven by the Jandex index plus
   `NativeImageMetadata.collect(…)`, not by configuration: `registerReflection`,

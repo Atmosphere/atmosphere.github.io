@@ -1,11 +1,11 @@
 ---
 title: "Quarkus"
-description: "Build-time processing for Quarkus 3.36.0+"
+description: "Build-time processing for Quarkus 3.39.5+"
 ---
 
 # Quarkus Integration
 
-A Quarkus extension that integrates Atmosphere with Quarkus 3.36.0+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and build-time reflection registration for GraalVM Native Image.
+A Quarkus extension that integrates Atmosphere with Quarkus 3.39.5+. Provides build-time annotation scanning via Jandex, Arc CDI integration, and build-time reflection registration for GraalVM Native Image.
 
 CI builds `samples/quarkus-chat` into a native binary and asserts exactly one thing: a `@ManagedService` serves a real long-polling connection. WebSocket, SSE, `@Message` round-trips and the AI stack are **not** covered by any native lane -- see [GraalVM Native Image](#graalvm-native-image) for the full scope.
 

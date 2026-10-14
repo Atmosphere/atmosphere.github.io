@@ -5,7 +5,7 @@ description: "Auto-configuration for Spring Boot 4.0+"
 
 # Spring Boot Integration
 
-Auto-configuration for running Atmosphere on Spring Boot 4.0.7. Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
+Auto-configuration for running Atmosphere on Spring Boot 4.1.1. Registers `AtmosphereServlet`, wires Spring DI into Atmosphere's object factory, and exposes `AtmosphereFramework` and `RoomManager` as Spring beans.
 
 ## Maven Coordinates
 

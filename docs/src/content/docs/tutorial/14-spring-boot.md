@@ -5,7 +5,7 @@ sidebar:
   order: 14
 ---
 
-The `atmosphere-spring-boot-starter` module provides auto-configuration for Spring Boot 4.0.6. Add it as a dependency and your `@ManagedService` classes work out of the box.
+The `atmosphere-spring-boot-starter` module provides auto-configuration for Spring Boot 4.1.1. Add it as a dependency and your `@ManagedService` classes work out of the box.
 
 ## Dependency
 
@@ -284,7 +284,7 @@ This pattern works because `RoomManager` is exposed as a Spring bean by the auto
 
 **Object factory order**: The starter sets the `SpringAtmosphereObjectFactory` on the `AtmosphereFramework` **before** calling `init()`. This is critical -- if the object factory is set after init, Atmosphere's annotation processors will not be able to inject Spring beans into `@ManagedService` instances.
 
-**Spring Boot 4.0 target**: The starter is built for Spring Boot 4.0.6 and uses the dependency versions managed by the Spring Boot 4.0.6 BOM. It overrides the parent POM's SLF4J/Logback versions for compatibility.
+**Spring Boot 4.0 target**: The starter is built for Spring Boot 4.1.1 and uses the dependency versions managed by the Spring Boot 4.1.1 BOM. It overrides the parent POM's SLF4J/Logback versions for compatibility.
 
 **BroadcasterFactory is not a Spring bean**: The starter deliberately does not expose `BroadcasterFactory` as a Spring bean. It is available via Atmosphere's `@Inject` inside `@ManagedService` classes, or programmatically via `framework.getAtmosphereConfig().getBroadcasterFactory()`.
 
