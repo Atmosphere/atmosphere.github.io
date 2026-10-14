@@ -9,9 +9,9 @@ const pillars = [
       { name: 'SSE', detail: 'Server-Sent Events. A simple HTTP-based protocol for server-to-client streaming with automatic reconnection built into the browser.', url: 'https://html.spec.whatwg.org/multipage/server-sent-events.html', urlLabel: 'WHATWG Spec' },
       { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC with native WebTransport support — auto-detected via AsyncSupport with zero-config Jetty 12 QUIC or Reactor Netty sidecar.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
       { name: 'Long-Polling', detail: 'HTTP long-polling with automatic reconnection. Works everywhere, even behind the most restrictive corporate firewalls and proxies.', url: 'https://datatracker.ietf.org/doc/html/rfc6202', urlLabel: 'RFC 6202' },
-      { name: 'gRPC', detail: 'High-performance RPC framework with bidirectional streaming over HTTP/2. Atmosphere exposes your agents as gRPC services alongside HTTP transports.', url: 'https://grpc.io', urlLabel: 'grpc.io' },
+      { name: 'HTTP Streaming', detail: 'One long-lived HTTP response the client reads incrementally as messages arrive. Unlike long-polling, the connection stays open between messages.', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Streams_API', urlLabel: 'Streams API' },
     ],
-    extras: ['Auto-fallback', 'Reconnection with jitter', 'Heartbeats', 'Message caching'],
+    extras: ['Auto-fallback', 'Reconnection with jitter', 'Heartbeats', 'Message caching', 'gRPC clients on the same Broadcaster'],
   },
   {
     label: 'Agent Protocols',
@@ -38,6 +38,12 @@ const pillars = [
     extras: ['ServiceLoader seams', 'In-tree defaults, zero config', 'No vendor lock-in'],
   },
 ];
+
+// Split on a period followed by a space, so a file name such as AGENTS.md does not end the sentence.
+const firstSentence = (text) => {
+  const first = text.split('. ')[0];
+  return first.endsWith('.') ? first : `${first}.`;
+};
 ---
 
 <section class="pillars" id="atmosphere">
@@ -62,14 +68,16 @@ const pillars = [
 
           <ul class="pillar-items">
             {pillar.items.map((item, iIdx) => (
-              <li class="pillar-item" data-pillar={pIdx} data-item={iIdx} role="button" tabindex="0">
-                <span class="item-name">
-                  {item.name}
-                  <svg class="item-arrow" width="14" height="14" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-                <span class="item-detail">{item.detail.split('.')[0]}.</span>
+              <li class="pillar-row">
+                <button type="button" class="pillar-item" data-pillar={pIdx} data-item={iIdx} aria-haspopup="dialog">
+                  <span class="item-name">
+                    {item.name}
+                    <svg class="item-arrow" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <span class="item-detail">{firstSentence(item.detail)}</span>
+                </button>
               </li>
             ))}
           </ul>
@@ -85,8 +93,8 @@ const pillars = [
   </div>
 
   <!-- Modal -->
-  <div class="modal-overlay" id="pillarModal" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true">
+  <div class="modal-overlay" id="pillarModal" aria-hidden="true" inert>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pillarModalTitle">
       <button class="modal-close" aria-label="Close">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l10 10M14 4L4 14"/></svg>
       </button>
@@ -125,23 +133,29 @@ const pillars = [
           <path d="M4 12L12 4M12 4H6M12 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>`;
+      // A hidden overlay stays inert so its close button and link are out of the tab order.
+      overlay.inert = false;
       overlay.setAttribute('aria-hidden', 'false');
       overlay.classList.add('active');
       document.body.style.overflow = 'hidden';
       closeBtn.focus();
     }
 
+    let opener = null;
+
     function closeModal() {
+      if (!overlay.classList.contains('active')) return;
       overlay.classList.remove('active');
       overlay.setAttribute('aria-hidden', 'true');
+      overlay.inert = true;
       document.body.style.overflow = '';
+      if (opener) { opener.focus(); opener = null; }
     }
 
     document.querySelectorAll('.pillar-item[data-pillar]').forEach(item => {
-      const handler = () => openModal(Number(item.dataset.pillar), Number(item.dataset.item));
-      item.addEventListener('click', handler);
-      item.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
+      item.addEventListener('click', () => {
+        opener = item;
+        openModal(Number(item.dataset.pillar), Number(item.dataset.item));
       });
     });
 
@@ -273,18 +287,27 @@ const pillars = [
     margin-bottom: var(--space-lg);
   }
 
+  .pillar-row {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .pillar-row:last-child {
+    border-bottom: none;
+  }
+
   .pillar-item {
     display: flex;
     flex-direction: column;
+    width: 100%;
     padding: var(--space-sm) var(--space-sm);
-    border-bottom: 1px solid var(--color-border);
+    background: none;
+    border: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
     cursor: pointer;
     border-radius: 6px;
     transition: all 0.2s var(--ease-out-quad);
-  }
-
-  .pillar-item:last-child {
-    border-bottom: none;
   }
 
   .pillar-item:hover {

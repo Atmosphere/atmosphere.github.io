@@ -1,0 +1,186 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout
+  title="Privacy — Async IO"
+  description="What async-io.live collects, who processes it, and how to reach Async IO about your personal information."
+>
+  <Header />
+  <main class="legal">
+    <article class="legal-container">
+      <header class="legal-header">
+        <span class="section-label">Privacy</span>
+        <h1 class="legal-title">Privacy policy</h1>
+        <p class="legal-lede">
+          Last updated <time datetime="2026-10-14">October 14, 2026</time>.
+          This policy covers async-io.live, including the documentation at
+          <a href="/docs/">async-io.live/docs/</a>. It describes what is collected
+          when you visit, who processes it, and how to reach us.
+        </p>
+      </header>
+
+      <section>
+        <h2>The short version</h2>
+        <ul>
+          <li>This site sets no cookies of its own and runs no advertising or cross-site tracking.</li>
+          <li>Visit statistics are aggregate and cookieless.</li>
+          <li>We only hold personal information you choose to send us: an email, or a call you book.</li>
+          <li>We do not sell or rent personal information.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Visit statistics</h2>
+        <p>
+          We count visits with <a href="https://plausible.io/data-policy" target="_blank" rel="noopener noreferrer">Plausible Analytics</a>,
+          which works without cookies. It records aggregate figures (pages viewed, referring site,
+          browser, operating system, device type and country) that do not identify you,
+          and we use them only to see which pages are read.
+        </p>
+      </section>
+
+      <section>
+        <h2>Hosting</h2>
+        <p>
+          The site is served by GitHub Pages. GitHub logs the IP address of visitors for security
+          purposes, as described in the
+          <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement</a>.
+          Fonts and scripts on this site are served from async-io.live, except the analytics
+          script above and the scheduling widget below.
+        </p>
+      </section>
+
+      <section>
+        <h2>Booking a call</h2>
+        <p>
+          The <a href="/contact/">contact page</a> embeds a
+          <a href="https://calendly.com/privacy" target="_blank" rel="noopener noreferrer">Calendly</a>
+          scheduler. Calendly loads only on that page. If you book, Calendly collects the name,
+          email address and answers you enter, and may set its own cookies. We receive the booking
+          and use it to prepare and hold the call.
+        </p>
+      </section>
+
+      <section>
+        <h2>Email</h2>
+        <p>
+          When you write to <a href="mailto:support@async-io.org">support@async-io.org</a>, we use your
+          message and address to answer you and, if you are a customer, to provide the support you
+          pay for. We keep that correspondence for as long as the conversation or the support
+          relationship needs it.
+        </p>
+      </section>
+
+      <section>
+        <h2>Your rights</h2>
+        <p>
+          You can ask to see the personal information we hold about you, have it corrected or
+          deleted, or withdraw a consent you gave. Write to
+          <a href="mailto:support@async-io.org">support@async-io.org</a>, which reaches the person
+          in charge of the protection of personal information at Async IO. We answer within 30 days.
+        </p>
+        <p>
+          Async IO is based in Quebec. If you are not satisfied with our answer, you can contact the
+          <a href="https://www.cai.gouv.qc.ca/" target="_blank" rel="noopener noreferrer">Commission d'accès à l'information du Québec</a>,
+          or the data protection authority where you live.
+        </p>
+      </section>
+
+      <section>
+        <h2>Changes</h2>
+        <p>
+          When this policy changes, the date at the top changes with it.
+        </p>
+      </section>
+    </article>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .legal {
+    padding: calc(var(--space-4xl) + 60px) var(--space-xl) var(--space-4xl);
+    min-height: 100vh;
+  }
+
+  .legal-container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .legal-header {
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+  }
+
+  .legal-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-md);
+  }
+
+  .legal-lede {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .legal section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .legal h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: var(--space-md);
+  }
+
+  .legal p,
+  .legal li {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .legal p + p {
+    margin-top: var(--space-md);
+  }
+
+  .legal ul {
+    padding-left: var(--space-lg);
+  }
+
+  .legal li + li {
+    margin-top: var(--space-xs);
+  }
+
+  .legal a {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .legal a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  @media (max-width: 640px) {
+    .legal {
+      padding: calc(var(--space-3xl) + 60px) var(--space-md) var(--space-3xl);
+    }
+  }
+</style>

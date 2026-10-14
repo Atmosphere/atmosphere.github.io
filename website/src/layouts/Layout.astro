@@ -1,4 +1,14 @@
 ---
+// Self-hosted fonts: no render-blocking request to Google, and no visitor IP sent to a third party.
+import '@fontsource/instrument-serif/latin-400.css';
+import '@fontsource/instrument-serif/latin-400-italic.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-500.css';
+import '@fontsource/geist/latin-300.css';
+import '@fontsource/geist/latin-400.css';
+import '@fontsource/geist/latin-500.css';
+import '@fontsource/geist/latin-600.css';
+
 interface Props {
   title: string;
   description?: string;
@@ -42,9 +52,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL('/AsyncIO.png', Astro.site).href} />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <title>{title}</title>
 
     <!-- Structured Data -->
@@ -87,7 +94,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 
     --color-text-primary: #e6edf3;
     --color-text-secondary: #8b949e;
-    --color-text-muted: #484f58;
+    --color-text-muted: #88909a;
 
     --color-accent: #d4b060;
     --color-accent-dim: #b8944a;
@@ -95,6 +102,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 
     --color-border: #21262d;
     --color-border-accent: #30363d;
+    --color-border-hover: #484f58;
 
     /* Typography */
     --font-display: 'Instrument Serif', Georgia, serif;
@@ -184,7 +192,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-muted);
+    background: var(--color-border-hover);
   }
 
   /* Focus styles */

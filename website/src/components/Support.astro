@@ -540,7 +540,7 @@ const plans = [
 
   .plan-cta:hover {
     background: var(--color-bg-elevated);
-    border-color: var(--color-text-muted);
+    border-color: var(--color-border-hover);
   }
 
   .plan-cta-highlight {
@@ -622,7 +622,7 @@ const plans = [
 
   .legacy-cta:hover {
     background: var(--color-bg-elevated);
-    border-color: var(--color-text-muted);
+    border-color: var(--color-border-hover);
   }
 
   .support-footer {
@@ -639,11 +639,12 @@ const plans = [
 
   .support-footer a {
     color: var(--color-accent);
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
 
   .support-footer a:hover {
-    text-decoration: underline;
+    text-decoration-thickness: 2px;
   }
 
   @media (max-width: 1024px) {
