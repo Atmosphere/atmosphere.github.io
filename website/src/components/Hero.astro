@@ -33,8 +33,7 @@
         Talk to Us
       </a>
     </div>
-    <div class="hero-install">
-      <code>curl -fsSL https://raw.githubusercontent.com/Atmosphere/atmosphere/main/cli/install.sh | sh</code>
+    <div class="hero-github">
       <a href="https://github.com/Atmosphere/atmosphere" target="_blank" rel="noopener noreferrer" class="hero-stars">
         &#9733; Star on GitHub
       </a>
@@ -191,7 +190,7 @@
     color: var(--color-text-primary);
   }
 
-  .hero-install {
+  .hero-github {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -199,20 +198,6 @@
     gap: var(--space-md);
     margin: calc(-1 * var(--space-xl)) auto var(--space-3xl);
     animation: fadeInUp 0.8s var(--ease-out-expo) 0.45s both;
-  }
-
-  .hero-install code {
-    min-width: 0;
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-    padding: var(--space-sm) var(--space-md);
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    color: var(--color-text-secondary);
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
   }
 
   .hero-stars {
