@@ -60,6 +60,20 @@
         <span class="stat-label">one SPI &mdash; swap by dependency, keep your code</span>
       </div>
     </div>
+
+    <!-- Captured 2026-10-14 from samples/spring-boot-ai-chat (4.0.73) against a local Ollama
+         qwen2.5:3b; the reply and the token metrics are what the model actually streamed. -->
+    <figure class="hero-shot">
+      <img
+        src="/console-chat.webp"
+        width="1120"
+        height="680"
+        loading="lazy"
+        decoding="async"
+        alt="The Atmosphere AI Console connected over WebTransport, showing a streamed three-point answer with its token count and tokens per second."
+      />
+      <figcaption>The Atmosphere Console, streaming a reply from a local model over WebTransport.</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -276,6 +290,27 @@
     width: 1px;
     height: 40px;
     background: var(--color-border-accent);
+  }
+
+  .hero-shot {
+    margin: var(--space-3xl) auto 0;
+    max-width: 960px;
+    animation: fadeInUp 0.8s var(--ease-out-expo) 0.6s both;
+  }
+
+  .hero-shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border-accent);
+    border-radius: 12px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 60px var(--color-accent-glow);
+  }
+
+  .hero-shot figcaption {
+    margin-top: var(--space-md);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
   }
 
   @keyframes fadeInUp {
