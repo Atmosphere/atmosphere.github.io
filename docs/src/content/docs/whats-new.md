@@ -76,8 +76,11 @@ opt-outs are explicit: `atmosphere.ai.rag.safety.fail-open` /
 `EmbeddingRuntime`, `@AgentScope(tier = SEMANTIC_INTENT)` used to admit every
 request with a warning; it now degrades to the rule-based tier, like the default
 embedding tier, so forbidden topics and hijacking probes are still enforced. A
-forbidden topic that fails to embed is no longer skipped: the verdict is an
-error, which `ScopePolicy` denies at pre-admission. The opt-out is the JVM system
+forbidden topic that fails to embed is no longer skipped: a message that clears
+the similarity floor and the margin against the topics that did embed degrades
+to the rule-based tier for that request, which still enforces the topic that
+could not be embedded. A failed purpose or request embedding is an error, which
+`ScopePolicy` denies at pre-admission. The opt-out is the JVM system
 property `org.atmosphere.ai.scope.semantic-intent.fail-open`.
 
 **Intent routing.** `IntentRouting` decides, before the LLM is called, whether a
