@@ -319,6 +319,8 @@ public class RagInterceptor implements AiInterceptor {
 }
 ```
 
+On `@AiEndpoint` an interceptor's `preProcess` runs after the request guardrails and governance policies admitted the turn. An interceptor that stamps the caller's identity (tenant, roles) the way an auth layer does overrides `runsBeforeAdmission()` to return `true`, so a policy requiring that identity sees it. Such an interceptor may add metadata but not change the message: a rewritten message fails the turn closed.
+
 ## Filters, Routing, and Middleware
 
 The AI module includes filters and middleware that sit between the `@Prompt` method and the LLM:
@@ -539,7 +541,7 @@ On `AiPipeline`, call `pipeline.setDefaultIntentRouting(routing)`. Per request, 
 
 - **Routes.** 2..16 routes with unique names (`[A-Za-z0-9_-]{1,64}`), exactly one `IntentRoute.Human`.
 - **Where the confidence comes from.** Only the Built-in runtime against an endpoint that returns logprobs scores the choice from the model's distribution (`DECISION_LOGPROBS`). On every other runtime `RuntimeDecisionModel` uses the confidence the model reports, and the ACT and CONFIRM tiers gate on that number: a model that reports 0.95 acts, and its deterministic handler runs without a confirmation. The source is in `IntentDecision.reason()`. For a stricter posture there, raise the tiers with `withThresholds(...)` or route through a `DecisionModel` whose confidence you trust (`withDecisionModel(...)`).
-- **Where it runs.** After admission on both paths — request guardrails, governance policies, and on the endpoint the `AiInterceptor` pre-processing and per-request scope — so a denied request is never classified. RAG runs after routing, so a handler or human route pays no retrieval call. A request a scope policy rewrote to its redirect text is not classified; it continues to the LLM path, which renders the redirect.
+- **Where it runs.** After admission on both paths — request guardrails, governance policies, and on the endpoint the `AiInterceptor` pre-processing and per-request scope — so a denied request is never classified. RAG runs after routing, so a handler or human route pays no retrieval call. A request a scope policy rewrote to its redirect text is not classified: the client gets the redirect text verbatim and the turn ends before routing and the LLM.
 - **Handlers.** An `IntentHandler` returns the reply text; the framework sends it and completes the turn, or errors the turn when the handler throws (there is no fallback to the LLM). The human route's handler hands the request to your queue and returns the acknowledgement. Handler turns are recorded in conversation memory; cost, budget, response guardrails, structured output, confidence and the model metrics do not apply because no model is called.
 - **Confirmation.** A CONFIRM-tier choice uses the approval machinery tools use: an `approval-required` frame with tool name `intent:<route>`, answered by `/__approval/<id>/approve` or `/deny` on the same session. On `@AiEndpoint` the wait is cut short to end before the endpoint's `timeout()`. The OpenAI-compatible and batch surfaces have no channel to answer on, so a CONFIRM-tier choice there escalates to the human route at once.
 - **Cancellation.** A cancelled turn is never routed: it errors with a `CancellationException` and runs no handler or human route.
