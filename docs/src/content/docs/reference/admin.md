@@ -85,7 +85,7 @@ Returns an aggregated snapshot:
 ```json
 {
   "status": "UP",
-  "version": "4.0.73",
+  "version": "4.0.74",
   "connections": 3,
   "broadcasters": 12,
   "handlers": 12,
