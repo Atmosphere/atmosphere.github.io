@@ -25,8 +25,8 @@ Walk these questions in order; stop at the first match.
 
 1. **New to Atmosphere AI and just need it to work?** →
    **Built-in** (`atmosphere-ai`). Zero extra deps, OpenAI-compatible
-   client out of the box, one of two runtimes (with Cohere) that emit
-   `TOOL_CALL_DELTA` for token-streaming tool-call argument deltas.
+   client out of the box, and, with Anthropic and Cohere, one of the runtimes
+   that emit `TOOL_CALL_DELTA` for token-streaming tool-call argument deltas.
    Use `--model` / `LLM_API_KEY` to point at OpenAI / Gemini / Ollama
    / any compatible endpoint.
 
@@ -122,7 +122,7 @@ are ordered from "most-general / most-portable" at the top to
 | Semantic Kernel | Microsoft / .NET ecosystem parity on JVM | Token-by-token | ✅ | ✅ |
 | AgentScope | Qwen-native ReAct, Alibaba Cloud AI Studio | Token-by-token | ✅ + `CANCELLATION` | — |
 | Spring AI Alibaba | DashScope / `ReactAgent` graph on Spring Boot 3 | **Buffered** (one chunk + complete) | ✅ | ✅ |
-| Anthropic | Direct Anthropic Messages API, no third-party SDK | Token-by-token | ✅ + `PER_REQUEST_RETRY` (five-round tool loop, cancellation-aware) | — |
+| Anthropic | Direct Anthropic Messages API, no third-party SDK | Token-by-token | ✅ + `TOOL_CALL_DELTA` + `PER_REQUEST_RETRY` (five-round tool loop, cancellation-aware) | — |
 | Cohere | Direct Cohere v2 chat API, no third-party SDK | Token-by-token | ✅ + `VISION` + `MULTI_MODAL` | — |
 
 ## What's the same on every runtime

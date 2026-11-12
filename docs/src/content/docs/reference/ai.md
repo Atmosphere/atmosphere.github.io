@@ -875,11 +875,11 @@ wire/SDK path and stay on `SO` — declaring `NSO` for them would violate Runtim
 | Google ADK | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
 | Embabel | 100 | Y | Y | Y |  | Y | Y | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
 | JetBrains Koog | 100 | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |  | Y | Y | Y |
-| Alibaba AgentScope | 100 | Y | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
-| Spring AI Alibaba | 100 | Y¹ | Y | Y |  | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
-| Microsoft Semantic Kernel | 100 | Y | Y | Y | Y | Y |  | Y | Y |  |  |  |  | Y | Y |  | Y | Y | Y |
-| Anthropic | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
-| Cohere | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| Alibaba AgentScope | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y | Y | Y |  | Y | Y |  | Y | Y | Y |
+| Spring AI Alibaba | 100 | Y¹ | Y | Y |  | Y |  | Y | Y | Y | Y | Y |  | Y | Y |  | Y | Y | Y |
+| Microsoft Semantic Kernel | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y |  | Y | Y | Y |
+| Anthropic | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y |  | Y | Y | Y | Y | Y | Y | Y | Y |
+| Cohere | 100 | Y | Y | Y | Y | Y |  | Y | Y | Y |  | Y |  | Y | Y | Y | Y | Y | Y |
 | CrewAI² | 50 | Y | Y | Y |  | Y | Y |  | Y |  |  |  |  | Y | Y |  |  |  |  |
 
 ¹ Spring AI Alibaba emits its final reply as one Atmosphere stream chunk, but
