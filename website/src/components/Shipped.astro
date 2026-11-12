@@ -12,14 +12,17 @@ const shipped = [
     title: 'One Console for every agent',
     body: `The Atmosphere Console ships inside the starter and serves every sample:
            chat, sessions, workspace, checkpoints, rooms, observability, policies,
-           decisions and OWASP posture — fourteen tabs, no frontend to write.`,
+           decisions, OWASP posture and lineage — up to fifteen tabs, each shown when
+           its feature is present, no frontend to write.`,
   },
   {
-    badge: 'shipped',
+    badge: 'opt-in',
     title: 'Agents that survive a restart',
-    body: `Durable runs record each step and replay deterministically. Kill the JVM
-           mid-turn; the client reconnects with its run id and the agent picks up
-           where it stopped. Snapshots persist to in-memory, SQLite or Postgres.`,
+    body: `Set atmosphere.durable-runs.enabled=true and durable runs record each step
+           and replay deterministically. Kill the JVM mid-turn; the client reconnects
+           with its run id and the agent picks up where it stopped. The step journal is
+           SQLite with atmosphere-checkpoint on the classpath, otherwise in-memory and
+           lost on restart. Off by default.`,
   },
   {
     badge: 'shipped',
@@ -40,7 +43,7 @@ const shipped = [
     title: 'Governance every runtime honors',
     body: `Install a governance policy and it runs before the model does — a denial
            blocks the call. That "a deny blocks execution" rule is pinned by a contract
-           test all twelve runtimes must pass, so none can quietly skip it.`,
+           test every one of the twelve runtimes inherits.`,
   },
   {
     badge: 'opt-in',
@@ -83,6 +86,16 @@ const shipped = [
     body: `Turn on the tape and every typed event on a session is recorded durably.
            Replay a whole run — or a multi-agent coordination tree — with no model in
            the loop, then fold the tape into training data. Off by default.`,
+  },
+  {
+    badge: 'default-on',
+    title: 'Lineage for every AI turn',
+    body: `With the Spring Boot starters or the Quarkus extension, each AI turn is
+           recorded by default: which agent configuration answered (runtime, requested
+           model, system-prompt and tool-set hashes) and which tools it called, with no
+           prompt or tool-result text. Read it from the admin API, behind its content-read
+           gate, or the Console's Lineage tab. The default recorder is in-memory and is
+           lost on restart.`,
   },
   {
     badge: 'add a dependency',

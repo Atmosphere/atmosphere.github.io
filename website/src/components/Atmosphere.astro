@@ -7,7 +7,7 @@ const pillars = [
     items: [
       { name: 'WebSocket', detail: 'Full-duplex communication over a single TCP connection. The standard for real-time web applications since 2011.', url: 'https://datatracker.ietf.org/doc/html/rfc6455', urlLabel: 'RFC 6455' },
       { name: 'SSE', detail: 'Server-Sent Events. A simple HTTP-based protocol for server-to-client streaming with automatic reconnection built into the browser.', url: 'https://html.spec.whatwg.org/multipage/server-sent-events.html', urlLabel: 'WHATWG Spec' },
-      { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC with native WebTransport support — auto-detected via AsyncSupport with zero-config Jetty 12 QUIC or Reactor Netty sidecar.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
+      { name: 'WebTransport/HTTP3', detail: 'Multiplexed, low-latency transport over QUIC with native WebTransport support — auto-detected via AsyncSupport: Jetty 12 QUIC when jetty-http3-server is on the classpath, or an in-JVM Reactor Netty HTTP/3 server in the Spring Boot starter with atmosphere.web-transport.enabled=true.', url: 'https://w3c.github.io/webtransport/', urlLabel: 'W3C Spec' },
       { name: 'Long-Polling', detail: 'HTTP long-polling with automatic reconnection. Works everywhere, even behind the most restrictive corporate firewalls and proxies.', url: 'https://datatracker.ietf.org/doc/html/rfc6202', urlLabel: 'RFC 6202' },
       { name: 'HTTP Streaming', detail: 'One long-lived HTTP response the client reads incrementally as messages arrive. Unlike long-polling, the connection stays open between messages.', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Streams_API', urlLabel: 'Streams API' },
     ],

@@ -10,10 +10,11 @@ const abstractedFeatures = [
   'Tool calling with @AiTool and JSON-schema parameters',
   'Human-in-the-loop approval gates via @RequiresApproval',
   'Structured output with response schemas',
-  'Conversation memory across turns',
+  'Conversation memory across turns on every runtime but CrewAI',
   'Vision and multi-modal input on any framework that supports it',
   'Token-usage accounting on every response',
-  'Per-request retry policy and prompt caching',
+  'Per-request retry policy',
+  'Prompt caching on the runtimes that support it',
 ];
 
 const atmosphereOnlyFeatures = [
@@ -23,7 +24,7 @@ const atmosphereOnlyFeatures = [
   'Durable HITL workflows — agent state survives JVM restart via CheckpointStore',
   '@Command routing to Slack, Telegram, Discord, WhatsApp, Messenger',
   'Rooms, presence, and broadcaster clustering over Kafka or Redis',
-  'MCP server — expose @AiTool to Claude, Copilot, Cursor, any MCP client',
+  'MCP server — expose @AiTool to Claude, Copilot, Cursor, any MCP client; the stdio bridge is attached to GitHub releases as .mcpb bundles for Claude Desktop (macOS arm64, Linux x64, Windows x64)',
   'atmosphere.js client SDK with React, Vue, Svelte, and React Native hooks',
   'Compliance evidence pinned in CI — OWASP Agentic Top 10, EU AI Act, HIPAA, SOC 2',
   'Plan-and-verify — refuse unsafe LLM-emitted workflows before any tool fires',
@@ -37,7 +38,7 @@ const atmosphereOnlyFeatures = [
 const lockInStory = [
   {
     without: 'One framework, chosen up front.',
-    with: 'Twelve runtimes — Built-in plus eleven framework adapters (Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, Anthropic, Cohere, CrewAI). Swap the dependency when the winner changes.',
+    with: 'Twelve runtimes — Built-in plus eleven adapters: nine third-party frameworks (Spring AI, LangChain4j, Google ADK, Embabel, Koog, Semantic Kernel, AgentScope, Spring AI Alibaba, and CrewAI through a Python sidecar) and two native API clients (Anthropic, Cohere). Swap the dependency when the winner changes.',
   },
   {
     without: 'One LLM provider, locked into its pricing and SLA.',
@@ -49,7 +50,7 @@ const lockInStory = [
   },
   {
     without: 'Separate support contracts with each vendor. No one owns the integration.',
-    with: 'One support contract with Async IO. We have been shipping Atmosphere and writing every bridge on this page since 2013.',
+    with: 'One support contract with Async IO. We have been shipping Atmosphere since 2013, and we write and maintain every bridge on this page.',
   },
   {
     without: 'No escape hatch if the bet goes wrong.',
@@ -103,7 +104,7 @@ const frameworks = [
     short: 'AgentScope',
     vendor: 'Alibaba',
     language: 'Java',
-    summary: 'Multi-agent framework from Alibaba. Structured output, conversation memory, and token usage on top of explicit tool dispatch managed in your code.',
+    summary: 'Multi-agent framework from Alibaba. Structured output, conversation memory, and token usage; @AiTool calls are bridged into its toolkit and run through Atmosphere\'s approval gate.',
     bridge: 'atmosphere-agentscope',
   },
   {
@@ -165,9 +166,10 @@ const frameworks = [
       <p class="section-description">
         You are not shopping between Spring AI and LangChain4j — you want an
         agent stack that does not lock you into one framework, one LLM
-        provider, or one vendor. The Java AI ecosystem has eleven third-party
-        agent frameworks: each is moving fast, each has its own release
-        cadence, and each could change direction tomorrow. Atmosphere is the
+        provider, or one vendor. Atmosphere bridges nine third-party agent
+        frameworks (one of them, CrewAI, a Python sidecar) and two native model
+        APIs: each is moving fast, each has its own release cadence, and each
+        could change direction tomorrow. Atmosphere is the
         <strong>runtime-abstraction layer</strong> that makes your
         <code>@Agent</code>, <code>@AiEndpoint</code>, and <code>@AiTool</code>
         code portable across all of them — twelve total runtimes counting
@@ -205,7 +207,9 @@ const frameworks = [
         Atmosphere runs <strong>on top of</strong> each framework and its
         ecosystem — Spring AI, LangChain4j, Google ADK, Microsoft
         Semantic Kernel, JetBrains Koog, Alibaba AgentScope, Embabel's
-        planning engine, and Spring AI Alibaba's ReactAgent. The
+        planning engine, Spring AI Alibaba's ReactAgent, and CrewAI through
+        a Python sidecar — and calls the Anthropic Messages and Cohere v2
+        Chat APIs directly. The
         <strong>Built-in</strong> runtime is a zero-dependency
         OpenAI-compatible client for tests and local dev. Whichever you
         pick, you code against one surface — <code>@Agent</code>,
@@ -220,7 +224,8 @@ const frameworks = [
           <span class="featurelist-label">Abstracted through the @Agent API</span>
           <h4 class="featurelist-title">Portable across all 12 runtimes</h4>
           <p class="featurelist-sub">
-            Every framework provides these. Atmosphere normalizes them
+            Every runtime provides these, except where an item names its
+            limits. Atmosphere normalizes them
             behind one annotation surface, so your agent code is identical
             whether you run on Spring AI, Koog, AgentScope, or anything in
             between — and the capability matrix is CI-pinned so the
