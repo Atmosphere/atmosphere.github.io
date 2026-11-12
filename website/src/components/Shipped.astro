@@ -18,11 +18,13 @@ const shipped = [
   {
     badge: 'opt-in',
     title: 'Agents that survive a restart',
-    body: `Set atmosphere.durable-runs.enabled=true and durable runs record each step
-           and replay deterministically. Kill the JVM mid-turn; the client reconnects
-           with its run id and the agent picks up where it stopped. The step journal is
-           SQLite with atmosphere-checkpoint on the classpath, otherwise in-memory and
-           lost on restart. Off by default.`,
+    body: `Set atmosphere.durable-runs.enabled=true (quarkus.atmosphere.durable-runs.enabled
+           on Quarkus) and durable runs journal every tool call, and on the Built-in
+           runtime every LLM round, then replay them deterministically. Kill the JVM
+           mid-turn; the client reconnects with its run id and the agent picks up where
+           it stopped. The journal is SQLite with atmosphere-checkpoint and the SQLite
+           JDBC driver on the classpath, otherwise in-memory and lost on restart. Off by
+           default.`,
   },
   {
     badge: 'shipped',
