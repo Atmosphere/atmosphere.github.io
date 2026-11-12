@@ -21,8 +21,9 @@ const shipped = [
     body: `Set atmosphere.durable-runs.enabled=true (quarkus.atmosphere.durable-runs.enabled
            on Quarkus) and durable runs journal every tool call, and on the Built-in
            runtime every LLM round, then replay them deterministically. Kill the JVM
-           mid-turn; the client reconnects with its run id and the agent picks up where
-           it stopped. The journal is SQLite with atmosphere-checkpoint and the SQLite
+           mid-turn; once the crashed process's run lease expires (lease-ttl, 5 minutes by
+           default), the client reconnects with its run id and the agent picks up where it
+           stopped. The journal is SQLite with atmosphere-checkpoint and the SQLite
            JDBC driver on the classpath, otherwise in-memory and lost on restart. Off by
            default.`,
   },
@@ -95,8 +96,8 @@ const shipped = [
     body: `With the Spring Boot starters or the Quarkus extension, each AI turn is
            recorded by default: which agent configuration answered (runtime, requested
            model, system-prompt and tool-set hashes) and which tools it called, with no
-           prompt or tool-result text. Read it from the admin API, behind its content-read
-           gate, or the Console's Lineage tab. The default recorder is in-memory and is
+           prompt or tool-result text. Read it from the admin API or the Console's Lineage
+           tab, both behind the admin content-read gate. The default recorder is in-memory and is
            lost on restart.`,
   },
   {

@@ -1,7 +1,8 @@
 ---
 // The value prop in two parallel lists:
-//   1. abstracted — features every framework provides, but normalized behind
-//      the @Agent / @AiEndpoint / @AiTool surface so they're portable
+//   1. abstracted — features normalized behind the @Agent / @AiEndpoint /
+//      @AiTool surface so they're portable; an item a runtime lacks names its
+//      limits (the rendered subtitle says so)
 //   2. atmosphereOnly — features no framework ships on its own
 // Replaces the per-framework checkmark matrix, which was just "everyone has
 // the same thing" and demonstrated nothing.
@@ -24,7 +25,7 @@ const atmosphereOnlyFeatures = [
   'Durable HITL workflows — agent state survives JVM restart via CheckpointStore',
   '@Command routing to Slack, Telegram, Discord, WhatsApp, Messenger',
   'Rooms, presence, and broadcaster clustering over Kafka or Redis',
-  'MCP server — expose @AiTool to Claude, Copilot, Cursor, any MCP client; the stdio bridge is attached to GitHub releases as .mcpb bundles for Claude Desktop (macOS arm64, Linux x64, Windows x64)',
+  'MCP server — expose @AiTool to Claude, Copilot, Cursor, any MCP client; the stdio bridge is attached to GitHub releases as .mcpb bundles for Claude Desktop (macOS arm64, Linux x64, Windows x64; the macOS binary is not notarized)',
   'atmosphere.js client SDK with React, Vue, Svelte, and React Native hooks',
   'Compliance evidence pinned in CI — OWASP Agentic Top 10, EU AI Act, HIPAA, SOC 2',
   'Plan-and-verify — refuse unsafe LLM-emitted workflows before any tool fires',
@@ -175,8 +176,8 @@ const frameworks = [
         code portable across all of them — twelve total runtimes counting
         Atmosphere's own Built-in OpenAI-compatible client. Swap the
         dependency, keep the code. Async IO maintains the abstraction and every
-        bridge on this page, and has been selling the support contract that
-        covers the swap since 2013.
+        bridge on this page, and has been selling Atmosphere support since
+        2013.
       </p>
     </div>
 

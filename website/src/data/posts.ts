@@ -1,5 +1,6 @@
 // Shared by the blog index (pages/blog/index.astro) and the RSS feed (pages/rss.xml.ts).
-// Post index. Dates are each post's publication date, as shown on the post; excerpts
+// Post index. Dates are each post's publication date (shown on the post where it carries one;
+// otherwise the date of the post's first commit); excerpts
 // are drawn from the post's own lede. Newest first. When a post is added under
 // pages/blog/, add its entry here.
 export const posts = [
