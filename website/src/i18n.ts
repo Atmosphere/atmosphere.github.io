@@ -81,7 +81,7 @@ export const ui = {
       atmosphere:
         'Framework for real-time AI agents on the JVM. Agents stream over WebSocket and SSE, speak MCP, A2A and AG-UI, and run on Spring Boot or Quarkus.',
       mirroir:
-        'MCP server that lets AI agents control a real iPhone. It works through macOS iPhone Mirroring, so it reaches any app on the phone, with no jailbreak or developer mode.',
+        'An AI agent that drives a real iPhone. It turns a recipe video into a grocery list, plays games and gets things done in any app on the phone.',
       trailsnag:
         'Trail-issue reporting for trail networks. Hikers report a problem in 30 seconds with no account, and the trail stewards handle it on a map.',
       learnMore: 'Overview',
@@ -197,7 +197,7 @@ export const ui = {
       atmosphere:
         'Framework pour agents IA en temps réel sur la JVM. Les agents communiquent en streaming par WebSocket et SSE, prennent en charge MCP, A2A et AG-UI, et tournent sur Spring Boot ou Quarkus.',
       mirroir:
-        "Serveur MCP qui permet aux agents IA de contrôler un vrai iPhone. Il passe par la Recopie de l'iPhone de macOS et atteint donc n'importe quelle app, sans jailbreak ni mode développeur.",
+        "Un agent IA qui pilote un vrai iPhone. Il transforme une vidéo de recette en liste d'épicerie, joue à des jeux et accomplit des tâches dans n'importe quelle app du téléphone.",
       trailsnag:
         'Signalement des problèmes sur les réseaux de sentiers. Les randonneurs signalent un problème en 30 secondes, sans compte, et les gestionnaires des sentiers le traitent sur une carte.',
       learnMore: 'En savoir plus',
