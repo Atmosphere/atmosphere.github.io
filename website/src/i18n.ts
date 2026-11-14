@@ -56,7 +56,6 @@ export const ui = {
       contact: 'Contact',
       privacy: 'Privacy',
       rights: 'All rights reserved.',
-      tagline: 'Independent software company.',
     },
     meta: {
       title: 'Async IO — Software development and AI consulting',
@@ -171,7 +170,6 @@ export const ui = {
       contact: 'Contact',
       privacy: 'Confidentialité',
       rights: 'Tous droits réservés.',
-      tagline: 'Entreprise de logiciels indépendante.',
     },
     meta: {
       title: 'Async IO — Développement logiciel et consultation en IA',
