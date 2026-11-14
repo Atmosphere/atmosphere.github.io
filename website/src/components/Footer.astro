@@ -3,7 +3,7 @@ import { langOf, ui } from '../i18n';
 
 const currentYear = new Date().getFullYear();
 const t = ui[langOf(Astro.url.pathname)];
-// The company pages are commercial; the docs link only shows on the Atmosphere product page.
+// The company pages are commercial; the docs and GitHub links only show on the Atmosphere pages.
 const onAtmosphere = Astro.url.pathname.startsWith('/atmosphere/');
 
 const links = [
@@ -13,7 +13,7 @@ const links = [
   { label: t.footer.services, href: `${t.home}#consulting` },
   ...(onAtmosphere ? [{ label: t.footer.docs, href: '/docs/' }] : []),
   { label: t.footer.support, href: '/atmosphere/#support' },
-  { label: 'GitHub', href: 'https://github.com/Atmosphere/atmosphere' },
+  ...(onAtmosphere ? [{ label: 'GitHub', href: 'https://github.com/Atmosphere/atmosphere' }] : []),
   { label: t.footer.blog, href: '/blog/' },
   { label: t.footer.contact, href: t.contact },
   { label: t.footer.privacy, href: t.privacy },
