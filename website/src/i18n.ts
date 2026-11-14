@@ -75,7 +75,7 @@ export const ui = {
     products: {
       title: 'What we maintain',
       atmosphereMeta: 'Enterprise support',
-      atmosphereAlt: 'The Atmosphere Console running a team of agents',
+      atmosphereAlt: 'The Atmosphere Console: a coordinator sends a prompt to four agents and writes the briefing',
       mirroirAlt: 'Claude using mirroir to build a grocery list on an iPhone from a recipe video',
       trailsnagAlt: 'TrailSnag steward desk: snag map, stats and trail status',
       support: 'Support',
@@ -171,7 +171,7 @@ export const ui = {
     products: {
       title: 'Ce que nous maintenons',
       atmosphereMeta: 'Support entreprise',
-      atmosphereAlt: "La console Atmosphere qui exécute une équipe d'agents",
+      atmosphereAlt: "La console Atmosphere : un coordonnateur confie une demande à quatre agents et rédige la synthèse",
       mirroirAlt: "Claude utilise mirroir pour créer une liste d'épicerie sur un iPhone à partir d'une vidéo de recette",
       trailsnagAlt: 'TrailSnag : carte des signalements, statistiques et état des sentiers',
       support: 'Support',

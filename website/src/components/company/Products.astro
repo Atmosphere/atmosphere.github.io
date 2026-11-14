@@ -26,7 +26,14 @@ const products = [
     name: 'Atmosphere',
     href: '/atmosphere/',
     icon: icons.atmosphere,
-    media: { kind: 'image', src: '/console-team.webp', alt: t.products.atmosphereAlt },
+    // spring-boot-multi-agent-startup-team on a local qwen2.5 7B model, recorded in the Console;
+    // the wait for the model is fast-forwarded.
+    media: {
+      kind: 'video',
+      src: '/media/atmosphere-console.mp4',
+      poster: '/media/atmosphere-console.poster.jpg',
+      alt: t.products.atmosphereAlt,
+    },
     meta: t.products.atmosphereMeta,
     tagline: t.products.atmosphere,
     links: [

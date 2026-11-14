@@ -9,6 +9,7 @@ const onAtmosphere = Astro.url.pathname.startsWith('/atmosphere/');
 const links = [
   { label: 'Atmosphere', href: '/atmosphere/' },
   { label: 'mirroir', href: 'https://mirroir.dev' },
+  { label: 'TrailSnag', href: 'https://trailsnag.com' },
   { label: t.footer.services, href: `${t.home}#consulting` },
   ...(onAtmosphere ? [{ label: t.footer.docs, href: '/docs/' }] : []),
   { label: t.footer.support, href: '/atmosphere/#support' },

@@ -10,6 +10,7 @@ const onAtmosphere = Astro.url.pathname.startsWith('/atmosphere/');
 const navLinks = [
   { href: '/atmosphere/', label: 'Atmosphere' },
   { href: 'https://mirroir.dev', label: 'mirroir' },
+  { href: 'https://trailsnag.com', label: 'TrailSnag' },
   { href: `${t.home}#consulting`, label: t.nav.services },
   { href: '/atmosphere/#support', label: t.nav.support },
   ...(onAtmosphere ? [{ href: '/docs/', label: t.nav.docs }] : []),
@@ -217,7 +218,7 @@ const navLinks = [
     transform: translateY(-4.5px) rotate(-45deg);
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     .header {
       padding: var(--space-md);
     }
