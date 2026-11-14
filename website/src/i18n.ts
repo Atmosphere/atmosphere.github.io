@@ -130,10 +130,9 @@ export const ui = {
             'Co-founded Dravr and built the entire stack with Claude Code: a multi-tenant Rust backend, a web app and a React Native mobile app. The AI coach reads the athlete’s Strava, Garmin and Whoop data and answers on the web, on the phone, in messaging apps and in any assistant that speaks MCP.',
         },
         {
-          sector: 'Environmental technology',
-          title: 'Forest-management platform',
-          summary:
-            'Founding architect at Fyri: helped launch the platform and the company, up to the web and mobile apps private woodlot owners use today. Drove the AI R&D on tree detection and contributed to the R&D tax-credit and funding applications.',
+          sector: 'Online games',
+          title: 'Real-time multiplayer games',
+          summary: 'GameDuell uses Atmosphere in all of its games that need to deliver events in real time.',
         },
         {
           sector: 'Generative AI startup',
@@ -247,10 +246,9 @@ export const ui = {
             "Cofondateur de Dravr ; toute la plateforme construite avec Claude Code : un backend Rust multi-tenant, une app web et une app mobile React Native. Le coach IA lit les données Strava, Garmin et Whoop de l'athlète et répond sur le web, sur le téléphone, dans les messageries et dans tout assistant compatible MCP.",
         },
         {
-          sector: 'Technologies environnementales',
-          title: 'Plateforme de gestion forestière',
-          summary:
-            "Architecte fondateur chez Fyri : aide au lancement de la plateforme et de l'entreprise, jusqu'aux apps web et mobile qu'utilisent aujourd'hui les propriétaires de boisés privés. R-D en IA pour la détection des arbres et contribution aux demandes de crédits d'impôt R-D et de financement.",
+          sector: 'Jeux en ligne',
+          title: 'Jeux multijoueurs en temps réel',
+          summary: 'GameDuell utilise Atmosphere dans tous ses jeux qui doivent livrer des événements en temps réel.',
         },
         {
           sector: 'Startup en IA générative',
