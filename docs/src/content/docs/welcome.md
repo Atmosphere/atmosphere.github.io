@@ -65,7 +65,7 @@ Same framework, same transports, same clustering — you choose how much AI you 
 
 Atmosphere is Apache 2.0 and free to use. For teams running it in production, [Async-IO](https://async-io.live) — the team that wrote and maintains the framework — offers commercial support tiers, migration services, and a compliance evidence package built on the in-tree OWASP Agentic Top 10 / EU AI Act / HIPAA / SOC 2 matrices.
 
-[Support tiers & SLA](https://async-io.live/#support) · [Book a 30-min call](https://async-io.live/contact/) · <support@async-io.org>
+[Support tiers & SLA](https://async-io.live/atmosphere/#support) · [Book a 30-min call](https://async-io.live/contact/) · <support@async-io.org>
 
 ## Version
 
