@@ -130,9 +130,9 @@ export const ui = {
         },
         {
           sector: 'Environmental technology',
-          title: 'Trail-management platform',
+          title: 'Forest-management platform',
           summary:
-            'Built the entire stack with Claude Code: a Next.js web app where hikers report a trail problem from a QR sticker in under 30 seconds, with no account and even offline. Behind it, a TypeScript API over Postgres and PostGIS keeps each trail organization’s data isolated.',
+            'Founding architect at Fyri: helped launch the platform and the company, up to the web and mobile apps private woodlot owners use today. Drove the AI R&D on tree detection and contributed to the R&D tax-credit and funding applications.',
         },
         {
           sector: 'Generative AI startup',
@@ -246,9 +246,9 @@ export const ui = {
         },
         {
           sector: 'Technologies environnementales',
-          title: 'Plateforme de gestion de sentiers',
+          title: 'Plateforme de gestion forestière',
           summary:
-            "Toute la plateforme construite avec Claude Code : une app web Next.js où les randonneurs signalent un problème en moins de 30 secondes à partir d'un autocollant QR, sans compte et même hors ligne. Derrière, une API TypeScript sur Postgres et PostGIS isole les données de chaque organisation.",
+            "Architecte fondateur chez Fyri : aide au lancement de la plateforme et de l'entreprise, jusqu'aux apps web et mobile qu'utilisent aujourd'hui les propriétaires de boisés privés. R-D en IA pour la détection des arbres et contribution aux demandes de crédits d'impôt R-D et de financement.",
         },
         {
           sector: 'Startup en IA générative',

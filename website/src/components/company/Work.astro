@@ -12,11 +12,11 @@ const t = ui[lang];
 const stacks = [
   'Java · Quarkus · MCP · Claude Code',
   'Rust · MCP · A2A · React Native',
-  'TypeScript · Next.js · Hono · PostGIS',
+  'TypeScript · GraphQL · Expo · GCP',
   'Go · React · Python · LangChain',
 ];
-// Dravr and Katara are named with the maintainer's agreement; the other clients are not.
-const links: (string | undefined)[] = [undefined, 'https://dravr.ai', undefined, 'https://katara.ai'];
+// Dravr, Fyri and Katara are named with the maintainer's agreement; the developer-tools vendor is not.
+const links: (string | undefined)[] = [undefined, 'https://dravr.ai', 'https://fyri.land', 'https://katara.ai'];
 const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[i] }));
 ---
 
