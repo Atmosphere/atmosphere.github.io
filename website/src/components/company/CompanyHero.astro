@@ -30,11 +30,10 @@ const t = ui[lang];
 <style>
   .co-hero {
     position: relative;
-    min-height: 70vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: calc(var(--space-4xl) + 2rem) var(--space-xl) var(--space-4xl);
+    padding: calc(var(--space-4xl) + 2rem) var(--space-xl) var(--space-2xl);
     overflow: hidden;
   }
 
@@ -42,6 +41,8 @@ const t = ui[lang];
     position: absolute;
     inset: 0;
     pointer-events: none;
+    /* The hero now ends close to its buttons: fade the glow out instead of cutting it off. */
+    mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
   }
 
   .grid-lines {
@@ -101,8 +102,7 @@ const t = ui[lang];
 
   @media (max-width: 768px) {
     .co-hero {
-      min-height: auto;
-      padding: calc(var(--space-4xl) + 1rem) var(--space-md) var(--space-3xl);
+      padding: calc(var(--space-4xl) + 1rem) var(--space-md) var(--space-xl);
     }
   }
 </style>
