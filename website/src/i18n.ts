@@ -75,11 +75,14 @@ export const ui = {
     products: {
       title: 'What we maintain',
       atmosphereMeta: 'Enterprise support',
+      atmosphereAlt: 'The Atmosphere Console running a team of agents',
+      mirroirAlt: 'Claude using mirroir to build a grocery list on an iPhone from a recipe video',
+      trailsnagAlt: 'TrailSnag steward desk: snag map, stats and trail status',
       support: 'Support',
       atmosphere: 'Framework for real-time AI agents on the JVM.',
       mirroir: 'MCP server that lets AI agents control a real iPhone.',
       trailsnag: 'Trail-issue reporting for trail networks.',
-      learnMore: 'Learn more',
+      learnMore: 'Overview',
     },
     services: {
       title: 'Services',
@@ -165,6 +168,9 @@ export const ui = {
     products: {
       title: 'Ce que nous maintenons',
       atmosphereMeta: 'Support entreprise',
+      atmosphereAlt: "La console Atmosphere qui exécute une équipe d'agents",
+      mirroirAlt: "Claude utilise mirroir pour créer une liste d'épicerie sur un iPhone à partir d'une vidéo de recette",
+      trailsnagAlt: 'TrailSnag : carte des signalements, statistiques et état des sentiers',
       support: 'Support',
       atmosphere: 'Framework pour agents IA en temps réel sur la JVM.',
       mirroir: 'Serveur MCP qui permet aux agents IA de contrôler un vrai iPhone.',

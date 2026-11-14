@@ -13,6 +13,7 @@ const products = [
   {
     name: 'Atmosphere',
     href: '/atmosphere/',
+    media: { kind: 'image', src: '/console-team.webp', alt: t.products.atmosphereAlt },
     meta: t.products.atmosphereMeta,
     tagline: t.products.atmosphere,
     links: [
@@ -24,6 +25,12 @@ const products = [
   {
     name: 'mirroir',
     href: 'https://mirroir.dev',
+    media: {
+      kind: 'video',
+      src: '/media/mirroir-recipe.mp4',
+      poster: '/media/mirroir-recipe.poster.jpg',
+      alt: t.products.mirroirAlt,
+    },
     tagline: t.products.mirroir,
     links: [
       { href: 'https://mirroir.dev', label: 'mirroir.dev', external: true },
@@ -33,6 +40,13 @@ const products = [
   {
     name: 'TrailSnag',
     href: 'https://trailsnag.com',
+    // Screens from trailsnag.com's own capture set (demo organisation), in the page's language.
+    media: {
+      kind: 'video',
+      src: `/media/trailsnag.${lang}.mp4`,
+      poster: `/media/trailsnag.${lang}.poster.jpg`,
+      alt: t.products.trailsnagAlt,
+    },
     tagline: t.products.trailsnag,
     links: [{ href: 'https://trailsnag.com', label: 'trailsnag.com', external: true }],
   },
@@ -45,6 +59,23 @@ const products = [
     <div class="products-grid">
       {products.map((p) => (
         <article class="co-card product">
+          <a href={p.href} class="product-media" tabindex="-1">
+            {p.media.kind === 'image' ? (
+              <img src={p.media.src} alt={p.media.alt} loading="lazy" decoding="async" width="1280" height="800" />
+            ) : (
+              <video
+                src={p.media.src}
+                poster={p.media.poster}
+                aria-label={p.media.alt}
+                muted
+                loop
+                playsinline
+                preload="none"
+                width="1280"
+                height="800"
+              ></video>
+            )}
+          </a>
           <h3 class="product-name"><a href={p.href}>{p.name}</a></h3>
           {p.meta && <span class="product-meta">{p.meta}</span>}
           <p class="product-tagline">{p.tagline}</p>
@@ -64,6 +95,30 @@ const products = [
     </div>
   </div>
 </section>
+
+<script>
+  // Play each demo only while it is on screen; leave the poster for reduced-motion visitors.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const videos = document.querySelectorAll<HTMLVideoElement>('.product-media video');
+  if (!reduce && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const v = e.target as HTMLVideoElement;
+          if (e.isIntersecting) {
+            v.play().catch(() => {
+              // Autoplay refused (power saving, browser policy): the poster stays visible.
+            });
+          } else {
+            v.pause();
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+    videos.forEach((v) => io.observe(v));
+  }
+</script>
 
 <style>
   .co-title {
@@ -86,6 +141,25 @@ const products = [
     font-family: var(--font-display);
     font-size: 1.75rem;
     font-weight: 400;
+  }
+
+  .product-media {
+    display: block;
+    aspect-ratio: 16 / 10;
+    margin: calc(-1 * var(--space-sm)) calc(-1 * var(--space-sm)) var(--space-xs);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--color-bg-primary);
+  }
+
+  .product-media img,
+  .product-media video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
   }
 
   .product-name a {
