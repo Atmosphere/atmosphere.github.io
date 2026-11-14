@@ -120,9 +120,8 @@ export const ui = {
       cases: [
         {
           sector: 'Developer-tools vendor',
-          title: 'Migration agent and team enablement',
-          summary:
-            'Moved the team to AI-assisted development with Claude Code, with shared skills and a project set up for agents. Built the AI agent that converts JMeter and LoadRunner load tests into Gatling simulations, and deployed it on AWS.',
+          title: 'Performance-testing compiler',
+          summary: 'Built a high-performance compiler for performance testing.',
         },
         {
           sector: 'Consumer AI coaching',
@@ -238,9 +237,8 @@ export const ui = {
       cases: [
         {
           sector: "Éditeur d'outils de développement",
-          title: "Agent de migration et formation de l'équipe",
-          summary:
-            "Passage de l'équipe au développement assisté par IA avec Claude Code, avec des skills partagés et un projet organisé pour les agents. Construction de l'agent IA qui convertit les tests de charge JMeter et LoadRunner en simulations Gatling, déployé sur AWS.",
+          title: 'Compilateur pour tests de performance',
+          summary: "Construction d'un compilateur haute performance pour les tests de performance.",
         },
         {
           sector: 'Coaching IA grand public',
