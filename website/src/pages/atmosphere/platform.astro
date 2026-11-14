@@ -1,0 +1,65 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Shipped from '../../components/Shipped.astro';
+import Atmosphere from '../../components/Atmosphere.astro';
+import WhyAtmosphere from '../../components/WhyAtmosphere.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout
+  title="The Atmosphere platform | Async IO"
+  description="What ships in Atmosphere: the Console, multi-agent fleets, approvals, governance, plan verification, durable runs, transports, agent protocols and twelve AI runtimes behind one API."
+>
+  <Header />
+  <main>
+    <header class="platform-intro">
+      <a class="platform-back" href="/atmosphere/">&larr; Atmosphere</a>
+      <h1 class="platform-title">The Atmosphere platform</h1>
+      <p class="platform-lede">Everything that ships, with how to turn it on.</p>
+    </header>
+    <Shipped />
+    <Atmosphere />
+    <WhyAtmosphere />
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .platform-intro {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: calc(var(--space-4xl) + 2rem) var(--space-xl) 0;
+    text-align: center;
+  }
+
+  .platform-back {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    transition: color 0.2s var(--ease-out-quad);
+  }
+
+  .platform-back:hover {
+    color: var(--color-accent);
+  }
+
+  .platform-title {
+    margin-top: var(--space-md);
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 6vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+  }
+
+  .platform-lede {
+    margin-top: var(--space-sm);
+    color: var(--color-text-secondary);
+  }
+
+  @media (max-width: 640px) {
+    .platform-intro {
+      padding: calc(var(--space-3xl) + 2rem) var(--space-md) 0;
+    }
+  }
+</style>

@@ -12,7 +12,14 @@ import { ui } from '../i18n';
 
 // Section anchors that lived on this URL before the Atmosphere page moved to /atmosphere/.
 // Links already published (README, docs, posts) point at e.g. https://async-io.live/#support.
-const movedAnchors = ['support', 'shipped', 'atmosphere', 'why', 'capabilities'];
+// The platform sections later moved again, from /atmosphere/ to /atmosphere/platform/.
+const movedAnchors: Record<string, string> = {
+  support: '/atmosphere/#support',
+  capabilities: '/atmosphere/#capabilities',
+  shipped: '/atmosphere/platform/#shipped',
+  atmosphere: '/atmosphere/platform/#atmosphere',
+  why: '/atmosphere/platform/#why',
+};
 ---
 
 <Layout title={ui.en.meta.title} description={ui.en.meta.description}>
@@ -20,8 +27,8 @@ const movedAnchors = ['support', 'shipped', 'atmosphere', 'why', 'capabilities']
     // Keep old deep links working: /#support now lives at /atmosphere/#support.
     (function () {
       var id = window.location.hash.slice(1);
-      if (movedAnchors.indexOf(id) !== -1) {
-        window.location.replace('/atmosphere/#' + id);
+      if (Object.prototype.hasOwnProperty.call(movedAnchors, id)) {
+        window.location.replace(movedAnchors[id]);
       }
     })();
   </script>

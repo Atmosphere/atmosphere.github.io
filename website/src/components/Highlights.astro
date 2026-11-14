@@ -1,0 +1,131 @@
+---
+// The short version of the platform for the Atmosphere landing page. Titles and badges are copied
+// from Shipped.astro, where each one is tied to code; the full story lives on /atmosphere/platform/.
+const highlights = [
+  { badge: 'shipped', title: 'One Console for every agent' },
+  { badge: 'shipped', title: 'Multi-agent fleets, visible live' },
+  { badge: 'shipped', title: 'Human approval, built in' },
+  { badge: 'install a policy', title: 'Governance every runtime honors' },
+  { badge: 'opt-in', title: 'Verify the plan before it runs' },
+  { badge: 'opt-in', title: 'Agents that survive a restart' },
+];
+---
+
+<section class="highlights" id="highlights">
+  <div class="highlights-container">
+    <div class="section-header">
+      <span class="section-label">The platform</span>
+      <h2 class="section-title">Everything an agent needs in production</h2>
+    </div>
+
+    <ul class="highlights-grid">
+      {highlights.map((h) => (
+        <li class="highlight">
+          <span class="highlight-badge">{h.badge}</span>
+          <span class="highlight-title">{h.title}</span>
+        </li>
+      ))}
+    </ul>
+
+    <a class="highlights-more" href="/atmosphere/platform/">
+      Transports, protocols, runtimes and everything that shipped
+      <span aria-hidden="true">&rarr;</span>
+    </a>
+  </div>
+</section>
+
+<style>
+  .highlights {
+    padding: var(--space-4xl) var(--space-xl);
+  }
+
+  .highlights-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .section-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    margin-bottom: var(--space-md);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .highlights-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+
+  .highlight {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  .highlight-badge {
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-border-accent);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  .highlight-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .highlights-more {
+    display: flex;
+    width: fit-content;
+    gap: var(--space-sm);
+    margin: var(--space-xl) auto 0;
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border-accent);
+    padding-bottom: 2px;
+    transition: border-color 0.2s var(--ease-out-quad);
+  }
+
+  .highlights-more:hover {
+    border-color: var(--color-accent);
+  }
+
+  @media (max-width: 860px) {
+    .highlights-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .highlights {
+      padding: var(--space-3xl) var(--space-md);
+    }
+  }
+</style>
