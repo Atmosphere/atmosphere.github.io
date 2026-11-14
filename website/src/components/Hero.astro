@@ -9,20 +9,6 @@
   </div>
 
   <div class="hero-content">
-    <!-- Proof is verifiable open-source fact, rounded down. Re-check before editing:
-         stars:    gh api repos/Atmosphere/atmosphere --jq .stargazers_count            (3,821 on 2026-10-14)
-         releases: curl -s https://repo1.maven.org/maven2/org/atmosphere/atmosphere-runtime/maven-metadata.xml
-                   | grep -o '<version>[^<]*' | grep -viE 'rc|beta|alpha|snapshot|m[0-9]' | wc -l   (283 on 2026-10-14) -->
-    <ul class="hero-proof">
-      <li>
-        <a href="https://github.com/Atmosphere/atmosphere" target="_blank" rel="noopener noreferrer">
-          &#9733; 3.8K GitHub stars
-        </a>
-      </li>
-      <li>280+ releases on Maven Central</li>
-      <li>Supported since 2013</li>
-    </ul>
-
     <h1 class="hero-title">
       Real-time AI agents for the JVM,
       <span class="title-accent">backed by the team that builds them.</span>
@@ -156,35 +142,6 @@
     animation: fadeInUp 0.8s var(--ease-out-expo) 0.1s both;
   }
 
-  .hero-proof {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-sm);
-    list-style: none;
-    margin-bottom: var(--space-xl);
-    animation: fadeInUp 0.8s var(--ease-out-expo) 0.05s both;
-  }
-
-  .hero-proof li {
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    letter-spacing: 0.02em;
-    color: var(--color-text-secondary);
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border-accent);
-    border-radius: 999px;
-    padding: 0.35em 0.9em;
-  }
-
-  .hero-proof a {
-    color: inherit;
-    transition: color 0.2s var(--ease-out-quad);
-  }
-
-  .hero-proof a:hover {
-    color: var(--color-accent);
-  }
 
   .title-accent {
     display: block;
@@ -330,10 +287,6 @@
       padding: var(--space-4xl) var(--space-md);
     }
 
-    .hero-proof li {
-      font-size: 0.6875rem;
-      letter-spacing: 0;
-    }
 
     .hero-actions {
       flex-direction: column;
