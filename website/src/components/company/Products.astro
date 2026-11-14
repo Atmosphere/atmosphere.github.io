@@ -9,10 +9,23 @@ interface Props {
 
 const { lang = 'en' } = Astro.props;
 const t = ui[lang];
+// Product marks, redrawn in currentColor so they read on the dark card in any system theme.
+// Sources: docs/src/assets/logo.svg (Atmosphere), mirroir-mcp website/public/favicon.svg,
+// trailsnag.github.io public/favicon.svg.
+const icons = {
+  atmosphere:
+    '<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/><path d="M12 20 C12 14, 20 10, 20 10 S28 14, 28 20 S20 30, 20 30 S12 26, 12 20Z" fill="currentColor" opacity="0.15"/><circle cx="20" cy="20" r="4" fill="currentColor"/></svg>',
+  mirroir:
+    '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="8" y="4" width="16" height="24" rx="3" stroke="currentColor" stroke-width="2"/><line x1="14" y1="25" x2="18" y2="25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  trailsnag:
+    '<svg viewBox="0 0 64 80" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M32 77C32 77 6 46.5 6 29 6 14.6 17.6 3 32 3c14.4 0 26 11.6 26 26 0 17.5-26 48-26 48Z M28.16 13.28 33.14 12.84 A3.5 3.5 0 0 1 36.93 16.02 L39.02 39.93 A3.5 3.5 0 0 1 35.84 43.72 L30.86 44.16 A3.5 3.5 0 0 1 27.07 40.98 L24.98 17.07 A3.5 3.5 0 0 1 28.16 13.28 Z"/></svg>',
+};
+
 const products = [
   {
     name: 'Atmosphere',
     href: '/atmosphere/',
+    icon: icons.atmosphere,
     media: { kind: 'image', src: '/console-team.webp', alt: t.products.atmosphereAlt },
     meta: t.products.atmosphereMeta,
     tagline: t.products.atmosphere,
@@ -25,6 +38,7 @@ const products = [
   {
     name: 'mirroir',
     href: 'https://mirroir.dev',
+    icon: icons.mirroir,
     media: {
       kind: 'video',
       src: '/media/mirroir-recipe.mp4',
@@ -40,6 +54,7 @@ const products = [
   {
     name: 'TrailSnag',
     href: 'https://trailsnag.com',
+    icon: icons.trailsnag,
     // Screens from trailsnag.com's own capture set (demo organisation), in the page's language.
     media: {
       kind: 'video',
@@ -76,7 +91,10 @@ const products = [
               ></video>
             )}
           </a>
-          <h3 class="product-name"><a href={p.href}>{p.name}</a></h3>
+          <h3 class="product-name">
+            <span class="product-icon" set:html={p.icon} />
+            <a href={p.href}>{p.name}</a>
+          </h3>
           {p.meta && <span class="product-meta">{p.meta}</span>}
           <p class="product-tagline">{p.tagline}</p>
           <div class="product-links">
@@ -160,6 +178,24 @@ const products = [
     height: 100%;
     object-fit: cover;
     object-position: top center;
+  }
+
+  .product-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .product-icon {
+    display: inline-flex;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--color-accent);
+  }
+
+  .product-icon :global(svg) {
+    width: 100%;
+    height: 100%;
   }
 
   .product-name a {

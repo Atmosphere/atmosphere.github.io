@@ -79,9 +79,12 @@ export const ui = {
       mirroirAlt: 'Claude using mirroir to build a grocery list on an iPhone from a recipe video',
       trailsnagAlt: 'TrailSnag steward desk: snag map, stats and trail status',
       support: 'Support',
-      atmosphere: 'Framework for real-time AI agents on the JVM.',
-      mirroir: 'MCP server that lets AI agents control a real iPhone.',
-      trailsnag: 'Trail-issue reporting for trail networks.',
+      atmosphere:
+        'Framework for real-time AI agents on the JVM. Agents stream over WebSocket and SSE, speak MCP, A2A and AG-UI, and run on Spring Boot or Quarkus.',
+      mirroir:
+        'MCP server that lets AI agents control a real iPhone. It works through macOS iPhone Mirroring, so it reaches any app on the phone, with no jailbreak or developer mode.',
+      trailsnag:
+        'Trail-issue reporting for trail networks. Hikers report a problem in 30 seconds with no account, and the trail stewards handle it on a map.',
       learnMore: 'Overview',
     },
     services: {
@@ -172,9 +175,12 @@ export const ui = {
       mirroirAlt: "Claude utilise mirroir pour créer une liste d'épicerie sur un iPhone à partir d'une vidéo de recette",
       trailsnagAlt: 'TrailSnag : carte des signalements, statistiques et état des sentiers',
       support: 'Support',
-      atmosphere: 'Framework pour agents IA en temps réel sur la JVM.',
-      mirroir: 'Serveur MCP qui permet aux agents IA de contrôler un vrai iPhone.',
-      trailsnag: 'Signalement des problèmes sur les réseaux de sentiers.',
+      atmosphere:
+        'Framework pour agents IA en temps réel sur la JVM. Les agents communiquent en streaming par WebSocket et SSE, prennent en charge MCP, A2A et AG-UI, et tournent sur Spring Boot ou Quarkus.',
+      mirroir:
+        "Serveur MCP qui permet aux agents IA de contrôler un vrai iPhone. Il passe par la Recopie de l'iPhone de macOS et atteint donc n'importe quelle app, sans jailbreak ni mode développeur.",
+      trailsnag:
+        'Signalement des problèmes sur les réseaux de sentiers. Les randonneurs signalent un problème en 30 secondes, sans compte, et les gestionnaires des sentiers le traitent sur une carte.',
       learnMore: 'En savoir plus',
     },
     services: {
