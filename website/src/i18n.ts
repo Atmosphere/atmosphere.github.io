@@ -117,9 +117,30 @@ export const ui = {
     work: {
       title: 'Selected work',
       cases: [
-        { sector: 'Developer-tools vendor', title: 'Migration agent and team enablement' },
-        { sector: 'Consumer AI coaching', title: 'Multi-tenant AI platform' },
-        { sector: 'Environmental technology', title: 'Trail-management platform' },
+        {
+          sector: 'Developer-tools vendor',
+          title: 'Migration agent and team enablement',
+          summary:
+            'Moved the team to AI-assisted development with Claude Code: shared skills, completion tracking and CI quality gates. Built the whole stack of an MCP server that converts JMeter and LoadRunner load tests into Gatling simulations, from the Java and Quarkus server to its deployment on AWS.',
+        },
+        {
+          sector: 'Consumer AI coaching',
+          title: 'Multi-tenant AI platform',
+          summary:
+            'Co-founded Dravr and built the entire stack with Claude Code: a multi-tenant Rust backend, a web app and a React Native mobile app. The AI coach reads the athlete’s Strava, Garmin and Whoop data and answers on the web, on the phone, in messaging apps and in any assistant that speaks MCP.',
+        },
+        {
+          sector: 'Environmental technology',
+          title: 'Trail-management platform',
+          summary:
+            'Built the entire stack with Claude Code: a Next.js web app where hikers report a trail problem from a QR sticker in under 30 seconds, with no account and even offline. Behind it, a TypeScript API over Postgres and PostGIS keeps each trail organization’s data isolated.',
+        },
+        {
+          sector: 'Generative AI startup',
+          title: 'Fractional CTO',
+          summary:
+            'Took a proof of concept built by a consulting firm to a production RAG platform for the first customers, with monitoring for stability and scale. Helped build the company, including pitching it to pre-seed investors.',
+        },
       ],
     },
     cta: {
@@ -213,9 +234,30 @@ export const ui = {
     work: {
       title: 'Réalisations',
       cases: [
-        { sector: "Éditeur d'outils de développement", title: "Agent de migration et formation de l'équipe" },
-        { sector: 'Coaching IA grand public', title: 'Plateforme IA multi-tenant' },
-        { sector: 'Technologies environnementales', title: 'Plateforme de gestion de sentiers' },
+        {
+          sector: "Éditeur d'outils de développement",
+          title: "Agent de migration et formation de l'équipe",
+          summary:
+            "Passage de l'équipe au développement assisté par IA avec Claude Code : skills partagés, suivi de l'avancement et contrôles qualité en CI. Construction complète d'un serveur MCP qui convertit les tests de charge JMeter et LoadRunner en simulations Gatling, du serveur Java et Quarkus jusqu'au déploiement sur AWS.",
+        },
+        {
+          sector: 'Coaching IA grand public',
+          title: 'Plateforme IA multi-tenant',
+          summary:
+            "Cofondateur de Dravr ; toute la plateforme construite avec Claude Code : un backend Rust multi-tenant, une app web et une app mobile React Native. Le coach IA lit les données Strava, Garmin et Whoop de l'athlète et répond sur le web, sur le téléphone, dans les messageries et dans tout assistant compatible MCP.",
+        },
+        {
+          sector: 'Technologies environnementales',
+          title: 'Plateforme de gestion de sentiers',
+          summary:
+            "Toute la plateforme construite avec Claude Code : une app web Next.js où les randonneurs signalent un problème en moins de 30 secondes à partir d'un autocollant QR, sans compte et même hors ligne. Derrière, une API TypeScript sur Postgres et PostGIS isole les données de chaque organisation.",
+        },
+        {
+          sector: 'Startup en IA générative',
+          title: 'CTO à temps partiel',
+          summary:
+            "Passage d'une preuve de concept, construite par une firme de consultants, à une plateforme RAG en production pour les premiers clients, avec la surveillance de sa stabilité et de sa montée en charge. Participation à la construction de l'entreprise, jusqu'aux présentations aux investisseurs en pré-amorçage.",
+        },
       ],
     },
     cta: {

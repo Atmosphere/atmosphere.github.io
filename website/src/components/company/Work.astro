@@ -12,10 +12,11 @@ const t = ui[lang];
 const stacks = [
   'Java · Quarkus · MCP · Claude Code',
   'Rust · MCP · A2A · React Native',
-  'TypeScript · GraphQL · Expo · GCP',
+  'TypeScript · Next.js · Hono · PostGIS',
+  'Go · React · Python · LangChain',
 ];
-// Only Dravr is named; the other clients are not.
-const links: (string | undefined)[] = [undefined, 'https://dravr.ai', undefined];
+// Dravr and Katara are named with the maintainer's agreement; the other clients are not.
+const links: (string | undefined)[] = [undefined, 'https://dravr.ai', undefined, 'https://katara.ai'];
 const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[i] }));
 ---
 
@@ -27,6 +28,7 @@ const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[
         <article class="co-card case">
           <span class="case-sector">{c.sector}</span>
           <h3 class="case-title">{c.title}</h3>
+          <p class="case-summary">{c.summary}</p>
           <span class="case-stack">{c.stack}</span>
           {c.link && <a class="co-link case-link" href={c.link}>{c.link.replace('https://', '')}</a>}
         </article>
@@ -42,7 +44,7 @@ const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[
 
   .work-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-lg);
   }
 
@@ -63,6 +65,12 @@ const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[
     font-size: 1.5rem;
     font-weight: 400;
     line-height: 1.25;
+  }
+
+  .case-summary {
+    flex: 1;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
   }
 
   .case-stack {
