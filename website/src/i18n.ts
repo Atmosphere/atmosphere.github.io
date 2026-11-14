@@ -105,9 +105,11 @@ export const ui = {
         {
           title: 'AI',
           items: [
-            'AI-assisted development with Claude Code',
-            'CI and quality gates',
-            'Agent, MCP and LLM integration',
+            'Helping teams adopt AI-assisted development with Claude Code',
+            'Building AI agents',
+            'Agent skills',
+            'Multi-agent coordination',
+            'Project setup for AI-assisted teams',
             'Atmosphere support and migration',
           ],
         },
@@ -120,7 +122,7 @@ export const ui = {
           sector: 'Developer-tools vendor',
           title: 'Migration agent and team enablement',
           summary:
-            'Moved the team to AI-assisted development with Claude Code: shared skills, completion tracking and CI quality gates. Built the whole stack of an MCP server that converts JMeter and LoadRunner load tests into Gatling simulations, from the Java and Quarkus server to its deployment on AWS.',
+            'Moved the team to AI-assisted development with Claude Code, with shared skills and a project set up for agents. Built the AI agent that converts JMeter and LoadRunner load tests into Gatling simulations, and deployed it on AWS.',
         },
         {
           sector: 'Consumer AI coaching',
@@ -221,9 +223,11 @@ export const ui = {
         {
           title: 'IA',
           items: [
-            'Développement assisté par IA avec Claude Code',
-            'Intégration continue et contrôles qualité',
-            "Intégration d'agents IA, MCP et LLM",
+            'Accompagnement des équipes vers le développement assisté par IA avec Claude Code',
+            "Construction d'agents IA",
+            "Skills d'agents",
+            'Coordination multi-agents',
+            'Projets organisés pour le développement assisté par IA',
             'Support et migration Atmosphere',
           ],
         },
@@ -236,7 +240,7 @@ export const ui = {
           sector: "Éditeur d'outils de développement",
           title: "Agent de migration et formation de l'équipe",
           summary:
-            "Passage de l'équipe au développement assisté par IA avec Claude Code : skills partagés, suivi de l'avancement et contrôles qualité en CI. Construction complète d'un serveur MCP qui convertit les tests de charge JMeter et LoadRunner en simulations Gatling, du serveur Java et Quarkus jusqu'au déploiement sur AWS.",
+            "Passage de l'équipe au développement assisté par IA avec Claude Code, avec des skills partagés et un projet organisé pour les agents. Construction de l'agent IA qui convertit les tests de charge JMeter et LoadRunner en simulations Gatling, déployé sur AWS.",
         },
         {
           sector: 'Coaching IA grand public',
