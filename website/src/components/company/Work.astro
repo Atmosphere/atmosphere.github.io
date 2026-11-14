@@ -1,0 +1,83 @@
+---
+// Client names are withheld. Facts come from each project's repository or role description.
+import { ui, type Lang } from '../../i18n';
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = 'en' } = Astro.props;
+const t = ui[lang];
+// Sector and title are translated in ../../i18n.ts, in this order.
+const stacks = [
+  'Java · Quarkus · MCP · Claude Code',
+  'Rust · MCP · A2A · React Native',
+  'TypeScript · GraphQL · Expo · GCP',
+];
+// Only Dravr is named; the other clients are not.
+const links: (string | undefined)[] = [undefined, 'https://dravr.ai', undefined];
+const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[i] }));
+---
+
+<section class="co-section" id="work">
+  <div class="co-container">
+    <h2 class="co-title">{t.work.title}</h2>
+    <div class="work-grid">
+      {cases.map((c) => (
+        <article class="co-card case">
+          <span class="case-sector">{c.sector}</span>
+          <h3 class="case-title">{c.title}</h3>
+          <span class="case-stack">{c.stack}</span>
+          {c.link && <a class="co-link case-link" href={c.link}>{c.link.replace('https://', '')}</a>}
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .co-title {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .work-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .case {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .case-sector {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .case-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.25;
+  }
+
+  .case-stack {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+  }
+
+  .case-link {
+    align-self: flex-start;
+    margin-top: var(--space-sm);
+  }
+
+  @media (max-width: 860px) {
+    .work-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

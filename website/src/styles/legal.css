@@ -1,0 +1,83 @@
+/* Shared by the English and French privacy pages. */
+  .legal {
+    padding: calc(var(--space-4xl) + 60px) var(--space-xl) var(--space-4xl);
+    min-height: 100vh;
+  }
+
+  .legal-container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .legal-header {
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+  }
+
+  .legal-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-md);
+  }
+
+  .legal-lede {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .legal section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .legal h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: var(--space-md);
+  }
+
+  .legal p,
+  .legal li {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+  }
+
+  .legal p + p {
+    margin-top: var(--space-md);
+  }
+
+  .legal ul {
+    padding-left: var(--space-lg);
+  }
+
+  .legal li + li {
+    margin-top: var(--space-xs);
+  }
+
+  .legal a {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .legal a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  @media (max-width: 640px) {
+    .legal {
+      padding: calc(var(--space-3xl) + 60px) var(--space-md) var(--space-3xl);
+    }
+  }

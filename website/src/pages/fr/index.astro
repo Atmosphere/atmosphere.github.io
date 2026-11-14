@@ -1,0 +1,24 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import CompanyHero from '../../components/company/CompanyHero.astro';
+import Products from '../../components/company/Products.astro';
+import Consulting from '../../components/company/Consulting.astro';
+import Work from '../../components/company/Work.astro';
+import CallToAction from '../../components/company/CallToAction.astro';
+import '../../styles/company.css';
+import { ui } from '../../i18n';
+---
+
+<Layout title={ui.fr.meta.title} description={ui.fr.meta.description}>
+  <Header />
+  <main>
+    <CompanyHero lang="fr" />
+    <Consulting lang="fr" />
+    <Products lang="fr" />
+    <Work lang="fr" />
+    <CallToAction lang="fr" />
+  </main>
+  <Footer />
+</Layout>

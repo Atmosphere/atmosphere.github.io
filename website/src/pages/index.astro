@@ -1,24 +1,37 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
-import Hero from '../components/Hero.astro';
-import Shipped from '../components/Shipped.astro';
-import Atmosphere from '../components/Atmosphere.astro';
-import WhyAtmosphere from '../components/WhyAtmosphere.astro';
-import CodeExample from '../components/CodeExample.astro';
-import Support from '../components/Support.astro';
 import Footer from '../components/Footer.astro';
+import CompanyHero from '../components/company/CompanyHero.astro';
+import Products from '../components/company/Products.astro';
+import Consulting from '../components/company/Consulting.astro';
+import Work from '../components/company/Work.astro';
+import CallToAction from '../components/company/CallToAction.astro';
+import '../styles/company.css';
+import { ui } from '../i18n';
+
+// Section anchors that lived on this URL before the Atmosphere page moved to /atmosphere/.
+// Links already published (README, docs, posts) point at e.g. https://async-io.live/#support.
+const movedAnchors = ['support', 'shipped', 'atmosphere', 'why', 'capabilities'];
 ---
 
-<Layout title="Async IO — The Company Behind Atmosphere">
+<Layout title={ui.en.meta.title} description={ui.en.meta.description}>
+  <script is:inline define:vars={{ movedAnchors }}>
+    // Keep old deep links working: /#support now lives at /atmosphere/#support.
+    (function () {
+      var id = window.location.hash.slice(1);
+      if (movedAnchors.indexOf(id) !== -1) {
+        window.location.replace('/atmosphere/#' + id);
+      }
+    })();
+  </script>
   <Header />
   <main>
-    <Hero />
-    <Shipped />
-    <Atmosphere />
-    <WhyAtmosphere />
-    <CodeExample />
-    <Support />
+    <CompanyHero />
+    <Consulting />
+    <Products />
+    <Work />
+    <CallToAction />
   </main>
   <Footer />
 </Layout>

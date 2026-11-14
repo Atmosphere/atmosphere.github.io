@@ -1,0 +1,122 @@
+---
+// Sources: Atmosphere = the /atmosphere/ page; mirroir = github.com/jfarcand/mirroir-mcp README;
+// TrailSnag = trailsnag.com landing copy. Atmosphere and mirroir are Apache 2.0; TrailSnag is not open source.
+import { ui, type Lang } from '../../i18n';
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = 'en' } = Astro.props;
+const t = ui[lang];
+const products = [
+  {
+    name: 'Atmosphere',
+    href: '/atmosphere/',
+    meta: t.products.atmosphereMeta,
+    tagline: t.products.atmosphere,
+    links: [
+      { href: '/atmosphere/', label: t.products.learnMore },
+      { href: '/atmosphere/#support', label: t.products.support },
+      { href: 'https://github.com/Atmosphere/atmosphere', label: 'GitHub', external: true },
+    ],
+  },
+  {
+    name: 'mirroir',
+    href: 'https://mirroir.dev',
+    tagline: t.products.mirroir,
+    links: [
+      { href: 'https://mirroir.dev', label: 'mirroir.dev', external: true },
+      { href: 'https://github.com/jfarcand/mirroir-mcp', label: 'GitHub', external: true },
+    ],
+  },
+  {
+    name: 'TrailSnag',
+    href: 'https://trailsnag.com',
+    tagline: t.products.trailsnag,
+    links: [{ href: 'https://trailsnag.com', label: 'trailsnag.com', external: true }],
+  },
+];
+---
+
+<section class="co-section alt" id="products">
+  <div class="co-container">
+    <h2 class="co-title">{t.products.title}</h2>
+    <div class="products-grid">
+      {products.map((p) => (
+        <article class="co-card product">
+          <h3 class="product-name"><a href={p.href}>{p.name}</a></h3>
+          {p.meta && <span class="product-meta">{p.meta}</span>}
+          <p class="product-tagline">{p.tagline}</p>
+          <div class="product-links">
+            {p.links.map((l) => (
+              <a
+                href={l.href}
+                class="co-link"
+                {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
+                {l.label}
+              </a>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .co-title {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .product {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .product-name {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 400;
+  }
+
+  .product-name a {
+    transition: color 0.2s var(--ease-out-quad);
+  }
+
+  .product-name a:hover {
+    color: var(--color-accent);
+  }
+
+  .product-meta {
+    margin-top: calc(-1 * var(--space-sm));
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-accent);
+  }
+
+  .product-tagline {
+    color: var(--color-text-secondary);
+    flex: 1;
+  }
+
+  .product-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-lg);
+  }
+
+  @media (max-width: 860px) {
+    .products-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

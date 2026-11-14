@@ -1,20 +1,28 @@
 ---
+import { langOf, ui } from '../i18n';
+
 const currentYear = new Date().getFullYear();
+const t = ui[langOf(Astro.url.pathname)];
+// The company pages are commercial; the docs link only shows on the Atmosphere product page.
+const onAtmosphere = Astro.url.pathname.startsWith('/atmosphere/');
 
 const links = [
-  { label: 'Docs', href: '/docs/' },
-  { label: 'Support', href: '/#support' },
-  { label: 'GitHub', href: 'https://github.com/Atmosphere/atmosphere', external: true },
-  { label: 'Blog', href: '/blog/' },
-  { label: 'Contact', href: '/contact/' },
-  { label: 'Privacy', href: '/privacy/' },
+  { label: 'Atmosphere', href: '/atmosphere/' },
+  { label: 'mirroir', href: 'https://mirroir.dev' },
+  { label: t.footer.services, href: `${t.home}#consulting` },
+  ...(onAtmosphere ? [{ label: t.footer.docs, href: '/docs/' }] : []),
+  { label: t.footer.support, href: '/atmosphere/#support' },
+  { label: 'GitHub', href: 'https://github.com/Atmosphere/atmosphere' },
+  { label: t.footer.blog, href: '/blog/' },
+  { label: t.footer.contact, href: t.contact },
+  { label: t.footer.privacy, href: t.privacy },
 ];
 ---
 
 <footer class="footer">
   <div class="footer-container">
     <div class="footer-top">
-      <a href="/" class="footer-logo">
+      <a href={t.home} class="footer-logo">
         <img src="/logo.svg" alt="Async IO" width="28" height="28" style="border-radius: 4px;" />
         <span>Async IO</span>
       </a>
@@ -24,14 +32,8 @@ const links = [
           <a
             href={link.href}
             class="footer-link"
-            {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           >
             {link.label}
-            {link.external && (
-              <svg class="external-icon" width="10" height="10" viewBox="0 0 12 12" fill="none">
-                <path d="M3.5 8.5L8.5 3.5M8.5 3.5H4.5M8.5 3.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            )}
           </a>
         ))}
       </nav>
@@ -41,10 +43,10 @@ const links = [
 
     <div class="footer-bottom">
       <p class="footer-copyright">
-        &copy; 2013&ndash;{currentYear} Async IO. All rights reserved.
+        &copy; 2013&ndash;{currentYear} Async IO. {t.footer.rights}
       </p>
       <p class="footer-tagline">
-        Real-time infrastructure for the JVM since 2013.
+        {t.footer.tagline}
       </p>
     </div>
   </div>
@@ -84,8 +86,9 @@ const links = [
 
   .footer-links {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-xl);
+    gap: var(--space-md) var(--space-xl);
   }
 
   .footer-link {
@@ -102,13 +105,6 @@ const links = [
     color: var(--color-text-primary);
   }
 
-  .external-icon {
-    opacity: 0.5;
-  }
-
-  .footer-link:hover .external-icon {
-    opacity: 1;
-  }
 
   .footer-divider {
     height: 1px;
@@ -154,7 +150,9 @@ const links = [
     }
 
     .footer-links {
-      gap: var(--space-lg);
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--space-md) var(--space-lg);
     }
 
     .footer-bottom {

@@ -1,0 +1,155 @@
+/* Shared shell for the company landing page (src/pages/index.astro). Imported by that
+   page only, so the Atmosphere page under /atmosphere/ keeps its own component styles. */
+
+.co-section {
+  position: relative;
+  padding: var(--space-4xl) var(--space-xl);
+}
+
+.co-section.alt {
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.co-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.co-header {
+  max-width: 720px;
+  margin-bottom: var(--space-3xl);
+}
+
+.co-header.center {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.co-label {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: var(--space-md);
+}
+
+.co-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-lg);
+  text-wrap: balance;
+}
+
+.co-title em {
+  font-style: italic;
+  color: var(--color-accent);
+}
+
+.co-lede {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.co-card {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: var(--space-xl);
+  transition: border-color 0.2s var(--ease-out-quad);
+}
+
+.co-card:hover {
+  border-color: var(--color-border-hover);
+}
+
+.co-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  list-style: none;
+}
+
+.co-tags li {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-accent);
+  border-radius: 999px;
+  padding: 0.2em 0.75em;
+}
+
+.co-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s var(--ease-out-quad);
+}
+
+.co-btn-primary {
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+}
+
+.co-btn-primary:hover {
+  background: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--color-accent-glow);
+}
+
+.co-btn-secondary {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-accent);
+}
+
+.co-btn-secondary:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-elevated);
+}
+
+.co-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-accent);
+  transition: color 0.2s var(--ease-out-quad), border-color 0.2s var(--ease-out-quad);
+}
+
+.co-link:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+@media (max-width: 768px) {
+  .co-section {
+    padding: var(--space-3xl) var(--space-md);
+  }
+
+  .co-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .co-card {
+    padding: var(--space-lg);
+  }
+}

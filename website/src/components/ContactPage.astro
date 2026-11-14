@@ -1,0 +1,269 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import type { Lang } from '../i18n';
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = 'en' } = Astro.props;
+
+const calendlyUrl = 'https://calendly.com/jfarcand-async-io/30min';
+
+// Tier names the Support section can hand over via ?plan=. This is an
+// allowlist, not a hint: the value arrives from the URL and is echoed into the
+// page, so anything not on this list is ignored rather than rendered.
+const planNames = ['Developer', 'Production', 'Mission-Critical', 'Legacy', 'Services', 'Consulting'];
+
+const strings = {
+  en: {
+    title: 'Contact — Async IO',
+    label: 'Get in touch',
+    heading: "Let's talk",
+    description:
+      'Book a call with the Async-IO team to discuss consulting, enterprise support, migration planning, or how Atmosphere fits your architecture. You talk to the developers who do the work.',
+    planBefore: 'About the',
+    planAfter: ' plan.',
+    consulting: 'About a consulting engagement.',
+    emailBefore: 'Prefer email? Reach us at',
+    emailAfter: '— we answer every message ourselves.',
+    noscriptBefore: 'The scheduler needs JavaScript. Email',
+    noscriptAfter: 'and we will send you times.',
+    blocked: 'The scheduler could not load &mdash; it is likely blocked here. Email',
+    subjectConsulting: 'Consulting enquiry',
+    subjectPlan: ' plan — Atmosphere support enquiry',
+  },
+  fr: {
+    title: 'Contact — Async IO',
+    label: 'Contactez-nous',
+    heading: 'Discutons',
+    description:
+      "Planifiez un appel avec l'équipe d'Async IO pour discuter de consultation, de support entreprise, de migration ou de la place d'Atmosphere dans votre architecture. Vous parlez directement aux développeurs qui font le travail.",
+    planBefore: 'À propos du forfait',
+    planAfter: '.',
+    consulting: "À propos d'un mandat de consultation.",
+    emailBefore: 'Vous préférez le courriel? Écrivez-nous à',
+    emailAfter: '— nous répondons nous-mêmes à chaque message.',
+    noscriptBefore: 'Le calendrier nécessite JavaScript. Écrivez à',
+    noscriptAfter: 'et nous vous enverrons nos disponibilités.',
+    blocked: "Le calendrier n'a pas pu se charger (il est probablement bloqué par votre réseau). Écrivez à",
+    subjectConsulting: 'Demande de consultation',
+    subjectPlan: ' — demande de support Atmosphere',
+  },
+}[lang];
+const blockedHtml =
+  strings.blocked +
+  ' <a href="mailto:support@async-io.org">support@async-io.org</a> ' +
+  strings.noscriptAfter;
+const scriptStrings = {
+  consulting: strings.consulting,
+  subjectConsulting: strings.subjectConsulting,
+  subjectPlan: strings.subjectPlan,
+  // French subjects name the tier as "Forfait X"; English as "X plan".
+  planPrefix: lang === 'fr' ? 'Forfait ' : '',
+};
+---
+
+<Layout title={strings.title} description={strings.description}>
+  <Header />
+  <main>
+    <section class="contact">
+      <div class="contact-container">
+        <div class="contact-header">
+          <span class="section-label">{strings.label}</span>
+          <h1 class="contact-title">{strings.heading}</h1>
+          <p class="contact-description">{strings.description}</p>
+          <p class="plan-context" id="planContext" hidden>
+            {strings.planBefore} <strong id="planName"></strong>{strings.planAfter}
+          </p>
+        </div>
+
+        <div class="calendly-embed">
+          <div
+            class="calendly-inline-widget"
+            data-url={calendlyUrl}
+            data-base-url={calendlyUrl}
+            id="calendlyWidget"
+            style="min-width:320px;height:700px;"
+          ></div>
+        </div>
+
+        <div class="contact-alt">
+          <p>
+            {strings.emailBefore}
+            <a href="mailto:support@async-io.org" id="emailFallback">support@async-io.org</a>
+            {strings.emailAfter}
+          </p>
+          <noscript>
+            <p class="contact-noscript">
+              {strings.noscriptBefore}
+              <a href="mailto:support@async-io.org">support@async-io.org</a>
+              {strings.noscriptAfter}
+            </p>
+          </noscript>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script is:inline src="https://assets.calendly.com/assets/external/widget.js" async></script>
+
+<script is:inline define:vars={{ planNames, scriptStrings }}>
+  // Carry the tier the buyer clicked in Support across to this page: name it
+  // back to them, tag the booking, and preload the email fallback's subject.
+  // The value comes from the URL, so it is matched against the allowlist and
+  // never interpolated as markup.
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('plan');
+    const plan = planNames.find((p) => p.toLowerCase() === (requested || '').toLowerCase());
+    if (!plan) return;
+
+    const context = document.getElementById('planContext');
+    const name = document.getElementById('planName');
+    // Consulting is an engagement, not a support tier: name it without the word "plan".
+    const isConsulting = plan === 'Consulting';
+    if (context && name) {
+      if (isConsulting) {
+        context.textContent = scriptStrings.consulting;
+      } else {
+        name.textContent = plan;
+      }
+      context.hidden = false;
+    }
+
+    // utm_content rides through to the Calendly booking so an inbound call is
+    // already attributed to a tier before it starts.
+    const widget = document.getElementById('calendlyWidget');
+    if (widget) {
+      const base = widget.getAttribute('data-base-url');
+      widget.setAttribute('data-url', base + '?utm_content=' + encodeURIComponent(plan));
+    }
+
+    const email = document.getElementById('emailFallback');
+    if (email) {
+      email.setAttribute(
+        'href',
+        'mailto:support@async-io.org?subject=' +
+          encodeURIComponent(
+            isConsulting
+              ? scriptStrings.subjectConsulting
+              : scriptStrings.planPrefix + plan + scriptStrings.subjectPlan
+          )
+      );
+    }
+  })();
+</script>
+
+<script is:inline define:vars={{ blockedHtml }}>
+  // The scheduler is a third-party script on a domain corporate blockers eat.
+  // If it has not painted an iframe shortly after load, say so in the page
+  // instead of leaving an empty bordered box as the only purchase path.
+  window.addEventListener('load', function () {
+    window.setTimeout(function () {
+      const widget = document.getElementById('calendlyWidget');
+      if (!widget || widget.querySelector('iframe')) return;
+      const fallback = document.createElement('p');
+      fallback.className = 'contact-noscript';
+      // Built at build time from the page's own strings, never from the URL.
+      fallback.innerHTML = blockedHtml;
+      widget.replaceChildren(fallback);
+    }, 4000);
+  });
+</script>
+
+<style>
+  .contact {
+    padding: calc(var(--space-4xl) + 60px) var(--space-xl) var(--space-4xl);
+    min-height: 100vh;
+  }
+
+  .contact-container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .contact-header {
+    text-align: center;
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    margin-bottom: var(--space-md);
+  }
+
+  .contact-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-lg);
+  }
+
+  .contact-description {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .calendly-embed {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .contact-alt {
+    text-align: center;
+  }
+
+  .contact-alt p {
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+  }
+
+  .plan-context {
+    margin-top: var(--space-md);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--color-accent);
+  }
+
+  .contact-noscript {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    padding: var(--space-xl);
+    text-align: center;
+  }
+
+  .contact-alt a {
+    color: var(--color-accent);
+    transition: color 0.2s var(--ease-out-quad);
+  }
+
+  .contact-alt a:hover {
+    color: var(--color-text-primary);
+  }
+
+  @media (max-width: 640px) {
+    .contact {
+      padding: calc(var(--space-3xl) + 60px) var(--space-md) var(--space-3xl);
+    }
+  }
+</style>
