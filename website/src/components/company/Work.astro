@@ -12,11 +12,12 @@ const t = ui[lang];
 const stacks = [
   'Java · Quarkus · Claude Code',
   'Rust · MCP · A2A · React Native',
+  'Rust',
   'Java · Atmosphere',
   'Go · React · Python · LangChain',
 ];
-// Dravr, GameDuell and Katara are named with the maintainer's agreement; the developer-tools vendor is not.
-const links: (string | undefined)[] = [undefined, 'https://dravr.ai', 'https://www.gameduell.com', 'https://katara.ai'];
+// Dravr, Embacle, GameDuell and Katara are named with the maintainer's agreement; the developer-tools vendor is not.
+const links: (string | undefined)[] = [undefined, 'https://dravr.ai', 'https://github.com/dravr-ai/dravr-embacle', 'https://www.gameduell.com', 'https://katara.ai'];
 const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[i] }));
 ---
 
@@ -81,6 +82,11 @@ const cases = t.work.cases.map((c, i) => ({ ...c, stack: stacks[i], link: links[
   .case-link {
     align-self: flex-start;
     margin-top: var(--space-sm);
+  }
+
+  /* An odd last card takes the full row instead of leaving a gap. */
+  .case:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   @media (max-width: 860px) {

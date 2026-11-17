@@ -130,6 +130,12 @@ export const ui = {
             'Co-founded Dravr and built the entire stack with Claude Code: a multi-tenant Rust backend, a web app and a React Native mobile app. The AI coach reads the athlete’s Strava, Garmin and Whoop data and answers on the web, on the phone, in messaging apps and in any assistant that speaks MCP.',
         },
         {
+          sector: 'Developer tools',
+          title: 'One API for AI coding tools',
+          summary:
+            'Built Embacle, which lets applications use the AI coding tools a developer is already signed in to, such as Claude Code, GitHub Copilot and Codex, through one API and with no API key.',
+        },
+        {
           sector: 'Online games',
           title: 'Real-time multiplayer games',
           summary: 'GameDuell uses Atmosphere in all of its games that need to deliver events in real time.',
@@ -244,6 +250,12 @@ export const ui = {
           title: 'Plateforme IA multi-tenant',
           summary:
             "Cofondateur de Dravr ; toute la plateforme construite avec Claude Code : un backend Rust multi-tenant, une app web et une app mobile React Native. Le coach IA lit les données Strava, Garmin et Whoop de l'athlète et répond sur le web, sur le téléphone, dans les messageries et dans tout assistant compatible MCP.",
+        },
+        {
+          sector: 'Outils de développement',
+          title: 'Une API pour les outils de codage IA',
+          summary:
+            "Construction d'Embacle, qui permet aux applications d'utiliser, par une seule API et sans clé d'API, les outils de codage IA auxquels le développeur est déjà connecté, comme Claude Code, GitHub Copilot et Codex.",
         },
         {
           sector: 'Jeux en ligne',
